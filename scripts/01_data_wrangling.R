@@ -55,8 +55,10 @@ mocness_winter_2018_2019_fish_abundance <- smartbind(mocness_2018_02_fish_abunda
                                                  "2" ~ "50",
                                                  "3" ~ "25",
                                                  "4" ~ "0"))) %>%
+  # Make a new column for lowest taxonomic identity available
+  mutate(taxon = ifelse(species == "Unknown", family, species)) %>%
   # Keep only taxon, haul_number, maximum_depth_m, minimum_depth_m, and no.individuals
-  select(haul_number, family, species, maximum_depth_m, minimum_depth_m, individuals_in_tow = no.individuals)
+  select(haul_number, taxon, maximum_depth_m, minimum_depth_m, individuals_in_tow = no.individuals)
 
 # Change date and start time in 'mocness_2018_2019_metadata' to PT
 mocness_2018_2019_metadata_reformat_date <- mocness_2018_2019_metadata %>%
@@ -69,12 +71,12 @@ mocness_2018_2019_metadata_reformat_date <- mocness_2018_2019_metadata %>%
          time = substr(date_time_pt, 12, 19))
 
 # Merge fish abundance data with metadata by haul_number
-mocness_2018_2019_abundance <- merge(mocness_winter_2018_2019_fish_abundance, 
+mocness_2018_2019 <- merge(mocness_winter_2018_2019_fish_abundance, 
                            mocness_2018_2019_metadata_reformat_date, 
                            by.x = "haul_number", by.y = "Haul.no", all.x = TRUE) %>%
   # Keep only date, time_gmt, haul_number, maximum_depth_m, minimum_depth_m, latitude_dd,
   # longitude_dd, family, species, and concentration_ind_1000m3
   select(date, time, haul_number, maximum_depth_m, minimum_depth_m, 
-         latitude_dd = Station.lat, longitude_dd = Station.lon, family, species, 
+         latitude_dd = Station.lat, longitude_dd = Station.lon, taxon, 
          volume_filtered_m3 = Volume.filtered, individuals_in_tow)
 
