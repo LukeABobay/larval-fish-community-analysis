@@ -1,0 +1,48 @@
+---
+title: "mocness18-19explore"
+output: word_document
+date: "2025-07-30"
+knit: (function(input, encoding) {
+
+  rmarkdown::render(
+
+    input,
+
+    output_dir = here::here("output"),
+
+    output_file = paste0(xfun::sans_ext(input), '_', Sys.Date(), '.html')
+
+    )
+
+  })
+  ---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+```{r}
+library(here)
+library(tidyverse)
+library(ggplot2)
+```
+
+```{r}
+source(here("scripts/01_data_wrangling.R"))
+```
+
+```{r}
+mocness_18_19_merge_station <- unite(mocness_2018_2019, col = "location_station", location, station, sep="_", remove = TRUE)
+mocness_18_19_depth_range <- unite(mocness_18_19_merge_station, col = "depth_range", minimum_depth_m, maximum_depth_m, sep="-", remove = TRUE)
+```
+
+```{r}
+ggplot(mocness_18_19_depth_range, aes(x = taxon, y = individuals_in_tow)) +
+  geom_bar(stat = "identity") +
+  facet_grid(depth_range ~ location_station) +
+  labs(title = "Taxon Counts by Station and Depth Range",
+       x = "Taxon Group", y = "Count") +
+  theme_light() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+ggsave("plot_mocness_18_19_counts_station_depth.tif", plot = last_plot(), device = "tiff", path=here("output"), width = 36, height = 6, units = "in", dpi = 300)
+```
+
