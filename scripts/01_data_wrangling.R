@@ -76,7 +76,7 @@ mocness_2018_2019 <- merge(mocness_winter_2018_2019_fish_abundance,
                            by.x = "haul_number", by.y = "Haul.no", all.x = TRUE) %>%
   # Keep only date, time_gmt, haul_number, maximum_depth_m, minimum_depth_m, latitude_dd,
   # longitude_dd, family, species, and concentration_ind_1000m3
-  select(date, time, haul_number, maximum_depth_m, minimum_depth_m, 
+  select(date, time, haul_number, maximum_depth_m, minimum_depth_m, location = Location, station = Station, 
          latitude_dd = Station.lat, longitude_dd = Station.lon, taxon, 
          volume_filtered_m3 = Volume.filtered, individuals_in_tow)
 
