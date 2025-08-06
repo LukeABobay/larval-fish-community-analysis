@@ -17,7 +17,7 @@ library(gtools)
 # MOCNESS larval fish abundance
 mocness_2018_02_fish_abundance <- read.csv(here("data/18_w_mezcal_fish_ids.csv"))
 mocness_2019_03_fish_abundance <- read.csv(here("data/19_w_mezcal_fish_ids.csv"))
-mocness_2022_03_fish_abundance <- read.csv(here("data/22_w_SPECTRA_fish_inventory.csv"))
+mocness_2022_03_fish_abundance_raw <- read.csv(here("data/22_w_SPECTRA_fish_inventory.csv"))
 mocness_2023_02_fish_abundance <- read.csv(here("data/23_w_SPECTRA_fish_inventory.csv"))
 
 # MEZCAL metadata
@@ -37,6 +37,17 @@ mocness_winter_2018_2019_fish_abundance <- smartbind(mocness_2018_02_fish_abunda
   # Add project column, which will be necessary for merging with metadata, since this data frame has no date
   mutate(project = "MEZCAL")
 
+# Calculate valid values of 'number.of.individuals.adjusted' for rows in 2022 data set
+# that have a question mark following values in 'number.of.individuals.raw'
+questionable_values <- mocness_2022_03_fish_abundance_raw %>%
+  filter(grepl("\\?$", number.of.individuals.raw)) %>%
+  mutate(number.of.individuals.adjusted = as.numeric(gsub("\\?", "", number.of.individuals.raw)) * split.multiplier)
+
+# Bind re-calculated values with winter 2022 MOCNESS data
+mocness_2022_03_fish_abundance <- mocness_2022_03_fish_abundance_raw %>%
+  filter(!grepl("\\?$", number.of.individuals.raw)) %>%
+  rbind(., questionable_values)
+
 #Merge winter 2022 and 2023 MOCNESS fish data
 mocness_winter_2022_2023_fish_abundance <- smartbind(mocness_2022_03_fish_abundance,
                                                      mocness_2023_02_fish_abundance) %>%
@@ -46,8 +57,6 @@ mocness_winter_2022_2023_fish_abundance <- smartbind(mocness_2022_03_fish_abunda
   select(collection_date, haul_number, transect, station, net_number, 
          volume_filtered_m3, family, species, individuals_in_tow) %>%
   mutate(project = "SPECTRA")
-
-
 
 mocness_winter_fish_abundance <- smartbind(mocness_winter_2018_2019_fish_abundance,
                                            mocness_winter_2022_2023_fish_abundance) %>%
