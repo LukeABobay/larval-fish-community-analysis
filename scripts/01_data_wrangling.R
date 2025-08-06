@@ -29,12 +29,33 @@ mocness_2018_2019_metadata <- read.csv(here("data/mezcal_envr.csv"))
 # Merge winter 2018 and 2019 MOCNESS fish data
 mocness_winter_2018_2019_fish_abundance <- smartbind(mocness_2018_02_fish_abundance,
                                                      mocness_2019_03_fish_abundance) %>%
-  # Remove rows where every column is either empty or NA
-  filter(rowSums(is.na(.) | . == "") != ncol(.)) %>%
+  rename(haul_number = Haul.no, transect = Location, station = Station, 
+         volume_filtered_m3 = volume.filtered.m3, net_number = Net.no, 
+         individuals_in_tow = no.individuals) %>%
+  select(haul_number, transect, station, net_number, 
+         volume_filtered_m3, family, species, individuals_in_tow) %>%
+  # Add project column, which will be necessary for merging with metadata, since this data frame has no date
+  mutate(project = "MEZCAL")
+
+#Merge winter 2022 and 2023 MOCNESS fish data
+mocness_winter_2022_2023_fish_abundance <- smartbind(mocness_2022_03_fish_abundance,
+                                                     mocness_2023_02_fish_abundance) %>%
+  rename(collection_date = date, haul_number = haul.number, net_number = net.number, 
+         volume_filtered_m3 = volume.filtered.m3, 
+         individuals_in_tow = number.of.individuals.adjusted) %>%
+  select(collection_date, haul_number, transect, station, net_number, 
+         volume_filtered_m3, family, species, individuals_in_tow) %>%
+  mutate(project = "SPECTRA")
+
+
+
+mocness_winter_fish_abundance <- smartbind(mocness_winter_2018_2019_fish_abundance,
+                                           mocness_winter_2022_2023_fish_abundance) %>%
+  # Keep rows where at least one of the non-excluded columns is not NA and not an empty string
+  filter(if_any(-c(collection_date, individuals_in_tow),
+                ~ !is.na(.) & . != "")) %>%
   # Add clean Haul.no without "oblique," "*", etc. for purpose of merging with metadata
-  mutate(haul_number = Haul.no) %>%
-  # Replace "oblique" in haul_number with "0" to get closest time to reality from metadata for net 0
-  mutate(haul_number = gsub("\\*$", "", haul_number),
+  mutate(# Replace "oblique" in haul_number with "0" to get closest time to reality from metadata for net 0
          haul_number = gsub("oblique$", "0", haul_number),
          # Replace missing haul_number values with NA
          haul_number = ifelse(haul_number == "", NA, haul_number),
@@ -42,8 +63,8 @@ mocness_winter_2018_2019_fish_abundance <- smartbind(mocness_2018_02_fish_abunda
          haul_number = sub("^0+", "", haul_number)) %>%
   # Expand haul_number to all rows from a net
   fill(haul_number, .direction = "down") %>%
-  # Remove non-quantitative tows (asterisk in Net.no)
-  filter(!grepl("\\*$", Net.no)) %>%
+  # Remove non-quantitative tows (asterisk in net_number or p or asterisk in haul_number)
+  filter(!grepl("\\*$", net_number) & !grepl("\\*$", haul_number) & !grepl("\\p$", haul_number)) %>%
   # Add minimum and maximum depth for each tow based on net number from clean haul_number
   mutate(maximum_depth_m = as.numeric(case_match(substr(haul_number, nchar(haul_number), nchar(haul_number)), 
                                                  "0" ~ "100",
@@ -58,9 +79,12 @@ mocness_winter_2018_2019_fish_abundance <- smartbind(mocness_2018_02_fish_abunda
                                                  "3" ~ "25",
                                                  "4" ~ "0"))) %>%
   # Make a new column for lowest taxonomic identity available
-  mutate(taxon = ifelse(species == "Unknown", family, species)) %>%
-  # Keep only taxon, haul_number, maximum_depth_m, minimum_depth_m, and no.individuals
-  select(haul_number, taxon, maximum_depth_m, minimum_depth_m, individuals_in_tow = no.individuals)
+  mutate(taxon = ifelse(species %in% c("Unknown", ""), family, species)) %>%
+  # Format collection_date (only has values for SPECTRA) as date
+  mutate(collection_date = as.Date(collection_date, format = "%Y/%m/%d")) %>%
+  select(project, collection_date, haul_number, transect, 
+         station, maximum_depth_m, minimum_depth_m, 
+         volume_filtered_m3, taxon, individuals_in_tow)
 
 # Change date and start time in 'mocness_2018_2019_metadata' to PT
 mocness_2018_2019_metadata_reformat_date <- mocness_2018_2019_metadata %>%
@@ -70,15 +94,21 @@ mocness_2018_2019_metadata_reformat_date <- mocness_2018_2019_metadata %>%
          date_time_pt = lubridate::with_tz(date_time_gmt, "America/Los_Angeles")) %>%
   # Separate date and time into two columns
   mutate(date = as.Date(substr(date_time_pt, 1, 10)),
-         time = substr(date_time_pt, 12, 19))
+         time = substr(date_time_pt, 12, 19)) %>%
+  # Add column indicating that these metadata are for the MEZCAL project
+  mutate(project = "MEZCAL") %>%
+  # Rename columns to be consistent with fish data frame
+  rename(haul_number = Haul.no)
 
 # Merge fish abundance data with metadata by haul_number
-mocness_2018_2019 <- merge(mocness_winter_2018_2019_fish_abundance, 
-                           mocness_2018_2019_metadata_reformat_date, 
-                           by.x = "haul_number", by.y = "Haul.no", all.x = TRUE) %>%
+mocness_full <- merge(mocness_winter_fish_abundance, 
+                           mocness_2018_2019_metadata_reformat_date, by = c("project", "haul_number"),
+                      all.x = TRUE) %>%
+  # Take 'collection_date' from 'date' column when NA
+  mutate(collection_date = as.Date(ifelse(is.na(collection_date), date, collection_date))) %>%
   # Keep only date, time_gmt, haul_number, maximum_depth_m, minimum_depth_m, latitude_dd,
   # longitude_dd, family, species, and concentration_ind_1000m3
-  select(date, time, haul_number, maximum_depth_m, minimum_depth_m, location = Location, station = Station, 
-         latitude_dd = Station.lat, longitude_dd = Station.lon, taxon, 
+  select(project, collection_date, time, haul_number, maximum_depth_m, minimum_depth_m, 
+         transect, station, latitude_dd = Station.lat, longitude_dd = Station.lon, taxon, 
          volume_filtered_m3 = Volume.filtered, individuals_in_tow)
 
