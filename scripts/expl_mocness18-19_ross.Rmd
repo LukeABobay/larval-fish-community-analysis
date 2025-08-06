@@ -25,6 +25,28 @@ knitr::opts_chunk$set(echo = FALSE)
 library(here)
 library(tidyverse)
 library(ggplot2)
+library(RColorBrewer)
+```
+
+```{r Define variables}
+# Categories of species with >15 individuals from MEZCAL
+coastal_species <- c("Apodichthus flavidus", "Artedius spp.", "Citharichthys spp.", "Cottidae", "Isopsetta isolepis", "Liparis fucensis", "Ophiodon elongatus", "Parophrys vetulus", "Psettichthys melanostictus", "Sebastes spp.", "Xiphister atrophurpureus")
+coastal_colors <- colorRampPalette(brewer.pal(9, "Greens")[2:9])(length(coastal_species))
+
+coastal_oceanic_species <- c("Engraulis mordax", "Glyptocephalus zachirus", "Lestidiops ringens", "Lyopsetta exilis")
+coastal_oceanic_colors <- colorRampPalette(brewer.pal(9, "Blues")[2:9])(length(coastal_oceanic_species))
+
+oceanic_species <- c("Chauliodus macouni", "Diaphus theta", "Lipolagus ochotensis", "Myctophidae", "Protomyctophum crockeri", "Stenobrachius leucopsarus", "Tarletonbeania crenularis")
+oceanic_colors <- colorRampPalette(brewer.pal(9, "Purples")[2:9])(length(oceanic_species))
+
+# Named species color vector
+species_colors <- c(setNames(coastal_colors, coastal_species),
+                    setNames(coastal_oceanic_colors, coastal_oceanic_species),
+                    setNames(oceanic_colors, oceanic_species))
+
+# Vector of taxa ordered alphabetically within categories to order bars and figure legends
+ordered_taxa <- c(coastal_species, coastal_oceanic_species, oceanic_species)
+
 ```
 
 ```{r}
@@ -40,12 +62,22 @@ mocness_18_19_depth_range <- unite(mocness_18_19_merge_station, col = "depth_ran
 ```{r Reduce number of larval fish taxa}
 taxa_w_gt_15 <- mocness_18_19_depth_range %>%
   group_by(taxon) %>%
-  summarize(n = sum(individuals_in_tow)) %>%
+  summarize(n = sum(individuals_in_tow, na.rm = TRUE)) %>%
   ungroup() %>%
   filter(n >= 15)
 
 mocness_18_19_major_taxa <- mocness_18_19_depth_range %>%
-  filter(taxon %in% taxa_w_gt_15$taxon & taxon != "Unknown")
+  filter(taxon %in% taxa_w_gt_15$taxon & taxon != "Unknown" & !is.na(taxon) & taxon != "Damaged") %>%
+  mutate(taxon = case_match(taxon, 
+                            c("Citharichthys sordidus", "Citharichthys stigmaeus") ~ "Citharichthys spp.",
+                            "Artedius harringtoni" ~ "Artedius spp.",
+                            .default = taxon)) %>%
+  # Reorder taxa
+  mutate(taxon = factor(taxon, levels = ordered_taxa)) %>%
+  mutate(adult_habitat_affinity = case_when(taxon %in% coastal_species ~ "Coastal",
+                                            taxon %in% coastal_oceanic_species ~ "Coastal-oceanic",
+                                            taxon %in% oceanic_species ~ "Oceanic",
+                                            TRUE ~ "Other"))
 ```
 
 ```{r Plot taxon counts by station and depth}
@@ -68,22 +100,35 @@ ggplot(mocness_18_19_depth_range, aes(x = taxon, y = log(individuals_in_tow))) +
 # ggsave("plot_mocness_18_19_log_counts_station_depth.tif", plot = last_plot(), device = "tiff", path=here("output"), width = 36, height = 6, units = "in", dpi = 300)
 ```
 
-```{r Stacked barplot of major taxa}
+```{r Stacked barplots of major taxa}
 ggplot(mocness_18_19_major_taxa, aes(x = depth_range, y = individuals_in_tow, fill = taxon)) +
   geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(values = species_colors) +
   facet_grid(~ location_station) +
   labs(title = "Taxon Counts by Station and Depth Range",
        x = "Taxon Group", y = "Count") +
   theme_light() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# ggsave("plot_mocness_18_19_stacked_station_depth.tif", plot = last_plot(), device = "tiff", path=here("output"), width = 15, height = 6, units = "in", dpi = 300)
 
 ggplot(mocness_18_19_major_taxa, aes(x = depth_range, y = log(individuals_in_tow), fill = taxon)) +
   geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(values = species_colors) +
   facet_grid(~ location_station) +
   labs(title = "Taxon Counts by Station and Depth Range",
        x = "Taxon Group", y = "log(Count)") +
   theme_light() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# ggsave("plot_mocness_18_19_log_stacked_station_depth.tif", plot = last_plot(), device = "tiff", path=here("output"), width = 15, height = 6, units = "in", dpi = 300)
 
+ggplot(mocness_18_19_major_taxa, aes(x = depth_range, y = log(individuals_in_tow), fill = taxon)) +
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(values = species_colors) +
+  facet_grid(date ~ location_station) +
+  labs(title = "Taxon Counts by Station and Depth Range",
+       x = "Taxon Group", y = "log(Count)") +
+  theme_light() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# ggsave("plot_mocness_18_19_stacked_station_depth_date.tif", plot = last_plot(), device = "tiff", path=here("output"), width = 15, height = 15, units = "in", dpi = 300)
 ```
 
