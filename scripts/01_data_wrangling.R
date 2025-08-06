@@ -37,7 +37,9 @@ mocness_winter_2018_2019_fish_abundance <- smartbind(mocness_2018_02_fish_abunda
   mutate(haul_number = gsub("\\*$", "", haul_number),
          haul_number = gsub("oblique$", "0", haul_number),
          # Replace missing haul_number values with NA
-         haul_number = ifelse(haul_number == "", NA, haul_number)) %>%
+         haul_number = ifelse(haul_number == "", NA, haul_number),
+         # Remove leading zeros from haul numbers
+         haul_number = sub("^0+", "", haul_number)) %>%
   # Expand haul_number to all rows from a net
   fill(haul_number, .direction = "down") %>%
   # Remove non-quantitative tows (asterisk in Net.no)
