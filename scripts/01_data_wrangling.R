@@ -29,10 +29,10 @@ mocness_2018_2019_metadata <- read.csv(here("data/mezcal_envr.csv"))
 # Merge winter 2018 and 2019 MOCNESS fish data
 mocness_winter_2018_2019_fish_abundance <- smartbind(mocness_2018_02_fish_abundance,
                                                      mocness_2019_03_fish_abundance) %>%
-  rename(haul_number = Haul.no, transect = Location, station = Station, 
-         volume_filtered_m3 = volume.filtered.m3, net_number = Net.no, 
-         individuals_in_tow = no.individuals) %>%
-  select(haul_number, transect, station, net_number, 
+  rename(haul_number = Haul.no, transect = Location, station = Station,
+         replicate = Transect, volume_filtered_m3 = volume.filtered.m3, 
+         net_number = Net.no, individuals_in_tow = no.individuals) %>%
+  select(haul_number, transect, station, replicate, net_number, 
          volume_filtered_m3, family, species, individuals_in_tow) %>%
   # Add project column, which will be necessary for merging with metadata, since this data frame has no date
   mutate(project = "MEZCAL")
@@ -91,7 +91,7 @@ mocness_winter_fish_abundance <- smartbind(mocness_winter_2018_2019_fish_abundan
   mutate(taxon = ifelse(species %in% c("Unknown", ""), family, species)) %>%
   # Format collection_date (only has values for SPECTRA) as date
   mutate(collection_date = as.Date(collection_date, format = "%Y/%m/%d")) %>%
-  select(project, collection_date, haul_number, transect, 
+  select(project, collection_date, haul_number, replicate, transect, 
          station, maximum_depth_m, minimum_depth_m, 
          volume_filtered_m3, taxon, individuals_in_tow)
 
@@ -117,7 +117,7 @@ mocness_full <- merge(mocness_winter_fish_abundance,
   mutate(collection_date = as.Date(ifelse(is.na(collection_date), date, collection_date))) %>%
   # Keep only date, time_gmt, haul_number, maximum_depth_m, minimum_depth_m, latitude_dd,
   # longitude_dd, family, species, and concentration_ind_1000m3
-  select(project, collection_date, time, haul_number, maximum_depth_m, minimum_depth_m, 
+  select(project, collection_date, time, haul_number, replicate, maximum_depth_m, minimum_depth_m, 
          transect, station, latitude_dd = Station.lat, longitude_dd = Station.lon, taxon, 
          volume_filtered_m3 = Volume.filtered, individuals_in_tow)
 
