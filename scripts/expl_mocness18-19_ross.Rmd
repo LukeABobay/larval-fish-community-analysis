@@ -165,7 +165,7 @@ ggplot(filter(mocness_major_taxa, collection_date < "2019-01-01"), aes(x = depth
   scale_fill_manual(values = species_colors) +
   facet_grid(transect_replicate ~ station) +
   labs(title = "2018-02",
-       x = "Depth sampled (m)", y = "Count") +
+       x = "Depth sampled (m)", y = "log(Count)") +
   theme_light() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "none")
@@ -178,7 +178,7 @@ ggplot(filter(mocness_major_taxa, collection_date > "2019-01-01" & collection_da
   scale_fill_manual(values = species_colors) +
   facet_grid(transect_replicate ~ station) +
   labs(title = "2019-03",
-       x = "Depth sampled (m)", y = "Count") +
+       x = "Depth sampled (m)", y = "log(Count)") +
   theme_light() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "none")
@@ -191,7 +191,7 @@ ggplot(filter(mocness_major_taxa, collection_date > "2022-01-01" & collection_da
   scale_fill_manual(values = species_colors) +
   facet_grid(transect ~ station) +
   labs(title = "2022-03",
-       x = "Depth sampled (m)", y = "Count") +
+       x = "Depth sampled (m)", y = "log(Count)") +
   theme_light() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "none")
@@ -204,7 +204,7 @@ ggplot(filter(mocness_major_taxa, collection_date > "2023-01-01" & collection_da
   scale_fill_manual(values = species_colors) +
   facet_grid(transect ~ station) +
   labs(title = "2023-02",
-       x = "Depth sampled (m)", y = "Count") +
+       x = "Depth sampled (m)", y = "log(Count)") +
   theme_light() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "none")
