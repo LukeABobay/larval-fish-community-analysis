@@ -121,3 +121,37 @@ mocness_full <- merge(mocness_winter_fish_abundance,
          transect, station, latitude_dd = Station.lat, longitude_dd = Station.lon, taxon, 
          volume_filtered_m3 = Volume.filtered, individuals_in_tow)
 
+# Add columns with combined location/station and min/max depth
+mocness_clean <- mocness_full %>%
+  unite(col = "transect_station", transect, station, sep="_", remove = FALSE) %>%
+  unite(col = "depth_range", minimum_depth_m, maximum_depth_m, sep="-", remove = TRUE) %>%
+  mutate(taxon = case_match(taxon, 
+                            c("Agonidae spp.", "Xeneretmus latifrons", "Xeneretmus spp.") ~ "Agonidae",
+                            "Ammodytes spp." ~ "Ammodytidae",
+                            "Artedius harringtoni" ~ "Artedius spp.",
+                            "Chauliodus macouni" ~ "Chauliodus spp.",
+                            c("Citharichthys sordidus", "Citharichthys stigmaeus") ~ "Citharichthys spp.",
+                            "Cottidae spp." ~ "Cottidae",
+                            "Gobiidae spp." ~ "Gobiidae",
+                            "Hemilepidotus spinosus" ~ "Hemilepidotus spp.",
+                            c("Hexagrammidae spp.", "Hexagrammos decagrammus", "Hexagrammos octogrammus") ~ "Hexagrammidae",
+                            "Liparis fucensis" ~ "Liparis spp.",
+                            "Myctophid spp." ~ "Myctophidae",
+                            "Osmerid spp." ~ "Osmeridae",
+                            "Pholidae spp." ~ "Pholidae",
+                            "Sardinops sargax" ~ "Sardinops sagax",
+                            .default = taxon)) %>%
+  mutate(individuals_in_tow = as.numeric(individuals_in_tow))
+
+taxa_w_gt_15 <- mocness_clean %>%
+  filter(individuals_in_tow != "") %>%
+  mutate(individuals_in_tow = as.numeric(individuals_in_tow)) %>%
+  group_by(taxon) %>%
+  summarize(n = sum(individuals_in_tow, na.rm = TRUE)) %>%
+  ungroup() %>%
+  filter(n > 15)
+
+mocness_major_taxa <- mocness_clean %>%
+  filter(taxon %in% taxa_w_gt_15$taxon & taxon != "Unknown" & !is.na(taxon) & taxon != "Damaged") %>%
+  # Add combination of transect and replicate
+  mutate(transect_replicate = paste(transect, replicate, sep = "_"))
