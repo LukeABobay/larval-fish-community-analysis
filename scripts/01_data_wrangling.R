@@ -27,7 +27,7 @@ mocness_2023_02_fish_abundance <- read.csv(here("data/23_w_SPECTRA_fish_inventor
 mocness_2018_2019_metadata <- read.csv(here("data/mezcal_envr.csv"))
 
 # MEZCAL MOCNESS environmental data
-mocness_2018_2019_environmental <- read.csv(here("../dissertation-data/mocness_data/mocness_metadata.csv"))
+mocness_2018_2019_environmental <- read.csv(here("data/mocness_metadata.csv"))
 
 # ISIIS environmental data
 files <- c("MEZCAL_101_NH_IaN_binned_conc_w_dist.Rdata",
@@ -46,7 +46,7 @@ files <- c("MEZCAL_101_NH_IaN_binned_conc_w_dist.Rdata",
 # Write function to load all files in "files"
 load_one <- function(f) {
   env <- new.env()
-  load(file.path(here("../dissertation-data/isiis_data"), f), envir = env)
+  load(file.path(here("data"), f), envir = env)
   env[[ls(env)]]  # grab the object (biophys.9)
 }
 
@@ -55,7 +55,7 @@ isiis_list <- map(files, load_one)
 names(isiis_list) <- tools::file_path_sans_ext(files)
 
 # Load anchovy observational data that have been matched with GLORYS mixed layer depth
-glorys_covariates <- read.csv(here("../dissertation-data/clean_data/glorys_covariates_all.csv"))
+glorys_covariates <- read.csv(here("data/glorys_covariates_all.csv"))
 
 
 # Data wrangling ----------------------------------------------------------
@@ -165,7 +165,7 @@ bathy <- getNOAA.bathy(lon1 = -127, lon2 = -122,
 
 # Get list of sampling stations from whatever data frame contains the working version of the data set
 # Currently only returns MEZCAL stations because SPECTRA lat/lon haven't been added in yet
-sampling_stations_geographic <- mocness_major_taxa %>%
+sampling_stations_geographic <- mocness_full %>%
   distinct(latitude_dd, longitude_dd) %>%
   filter(!is.na(latitude_dd) & !is.na(longitude_dd)) %>%
   # Get depth of each sampling station
@@ -285,7 +285,7 @@ mocness_full_geographic_isiis_mixing <- merge(mocness_full_geographic_isiis, mix
 # MOCNESS data cleanup ----------------------------------------------------
 
 # Add columns with combined location/station and min/max depth
-mocness_clean <- mocness_full %>%
+mocness_clean <- mocness_full_geographic_isiis_mixing %>%
   unite(col = "transect_station", transect, station, sep="_", remove = FALSE) %>%
   unite(col = "depth_range", minimum_depth_m, maximum_depth_m, sep="-", remove = TRUE) %>%
   mutate(taxon = case_match(taxon, 
