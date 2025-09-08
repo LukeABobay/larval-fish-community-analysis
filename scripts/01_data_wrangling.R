@@ -9,7 +9,10 @@
 
 library(here)
 library(tidyverse)
+library(purrr)
 library(gtools)
+library(marmap)
+library(lubridate)
 
 
 # Load data ---------------------------------------------------------------
@@ -22,6 +25,37 @@ mocness_2023_02_fish_abundance <- read.csv(here("data/23_w_SPECTRA_fish_inventor
 
 # MEZCAL metadata
 mocness_2018_2019_metadata <- read.csv(here("data/mezcal_envr.csv"))
+
+# MEZCAL MOCNESS environmental data
+mocness_2018_2019_environmental <- read.csv(here("../dissertation-data/mocness_data/mocness_metadata.csv"))
+
+# ISIIS environmental data
+files <- c("MEZCAL_101_NH_IaN_binned_conc_w_dist.Rdata",
+           "MEZCAL_105_NH_IaD_binned_conc_w_dist.Rdata",
+           "MEZCAL_109_NH_IaD_binned_conc_w_dist.Rdata",
+           "MEZCAL_113_Tr_IaD_binned_conc_w_dist.Rdata",
+           "MEZCAL_301_NH_IaN_binned_conc_w_dist.Rdata",
+           "MEZCAL_305_NH_IaD_binned_conc_w_dist.Rdata",
+           "MEZCAL_309_NH_IbN_binned_conc_w_dist.Rdata",
+           "MEZCAL_313_NH_IbD_binned_conc_w_dist.Rdata",
+           "MEZCAL_317_TR_IaD_binned_conc_w_dist.Rdata",
+           "MEZCAL_321_TR_IaN_binned_conc_w_dist.Rdata",
+           "MEZCAL_325_TR_IbD_binned_conc_w_dist.Rdata",
+           "MEZCAL_329_TR_IbN_binned_conc_w_dist.Rdata")
+
+# Write function to load all files in "files"
+load_one <- function(f) {
+  env <- new.env()
+  load(file.path(here("../dissertation-data/isiis_data"), f), envir = env)
+  env[[ls(env)]]  # grab the object (biophys.9)
+}
+
+# Load the files
+isiis_list <- map(files, load_one)
+names(isiis_list) <- tools::file_path_sans_ext(files)
+
+# Load anchovy observational data that have been matched with GLORYS mixed layer depth
+glorys_covariates <- read.csv(here("../dissertation-data/clean_data/glorys_covariates_all.csv"))
 
 
 # Data wrangling ----------------------------------------------------------
@@ -121,6 +155,135 @@ mocness_full <- merge(mocness_winter_fish_abundance,
          transect, station, latitude_dd = Station.lat, longitude_dd = Station.lon, taxon, 
          volume_filtered_m3 = Volume.filtered, individuals_in_tow)
 
+
+# Geographic data ---------------------------------------------------------
+
+# Download bathymetry data for OR and CA at 1-minute spatial grid
+bathy <- getNOAA.bathy(lon1 = -127, lon2 = -122,
+                       lat1 = 40, lat2 = 46,
+                       resolution = 1)
+
+# Get list of sampling stations from whatever data frame contains the working version of the data set
+# Currently only returns MEZCAL stations because SPECTRA lat/lon haven't been added in yet
+sampling_stations_geographic <- mocness_major_taxa %>%
+  distinct(latitude_dd, longitude_dd) %>%
+  filter(!is.na(latitude_dd) & !is.na(longitude_dd)) %>%
+  # Get depth of each sampling station
+  mutate(seafloor_depth_m = get.depth(bathy, x = longitude_dd, y = latitude_dd, locator = FALSE)$depth) %>%
+  # Get distance to shore from each sampling station
+  mutate(distance_to_shore_km = dist2isobath(bathy, x = longitude_dd, y = latitude_dd, isobath = 0, locator = FALSE)$distance 
+         # Convert distance from m to km
+         / 1000) %>%
+  # Evaluate position relative to 200-m isobath
+  mutate(shelf_position = ifelse(seafloor_depth_m > -200, "shelf", "offshore"))
+
+mocness_full_geographic <- merge(mocness_full, sampling_stations_geographic, all.x = TRUE, by = c("latitude_dd", "longitude_dd"))
+
+
+# ISIIS environmental data ------------------------------------------------
+
+# Combine ISIIS data into one data frame
+isiis_all <- do.call(smartbind, isiis_list) %>%
+  mutate(time_Pacific = ymd_hms(time_Pacific, quiet = TRUE),
+         grp_month = floor_date(time_Pacific, "month"))  # month key
+
+# Get unique MOCNESS sampling events from mocness_full
+sampling_events <- mocness_full %>%
+  distinct(transect, station, collection_date, time, latitude_dd, longitude_dd, maximum_depth_m, minimum_depth_m) %>%
+  mutate(event_datetime = ymd_hms(paste(collection_date, time))) %>%
+  # 5 km is roughly 0.045 deg latitude near Oregon
+  mutate(latitude_max_dd = latitude_dd + 0.045,
+         latitude_min_dd = latitude_dd - 0.045,
+         # 5 km is roughly 0.063 deg longitude near Oregon
+         longitude_max_dd = longitude_dd + 0.063,
+         longitude_min_dd = longitude_dd - 0.063)
+
+# --- 1) For each sampling event, find the nearest (Transect_ID, month) in time among ISIIS points inside the 5-km box
+event_to_group <- sampling_events %>%
+  rowwise() %>%
+  mutate(nearest = list({
+    # Spatial subset for THIS event
+    sub <- isiis_all %>%
+      filter(Lat  >= latitude_min_dd,
+             Lat  <= latitude_max_dd,
+             Long >= longitude_min_dd,
+             Long <= longitude_max_dd,
+             Depth >= minimum_depth_m,
+             Depth <= maximum_depth_m)
+    
+    if (nrow(sub) == 0) {
+      tibble()  # no nearby ISIIS points
+    } else {
+      # Representative time per (Transect_ID, month)
+      sub %>%
+        group_by(Transect_ID, grp_month) %>%
+        summarise(
+          mid_time = as_datetime(median(as.numeric(time_Pacific), na.rm = TRUE)),
+          .groups = "drop"
+        ) %>%
+        filter(!is.na(mid_time)) %>%
+        mutate(time_diff = abs(difftime(mid_time, event_datetime, units = "secs"))) %>%
+        arrange(time_diff, mid_time) %>%   # deterministic tie-break
+        slice(1L) %>%                      # pick the closest group
+        select(Transect_ID, grp_month, mid_time, time_diff)
+    }
+  })) %>%
+  ungroup() %>%
+  unnest(nearest)
+
+# If some events had no ISIIS in the box, they'll be dropped here. Optional check:
+# anti_join(sampling_events, event_to_transect, by = c("transect","station","collection_date","time","latitude_dd","longitude_dd","event_datetime","latitude_max_dd","latitude_min_dd","longitude_max_dd","longitude_min_dd"))
+
+# --- 2) Attach ALL ISIIS rows from that (Transect_ID, month) and re-apply the event’s box
+isiis_matched <- event_to_group %>%
+  left_join(isiis_all, by = c("Transect_ID", "grp_month")) %>%
+  filter(Lat  >= latitude_min_dd,
+         Lat  <= latitude_max_dd,
+         Long >= longitude_min_dd,
+         Long <= longitude_max_dd,
+         Depth >= minimum_depth_m,
+         Depth <= maximum_depth_m)
+
+isiis_means_by_mocness_tow <- isiis_matched %>%
+  group_by(transect, station, event_datetime, maximum_depth_m, minimum_depth_m) %>%
+  mutate(prey_zooplankton_abundance_ind_m3 = 
+           sum(appendicularian, copepod_calanoid_calanus, copepod_calanoid_diaptomoidea,
+               copepod_calanoid_mesocalanus, copepod_calanoid_metridia, copepod_calanoid_other,
+               copepod_calanoid_paracalanidae, copepod_calanoid_paraeuchaeta, copepod_calanoid_pseudocalanus_mean_minor,
+               copepod_cyclopoid_oithona, copepod_cyclopoid_oithona_eggs, copepod_eucalaniid,
+               copepod_other, copepod_poecilostomatoid, crustacean_ostracod,
+               crustacean_zoea, echinoderm_brachiolaria, echinoderm_pluteus,
+               polychaete_larvae, na.rm = TRUE),
+         dissolved_oxygen_ml_l = mean(Oxygen, na.rm = TRUE),
+         seawater_density_1000_kg_m3 = mean(sw.density, na.rm = TRUE),
+         chlorophyll_ug_l = mean(chl.ug.l, na.rm = TRUE)) %>%
+  ungroup() %>%
+  distinct(transect, station, event_datetime, maximum_depth_m, minimum_depth_m,
+           prey_zooplankton_abundance_ind_m3, dissolved_oxygen_ml_l, seawater_density_1000_kg_m3,
+           chlorophyll_ug_l) %>%
+  mutate(date = as_date(event_datetime)) %>%
+  select(-event_datetime)
+
+mocness_full_geographic_isiis <- merge(mocness_full_geographic, isiis_means_by_mocness_tow,
+                                       all.x = TRUE, 
+                                       by.x = c("collection_date", "transect", "station", "maximum_depth_m", "minimum_depth_m"),
+                                       by.y = c("date", "transect", "station", "maximum_depth_m", "minimum_depth_m"))
+
+
+# GLORYS mixed layer depth ---------------------------------------------------
+
+# Get unique MOCNESS sampling events from mocness_full
+mixed_layer_depth <- glorys_covariates %>%
+  distinct(date, latitude_dd, longitude_dd, mlotst)
+
+mocness_full_geographic_isiis_mixing <- merge(mocness_full_geographic_isiis, mixed_layer_depth,
+                                              all.x = TRUE,
+                                              by.x = c("collection_date", "latitude_dd", "longitude_dd"),
+                                              by.y = c("date", "latitude_dd", "longitude_dd"))
+
+
+# MOCNESS data cleanup ----------------------------------------------------
+
 # Add columns with combined location/station and min/max depth
 mocness_clean <- mocness_full %>%
   unite(col = "transect_station", transect, station, sep="_", remove = FALSE) %>%
@@ -155,3 +318,4 @@ mocness_major_taxa <- mocness_clean %>%
   filter(taxon %in% taxa_w_gt_15$taxon & taxon != "Unknown" & !is.na(taxon) & taxon != "Damaged") %>%
   # Add combination of transect and replicate
   mutate(transect_replicate = paste(transect, replicate, sep = "_"))
+
