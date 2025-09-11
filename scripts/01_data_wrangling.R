@@ -287,6 +287,7 @@ mocness_full_geographic_isiis_mixing <- merge(mocness_full_geographic_isiis, mix
 # Add columns with combined location/station and min/max depth
 mocness_clean <- mocness_full_geographic_isiis_mixing %>%
   unite(col = "transect_station", transect, station, sep="_", remove = FALSE) %>%
+  unite(col = "transect_station_rep", transect_station, replicate, sep="_", remove=FALSE) %>%
   unite(col = "depth_range", minimum_depth_m, maximum_depth_m, sep="-", remove = TRUE) %>%
   mutate(taxon = case_match(taxon, 
                             c("Xeneretmus spp.", "Xeneretmus latifrons", "Agonidae spp.") ~ "Agonidae",
