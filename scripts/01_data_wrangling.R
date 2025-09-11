@@ -336,16 +336,18 @@ mocness_clean <- mocness_full_geographic_isiis_mixing %>%
                             .default = taxon)) %>%
   mutate(individuals_in_tow = as.numeric(individuals_in_tow))
 
-taxa_w_gt_15 <- mocness_clean %>%
+
+# filter out rare taxa (present in <5% of samples) -----------------------
+
+taxa_w_gt_5pct <- mocness_clean %>%
   filter(individuals_in_tow != "") %>%
   mutate(individuals_in_tow = as.numeric(individuals_in_tow)) %>%
+  filter(individuals_in_tow > 0) %>%
   group_by(taxon) %>%
-  summarize(n = sum(individuals_in_tow, na.rm = TRUE)) %>%
+  summarize(freq = n_distinct(transect_station_rep)) %>%
   ungroup() %>%
-  filter(n > 15)
+  filter(freq >= 0.05 * n_distinct(mocness_clean$transect_station_rep))
 
 mocness_major_taxa <- mocness_clean %>%
-  filter(taxon %in% taxa_w_gt_15$taxon & taxon != "Unknown" & !is.na(taxon) & taxon != "Damaged") %>%
-  # Add combination of transect and replicate
-  mutate(transect_replicate = paste(transect, replicate, sep = "_"))
+  filter(taxon %in% taxa_w_gt_5pct$taxon & taxon != "Unknown" & !is.na(taxon) & taxon != "Damaged")
 
