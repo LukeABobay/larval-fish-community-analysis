@@ -349,5 +349,5 @@ taxa_w_gt_5pct <- mocness_clean %>%
   filter(freq >= 0.05 * n_distinct(mocness_clean$transect_station_rep))
 
 mocness_major_taxa <- mocness_clean %>%
-  filter(taxon %in% taxa_w_gt_5pct$taxon & taxon != "Unknown" & !is.na(taxon) & taxon != "Damaged")
+  filter(taxon %in% taxa_w_gt_5pct$taxon & taxon != "Unknown" & !is.na(taxon) & taxon != "Damaged" & taxon != "")
 
