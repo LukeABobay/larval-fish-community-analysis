@@ -1,7 +1,8 @@
 
 # Description -------------------------------------------------------------
 
-# Conduct a cluster analysis
+# Conduct a cluster analysis of sampling events by LFC, plot clusters of 
+#sampling events in dendrograms, run an NMDS, and plot the NMDS ordination
 
 
 # Load packages -----------------------------------------------------------
