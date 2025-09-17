@@ -351,7 +351,9 @@ taxa_w_gt_5pct <- mocness_clean %>%
 mocness_major_taxa <- mocness_clean %>%
   filter(taxon %in% taxa_w_gt_5pct$taxon & taxon != "Unknown" & !is.na(taxon) & taxon != "Damaged" & taxon != "")
 
+
 ##filter to keep only 2018-2019 data and those with values for mixed layer depth for the time being
 
-mocness_major_taxa_2018_2019_MLD <- filter(mocness_major_taxa, collection_date < "2020-01-01" & !is.na(mlotst))
+mocness_major_taxa_2018_2019 <- filter(mocness_major_taxa, collection_date < "2020-01-01")
+mocness_major_taxa_2018_2019_MLD <- filter(mocness_major_taxa_2018_2019, !is.na(mlotst))
 
