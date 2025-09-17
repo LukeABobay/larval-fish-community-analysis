@@ -74,4 +74,4 @@ ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
   geom_point(size = 3) +
   geom_text_repel(aes(label = transect_station_rep), size = 3, max.overlaps = 10) +
   theme_classic() +
-  labs(title = "NMDS Ordination of sampling events by LFC", x = "NMDS1", y = "NMDS2") 
+  labs(title = "NMDS Ordination of sampling events by LFC", x = "NMDS1", y = "NMDS2")   ##NMDS plot
