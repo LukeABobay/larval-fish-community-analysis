@@ -353,5 +353,5 @@ mocness_major_taxa <- mocness_clean %>%
 
 ##filter to keep only 2018-2019 data and those with values for mixed layer depth for the time being
 
-mocness_major_taxa_2018_2019 <- filter(mocness_major_taxa, collection_date < "2020-01-01" & !is.na(mlotst))
+mocness_major_taxa_2018_2019_MLD <- filter(mocness_major_taxa, collection_date < "2020-01-01" & !is.na(mlotst))
 
