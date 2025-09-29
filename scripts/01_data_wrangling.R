@@ -158,10 +158,15 @@ mocness_full <- merge(mocness_winter_fish_abundance,
 
 # Geographic data ---------------------------------------------------------
 
-# Download bathymetry data for OR and CA at 1-minute spatial grid
-bathy <- getNOAA.bathy(lon1 = -127, lon2 = -122,
-                       lat1 = 40, lat2 = 46,
-                       resolution = 1)
+# # Download bathymetry data for OR and CA at 1-minute spatial grid
+# bathy <- getNOAA.bathy(lon1 = -127, lon2 = -122,
+#                        lat1 = 40, lat2 = 46,
+#                        resolution = 1)
+# 
+# # Save bathymetry data locally for occasions when server is down
+# saveRDS(bathy, file = here("data/marmap_bathymetry.rds"))
+
+bathy <- readRDS(here("data/marmap_bathymetry.rds"))
 
 # Get list of sampling stations from whatever data frame contains the working version of the data set
 # Currently only returns MEZCAL stations because SPECTRA lat/lon haven't been added in yet
@@ -351,9 +356,17 @@ taxa_w_gt_5pct <- mocness_clean %>%
 mocness_major_taxa <- mocness_clean %>%
   filter(taxon %in% taxa_w_gt_5pct$taxon & taxon != "Unknown" & !is.na(taxon) & taxon != "Damaged" & taxon != "")
 
+# Get list of date/station/replicate with > 20 individuals of any "major" taxa
+stations_w_gt_20ind <- mocness_major_taxa %>%
+  group_by(collection_date, transect, station, replicate) %>%
+  summarize(individuals_per_station = sum(individuals_in_tow), .groups = "drop") %>%
+  filter(individuals_per_station >= 20)
+
+# Filter out stations with few fish larvae, which will be excluded from cluster analysis
+mocness_major_taxa_stations <- inner_join(mocness_major_taxa, stations_w_gt_20ind, by = c("collection_date", "transect", "station", "replicate"))
 
 ##filter to keep only 2018-2019 data and those with values for mixed layer depth for the time being
 
-mocness_major_taxa_2018_2019 <- filter(mocness_major_taxa, collection_date < "2020-01-01")
+mocness_major_taxa_2018_2019 <- filter(mocness_major_taxa_stations, collection_date < "2020-01-01")
 mocness_major_taxa_2018_2019_MLD <- filter(mocness_major_taxa_2018_2019, !is.na(mlotst))
 
