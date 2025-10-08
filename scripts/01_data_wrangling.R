@@ -362,7 +362,7 @@ mocness_major_taxa <- mocness_clean %>%
 stations_w_gt_20ind <- mocness_major_taxa %>%
   group_by(collection_date, transect, station, replicate) %>%
   summarize(individuals_per_station = sum(individuals_in_tow), .groups = "drop") %>%
-  filter(individuals_per_station >= 20)
+  filter(individuals_per_station >= 26)
 
 # Filter out stations with few fish larvae, which will be excluded from cluster analysis
 mocness_major_taxa_stations <- inner_join(mocness_major_taxa, stations_w_gt_20ind, by = c("collection_date", "transect", "station", "replicate"))
