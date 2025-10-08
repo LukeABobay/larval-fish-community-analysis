@@ -29,6 +29,9 @@ mocness_2018_2019_metadata <- read.csv(here("data/mezcal_envr.csv"))
 # MEZCAL MOCNESS environmental data
 mocness_2018_2019_environmental <- read.csv(here("data/mocness_metadata.csv"))
 
+# SPECTRA MOCNESS sampling station coordinates
+spectra_sampling_stations <- read.csv(here("data/spectra_mocness_coordinates.csv"))
+
 # ISIIS environmental data
 files <- c("MEZCAL_101_NH_IaN_binned_conc_w_dist.Rdata",
            "MEZCAL_105_NH_IaD_binned_conc_w_dist.Rdata",
@@ -143,6 +146,14 @@ mocness_2018_2019_metadata_reformat_date <- mocness_2018_2019_metadata %>%
   # Rename columns to be consistent with fish data frame
   rename(haul_number = Haul.no)
 
+# Get separate columns for transect and station in spectra_sampling_stations
+spectra_sampling_stations_clean <- spectra_sampling_stations %>%
+  rename(latitude_dd = Latitude,
+         longitude_dd = Longitude) %>%
+  mutate(transect = substr(Name, 1, 2),
+         station = substr(Name, 3, n())) %>%
+  select(-Station.Type, -Name)
+
 # Merge fish abundance data with metadata by haul_number
 mocness_full <- merge(mocness_winter_fish_abundance, 
                            mocness_2018_2019_metadata_reformat_date, by = c("project", "haul_number"),
@@ -153,14 +164,21 @@ mocness_full <- merge(mocness_winter_fish_abundance,
   # longitude_dd, family, species, and concentration_ind_1000m3
   select(project, collection_date, time, haul_number, replicate, maximum_depth_m, minimum_depth_m, 
          transect, station, latitude_dd = Station.lat, longitude_dd = Station.lon, taxon, 
-         volume_filtered_m3 = Volume.filtered, individuals_in_tow)
+         volume_filtered_m3 = Volume.filtered, individuals_in_tow) %>%
+  # Add in lat/lon for SPECTRA sampling stations
+  merge(., spectra_sampling_stations_clean, by = c("transect", "station")) %>%
+  # Make latitude_dd column with values of latitude_dd.x if available, or values of latitude_dd.y if not
+  mutate(latitude_dd = ifelse(!is.na(latitude_dd.x), latitude_dd.x, latitude_dd.y)) %>%
+  # Make longitude_dd column with values of longitude_dd.x if available, or values of longitude_dd.y if not
+  mutate(longitude_dd = ifelse(!is.na(longitude_dd.x), longitude_dd.x, longitude_dd.y)) %>%
+  select(-latitude_dd.x, -latitude_dd.y, -longitude_dd.x, -longitude_dd.y)
 
 
 # Geographic data ---------------------------------------------------------
 
 # # Download bathymetry data for OR and CA at 1-minute spatial grid
 # bathy <- getNOAA.bathy(lon1 = -127, lon2 = -122,
-#                        lat1 = 40, lat2 = 46,
+#                        lat1 = 40, lat2 = 48,
 #                        resolution = 1)
 # 
 # # Save bathymetry data locally for occasions when server is down
