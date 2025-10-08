@@ -293,6 +293,8 @@ mocness_full_geographic_isiis_mixing <- merge(mocness_full_geographic_isiis, mix
 mocness_clean <- mocness_full_geographic_isiis_mixing %>%
   unite(col = "transect_station", transect, station, sep="_", remove = FALSE) %>%
   unite(col = "transect_station_rep", transect_station, replicate, sep="_", remove=FALSE) %>%
+  mutate(year = year(collection_date)) %>%
+  unite(col = "transect_station_rep_year", transect_station_rep, year, sep = "_", remove = FALSE) %>%
   unite(col = "depth_range", minimum_depth_m, maximum_depth_m, sep="-", remove = TRUE) %>%
   mutate(taxon = case_match(taxon, 
                             c("Xeneretmus spp.", "Xeneretmus latifrons", "Agonidae spp.") ~ "Agonidae",
@@ -323,7 +325,7 @@ mocness_clean <- mocness_full_geographic_isiis_mixing %>%
                               "Stenobrachius leucopsarus", "Tarletonbeania crenularis", "Diaphus theta", 
                               "Nannobrachium spp.") ~ "Myctophidae",
                             "Chilara taylori" ~ "Chilara taylori",
-                            "Osmerid spp" ~ "Osmeridae",
+                            c("Osmerid spp", "Osmerid spp.") ~ "Osmeridae",
                             "Lestidiops ringens" ~"Lestidiops ringens",
                             c("Citharichthys spp.", "Citharichthys sordidus", "Citharichthys stigmaeus") ~ "Paralichthyidae",
                             c("Pholidae spp.", "Apodichthus flavidus", "Apodichthys flavidus") ~ "Pholidae",
@@ -354,7 +356,7 @@ taxa_w_gt_5pct <- mocness_clean %>%
   filter(freq >= 0.05 * n_distinct(mocness_clean$transect_station_rep))
 
 mocness_major_taxa <- mocness_clean %>%
-  filter(taxon %in% taxa_w_gt_5pct$taxon & taxon != "Unknown" & !is.na(taxon) & taxon != "Damaged" & taxon != "")
+  filter(taxon %in% taxa_w_gt_5pct$taxon & taxon != "Unknown" & !is.na(taxon) & taxon != "Damaged" & taxon != "" & taxon != "Fish eggs")
 
 # Get list of date/station/replicate with > 20 individuals of any "major" taxa
 stations_w_gt_20ind <- mocness_major_taxa %>%
