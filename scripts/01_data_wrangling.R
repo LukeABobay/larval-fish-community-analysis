@@ -13,6 +13,7 @@ library(purrr)
 library(gtools)
 library(marmap)
 library(lubridate)
+library(sf)
 
 
 # Load data ---------------------------------------------------------------
@@ -240,84 +241,186 @@ isiis_all <- do.call(smartbind, isiis_list) %>%
 # Get unique MOCNESS sampling events from mocness_full
 sampling_events <- mocness_full %>%
   distinct(transect, station, collection_date, time, latitude_dd, longitude_dd, maximum_depth_m, minimum_depth_m) %>%
-  mutate(event_datetime = ymd_hms(paste(collection_date, time))) %>%
+  mutate(event_datetime = ymd_hms(paste(collection_date, time), tz = "America/Los_Angeles")) %>%
   # 5 km is roughly 0.045 deg latitude near Oregon
   mutate(latitude_max_dd = latitude_dd + 0.045,
          latitude_min_dd = latitude_dd - 0.045,
          # 5 km is roughly 0.063 deg longitude near Oregon
          longitude_max_dd = longitude_dd + 0.063,
-         longitude_min_dd = longitude_dd - 0.063)
+         longitude_min_dd = longitude_dd - 0.063,
+         event_id = row_number())
 
-# --- 1) For each sampling event, find the nearest (Transect_ID, month) in time among ISIIS points inside the 5-km box
-event_to_group <- sampling_events %>%
-  rowwise() %>%
-  mutate(nearest = list({
-    # Spatial subset for THIS event
-    sub <- isiis_all %>%
-      filter(Lat  >= latitude_min_dd,
-             Lat  <= latitude_max_dd,
-             Long >= longitude_min_dd,
-             Long <= longitude_max_dd,
-             Depth >= minimum_depth_m,
-             Depth <= maximum_depth_m)
-    
-    if (nrow(sub) == 0) {
-      tibble()  # no nearby ISIIS points
-    } else {
-      # Representative time per (Transect_ID, month)
-      sub %>%
-        group_by(Transect_ID, grp_month) %>%
-        summarise(
-          mid_time = as_datetime(median(as.numeric(time_Pacific), na.rm = TRUE)),
-          .groups = "drop"
-        ) %>%
-        filter(!is.na(mid_time)) %>%
-        mutate(time_diff = abs(difftime(mid_time, event_datetime, units = "secs"))) %>%
-        arrange(time_diff, mid_time) %>%   # deterministic tie-break
-        slice(1L) %>%                      # pick the closest group
-        select(Transect_ID, grp_month, mid_time, time_diff)
-    }
-  })) %>%
-  ungroup() %>%
-  unnest(nearest)
+# Rectangles (polygons) for event boxes
+events_sf <- sampling_events %>%
+  mutate(
+    geometry = pmap(
+      list(longitude_min_dd, latitude_min_dd, longitude_max_dd, latitude_max_dd),
+      \(xmin, ymin, xmax, ymax)
+      st_polygon(list(matrix(
+        c(xmin, ymin,
+          xmax, ymin,
+          xmax, ymax,
+          xmin, ymax,
+          xmin, ymin), ncol = 2, byrow = TRUE)))
+    )
+  ) %>%
+  st_as_sf(crs = 4326)
 
-# If some events had no ISIIS in the box, they'll be dropped here. Optional check:
-# anti_join(sampling_events, event_to_transect, by = c("transect","station","collection_date","time","latitude_dd","longitude_dd","event_datetime","latitude_max_dd","latitude_min_dd","longitude_max_dd","longitude_min_dd"))
+# Build ISIIS points
+isiis_needed <- c(
+  "Transect_ID", "grp_month", "Long", "Lat", "Depth",
+  "time_Pacific", "Oxygen", "sw.density", "chl.ug.l",
+  # prey columns used later:
+  "appendicularian",
+  "copepod_calanoid_calanus", "copepod_calanoid_diaptomoidea",
+  "copepod_calanoid_mesocalanus", "copepod_calanoid_metridia",
+  "copepod_calanoid_other", "copepod_calanoid_paracalanidae",
+  "copepod_calanoid_paraeuchaeta", "copepod_calanoid_pseudocalanus_mean_minor",
+  "copepod_cyclopoid_oithona", "copepod_cyclopoid_oithona_eggs",
+  "copepod_eucalaniid", "copepod_other", "copepod_poecilostomatoid",
+  "crustacean_ostracod", "crustacean_zoea",
+  "echinoderm_brachiolaria", "echinoderm_pluteus",
+  "polychaete_larvae"
+)
 
-# --- 2) Attach ALL ISIIS rows from that (Transect_ID, month) and re-apply the event’s box
-isiis_matched <- event_to_group %>%
-  left_join(isiis_all, by = c("Transect_ID", "grp_month")) %>%
-  filter(Lat  >= latitude_min_dd,
-         Lat  <= latitude_max_dd,
-         Long >= longitude_min_dd,
-         Long <= longitude_max_dd,
-         Depth >= minimum_depth_m,
-         Depth <= maximum_depth_m)
+isiis_pts <- isiis_all %>%
+  select(any_of(isiis_needed)) %>%
+  mutate(
+    # Harmonize timezone for safety; comment out if already PT
+    time_Pacific = with_tz(time_Pacific, "America/Los_Angeles")
+  ) %>%
+  st_as_sf(coords = c("Long", "Lat"), crs = 4326)
 
-isiis_means_by_mocness_tow <- isiis_matched %>%
+# Candidate pairs via spatial join with depth filter
+cand_pts <- st_join(
+  isiis_pts,
+  events_sf %>% select(event_id, event_datetime, minimum_depth_m, maximum_depth_m),
+  join = st_within,
+  left = FALSE
+)
+
+# Depth filter using the event-specific bounds:
+cand_pts <- cand_pts %>%
+  filter(Depth >= minimum_depth_m, Depth <= maximum_depth_m)
+
+# Compute representative mid_time PER (event_id, Transect_ID, grp_month) **from the points inside the event box**
+cand_grp <- cand_pts %>%
+  st_drop_geometry() %>%
+  group_by(event_id, Transect_ID, grp_month, event_datetime) %>%
+  summarise(
+    mid_time = as_datetime(median(as.numeric(time_Pacific), na.rm = TRUE)),
+    .groups = "drop"
+  ) %>%
+  filter(!is.na(mid_time)) %>%
+  mutate(time_diff = abs(difftime(mid_time, event_datetime, units = "secs")))
+
+# Pick the nearest (Transect_ID, grp_month) per event
+event_to_group <- cand_grp %>%
+  arrange(event_id, time_diff, mid_time) %>%
+  group_by(event_id) %>%
+  slice(1L) %>%
+  ungroup()
+
+# Bring back event attributes needed later (transect, station, bounds, etc.)
+event_to_group <- event_to_group %>%
+  inner_join(
+    sampling_events %>%
+      select(event_id, transect, station, collection_date,
+             maximum_depth_m, minimum_depth_m,
+             latitude_min_dd, latitude_max_dd,
+             longitude_min_dd, longitude_max_dd),
+    by = "event_id"
+  )
+
+# Attach all ISIIS rows for the chosen Transect_ID/grp_month and re-apply event box + depth
+# Keep only chosen pairs
+chosen_pairs <- event_to_group %>% distinct(event_id, Transect_ID, grp_month)
+
+# Subset ISIIS table to those pairs (keep all rows for the pair)
+isiis_all_chosen <- isiis_all %>%
+  semi_join(chosen_pairs, by = c("Transect_ID", "grp_month")) %>%
+  select(any_of(isiis_needed))
+
+# Convert those rows to sf points (for spatial filtering into each event polygon)
+isiis_pts_chosen <- isiis_all_chosen %>%
+  st_as_sf(coords = c("Long", "Lat"), crs = 4326)
+
+# Attach an event_id to each point by spatial containment, but only for the events we actually matched
+events_matched_sf <- events_sf %>%
+  semi_join(chosen_pairs, by = "event_id")
+
+pts_in_events <- st_join(
+  isiis_pts_chosen,
+  events_matched_sf %>%
+    select(event_id, maximum_depth_m, minimum_depth_m),
+  join = st_within,
+  left = FALSE
+)
+
+# Now restrict to the specific (event_id, Transect_ID, grp_month) *pair* chosen for that event
+pts_in_events <- pts_in_events %>%
+  st_drop_geometry() %>%
+  inner_join(chosen_pairs, by = c("event_id", "Transect_ID", "grp_month")) %>%
+  # event-specific depth bounds:
+  filter(Depth >= minimum_depth_m, Depth <= maximum_depth_m)
+
+# Summarize to event-level means/sums
+prey_cols <- c(
+  "appendicularian",
+  "copepod_calanoid_calanus", "copepod_calanoid_diaptomoidea",
+  "copepod_calanoid_mesocalanus", "copepod_calanoid_metridia",
+  "copepod_calanoid_other", "copepod_calanoid_paracalanidae",
+  "copepod_calanoid_paraeuchaeta", "copepod_calanoid_pseudocalanus_mean_minor",
+  "copepod_cyclopoid_oithona", "copepod_cyclopoid_oithona_eggs",
+  "copepod_eucalaniid", "copepod_other", "copepod_poecilostomatoid",
+  "crustacean_ostracod", "crustacean_zoea",
+  "echinoderm_brachiolaria", "echinoderm_pluteus",
+  "polychaete_larvae"
+)
+
+isiis_means_by_mocness_tow <- pts_in_events %>%
+  # mark rows where *all* prey columns are NA
+  mutate(all_prey_na = if_all(all_of(prey_cols), ~ is.na(.x))) %>%
+  # row-sum, but keep NA if all prey are NA
+  mutate(
+    prey_row = if_else(
+      all_prey_na,
+      NA_real_,
+      rowSums(across(all_of(prey_cols)), na.rm = TRUE)
+    )
+  ) %>%
+  # bring in event keys
+  inner_join(
+    event_to_group %>% select(event_id, transect, station, event_datetime),
+    by = "event_id"
+  ) %>%
   group_by(transect, station, event_datetime, maximum_depth_m, minimum_depth_m) %>%
-  mutate(prey_zooplankton_abundance_ind_m3 = 
-           sum(appendicularian, copepod_calanoid_calanus, copepod_calanoid_diaptomoidea,
-               copepod_calanoid_mesocalanus, copepod_calanoid_metridia, copepod_calanoid_other,
-               copepod_calanoid_paracalanidae, copepod_calanoid_paraeuchaeta, copepod_calanoid_pseudocalanus_mean_minor,
-               copepod_cyclopoid_oithona, copepod_cyclopoid_oithona_eggs, copepod_eucalaniid,
-               copepod_other, copepod_poecilostomatoid, crustacean_ostracod,
-               crustacean_zoea, echinoderm_brachiolaria, echinoderm_pluteus,
-               polychaete_larvae, na.rm = TRUE),
-         dissolved_oxygen_ml_l = mean(Oxygen, na.rm = TRUE),
-         seawater_density_1000_kg_m3 = mean(sw.density, na.rm = TRUE),
-         chlorophyll_ug_l = mean(chl.ug.l, na.rm = TRUE)) %>%
-  ungroup() %>%
-  distinct(transect, station, event_datetime, maximum_depth_m, minimum_depth_m,
-           prey_zooplankton_abundance_ind_m3, dissolved_oxygen_ml_l, seawater_density_1000_kg_m3,
-           chlorophyll_ug_l) %>%
+  summarise(
+    # keep NA if every prey_row in the group is NA
+    prey_zooplankton_abundance_ind_m3 =
+      if (all(is.na(prey_row))) NA_real_ else sum(prey_row, na.rm = TRUE),
+    
+    # optional: do the same “all NA -> NA” guard for means
+    dissolved_oxygen_ml_l =
+      if (all(is.na(Oxygen))) NA_real_ else mean(Oxygen, na.rm = TRUE),
+    seawater_density_1000_kg_m3 =
+      if (all(is.na(sw.density))) NA_real_ else mean(sw.density, na.rm = TRUE),
+    chlorophyll_ug_l =
+      if (all(is.na(chl.ug.l))) NA_real_ else mean(chl.ug.l, na.rm = TRUE),
+    
+    .groups = "drop"
+  ) %>%
   mutate(date = as_date(event_datetime)) %>%
   select(-event_datetime)
 
-mocness_full_geographic_isiis <- merge(mocness_full_geographic, isiis_means_by_mocness_tow,
-                                       all.x = TRUE, 
-                                       by.x = c("collection_date", "transect", "station", "maximum_depth_m", "minimum_depth_m"),
-                                       by.y = c("date", "transect", "station", "maximum_depth_m", "minimum_depth_m"))
+# Merge with MOCNESS data
+mocness_full_geographic_isiis <- merge(
+  mocness_full_geographic,
+  isiis_means_by_mocness_tow,
+  all.x = TRUE,
+  by.x = c("collection_date", "transect", "station", "maximum_depth_m", "minimum_depth_m"),
+  by.y = c("date",            "transect", "station", "maximum_depth_m", "minimum_depth_m")
+)
 
 
 # GLORYS mixed layer depth ---------------------------------------------------
