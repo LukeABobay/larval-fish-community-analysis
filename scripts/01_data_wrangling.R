@@ -57,6 +57,10 @@ load_one <- function(f) {
 isiis_list <- map(files, load_one)
 names(isiis_list) <- tools::file_path_sans_ext(files)
 
+# Load ISIIS environmental data for W22 and W23
+isiis_w22_env <- read.csv(here("data/W22_ISIIS3_enviro.csv"))
+isiis_w23_env <- read.csv(here("data/W23_ISIIS3_enviro.csv"))
+
 # Load anchovy observational data that have been matched with GLORYS mixed layer depth
 glorys_covariates <- read.csv(here("data/glorys_covariates_all.csv"))
 
@@ -154,6 +158,11 @@ spectra_sampling_stations_clean <- spectra_sampling_stations %>%
          station = substr(Name, 3, n())) %>%
   select(-Station.Type, -Name)
 
+# Get separate column for time of SPECTRA MOCNESS sampling events
+spectra_sampling_times <- mocness_2018_2019_environmental %>%
+  mutate(time = substr(cast_start_date_time_pt, 12, 19)) %>%
+  distinct(transect, station, date_pt, time)
+
 # Merge fish abundance data with metadata by haul_number
 mocness_full <- merge(mocness_winter_fish_abundance, 
                            mocness_2018_2019_metadata_reformat_date, by = c("project", "haul_number"),
@@ -171,7 +180,12 @@ mocness_full <- merge(mocness_winter_fish_abundance,
   mutate(latitude_dd = ifelse(!is.na(latitude_dd.x), latitude_dd.x, latitude_dd.y)) %>%
   # Make longitude_dd column with values of longitude_dd.x if available, or values of longitude_dd.y if not
   mutate(longitude_dd = ifelse(!is.na(longitude_dd.x), longitude_dd.x, longitude_dd.y)) %>%
-  select(-latitude_dd.x, -latitude_dd.y, -longitude_dd.x, -longitude_dd.y)
+  select(-latitude_dd.x, -latitude_dd.y, -longitude_dd.x, -longitude_dd.y) %>%
+  # Add in sampling time for SPECTRA MOCNESS deployments
+  merge(., spectra_sampling_times, by.x = c("transect", "station", "collection_date"), by.y = c("transect", "station", "date_pt")) %>%
+  # Make time column with values of time.x if available, or values of time.y if not
+  mutate(time = ifelse(!is.na(time.x), time.x, time.y)) %>%
+  select(-time.x, -time.y)
 
 
 # Geographic data ---------------------------------------------------------
@@ -205,10 +219,23 @@ mocness_full_geographic <- merge(mocness_full, sampling_stations_geographic, all
 
 # ISIIS environmental data ------------------------------------------------
 
+# Keep only needed columns from winter 2022 and winter 2023 ISIIS environmental data sets
+isiis_w22_w23_env <- rbind(isiis_w22_env, isiis_w23_env) %>%
+  mutate(sw.density = oce::swRho(Salinity, Temperature, Pressure, eos = "unesco")) %>%
+  rename(time_Pacific = Time_PT, Lat = Latitude, Long = Longitude, chl.ug.l = chl_a_ul) %>%
+  select(time_Pacific, Depth, Lat, Long, Oxygen, sw.density, chl.ug.l) %>%
+  mutate(Transect_ID = case_when(Lat > 47 ~ "GH",
+                                 Lat > 46 & Lat < 46.5 ~ "CR",
+                                 Lat > 45 & Lat < 46 ~ "CM",
+                                 Lat > 44.5 & Lat < 45 ~ "NH",
+                                 Lat > 43 & Lat < 44.5 ~ "HH",
+                                 Lat < 43 ~ "RR"))
+
 # Combine ISIIS data into one data frame
 isiis_all <- do.call(smartbind, isiis_list) %>%
+  smartbind(., isiis_w22_w23_env) %>%
   mutate(time_Pacific = ymd_hms(time_Pacific, quiet = TRUE),
-         grp_month = floor_date(time_Pacific, "month"))  # month key
+         grp_month = floor_date(time_Pacific, "month"))
 
 # Get unique MOCNESS sampling events from mocness_full
 sampling_events <- mocness_full %>%
