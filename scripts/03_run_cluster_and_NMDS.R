@@ -56,11 +56,11 @@ rect.hclust(AHC_result, k = 2, border = c(2, 4))
 
 ##plot 3 clusters/rectangles
 plot(AHC_result, labels = AHC_comm_matrix_transformed$transect_station_rep_year, main = "average linkage AHC of sampling events by LFC")
-rect.hclust(AHC_result, k = 3, border = c(2, 3, 4))
+rect.hclust(AHC_result, k = 5, border = c(2, 3, 4, 5, 6))
 
 # Extract list of sampling events belonging to each cluster
-clusters <- data.frame(transect_station_rep_year = names(cutree(AHC_result, k = 3)),
-                       cluster = cutree(AHC_result, k = 3))
+clusters <- data.frame(transect_station_rep_year = names(cutree(AHC_result, k = 5)),
+                       cluster = cutree(AHC_result, k = 5))
 
 
 # Plot abundance of each taxon, grouped by cluster ------------------------
