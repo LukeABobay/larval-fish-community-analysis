@@ -186,7 +186,13 @@ mocness_full <- merge(mocness_winter_fish_abundance,
   merge(., spectra_sampling_times, by.x = c("transect", "station", "collection_date"), by.y = c("transect", "station", "date_pt")) %>%
   # Make time column with values of time.x if available, or values of time.y if not
   mutate(time = ifelse(!is.na(time.x), time.x, time.y)) %>%
-  select(-time.x, -time.y)
+  select(-time.x, -time.y) %>%
+  # add temp and salinity from environmental df
+  merge(., mocness_2018_2019_environmental, 
+        by.x = c("transect", "station", "replicate", "collection_date"), 
+        by.y = c("transect", "station", "replicate", "date_pt")) %>%
+  select(-cast_start_date_time_utc, -cast_start_date_time_pt, -date_time_closed_utc, 
+         -date_time_closed_pt, -depth_closed_m, -volume_filtered_m3.x, -net)
 
 
 # Geographic data ---------------------------------------------------------
