@@ -30,7 +30,7 @@ source(here("scripts/01_data_wrangling.R"))
 mocness_2018_2019_wide <- mocness_major_taxa_2018_2019 %>%
   filter(!is.na(individuals_in_tow)) %>%
   group_by(project, collection_date, time, depth_range, latitude_dd, longitude_dd, 
-           taxon, transect_station_rep, volume_filtered_m3, seafloor_depth_m, 
+           taxon, transect_station_rep, volume_filtered_m3.y, seafloor_depth_m, 
            distance_to_shore_km, shelf_position, prey_zooplankton_abundance_ind_m3,
            dissolved_oxygen_ml_l, seawater_density_1000_kg_m3, chlorophyll_ug_l) %>%
   summarize(individuals_in_tow = sum(individuals_in_tow)) %>%
@@ -40,21 +40,21 @@ mocness_2018_2019_wide <- mocness_major_taxa_2018_2019 %>%
 ##split community matrix and environmental metadata into separate data frames
 comm_matrix_2018_2019 <- mocness_2018_2019_wide %>%
   select(-project, -collection_date, -time, -depth_range, -latitude_dd, -longitude_dd, 
-         -volume_filtered_m3, -seafloor_depth_m, -distance_to_shore_km, -shelf_position, 
+         -volume_filtered_m3.y, -seafloor_depth_m, -distance_to_shore_km, -shelf_position, 
          -prey_zooplankton_abundance_ind_m3, -dissolved_oxygen_ml_l, 
          -seawater_density_1000_kg_m3, -chlorophyll_ug_l)
 env_meta_2018_2019 <- mocness_2018_2019_wide %>%
   select(project, collection_date, time, depth_range, latitude_dd, longitude_dd, 
-         volume_filtered_m3, seafloor_depth_m, distance_to_shore_km, shelf_position, 
+         volume_filtered_m3.y, seafloor_depth_m, distance_to_shore_km, shelf_position, 
          prey_zooplankton_abundance_ind_m3, dissolved_oxygen_ml_l, 
          seawater_density_1000_kg_m3, chlorophyll_ug_l)
 
 ##transform taxa counts and run bray-curtis on community matrix
-transform_abundances_2018_2019 <- comm_matrix_2018_2019[, 2:22] %>%
+transform_abundances_2018_2019 <- comm_matrix_2018_2019[, 2:20] %>%
   sqrt()
 comm_matrix_2018_2019_transformed <- comm_matrix_2018_2019[,1] %>%
   bind_cols(.,transform_abundances_2018_2019)
-dissim_matrix_2018_2019 <- vegdist(comm_matrix_2018_2019_transformed[,2:22], method = "bray")
+dissim_matrix_2018_2019 <- vegdist(comm_matrix_2018_2019_transformed[,2:20], method = "bray")
 
 ##bin environmental data for plotting
 env_meta_binned_2018_2019 <- env_meta_2018_2019 %>%
@@ -85,11 +85,11 @@ MLD_2018_2019 <- mocness_2018_2019_MLD_wide %>%
   select(transect_station_rep, mlotst)
 
 ##transform MLD taxa counts and run bray-curtis on community matrix
-transform_abundances_2018_2019_MLD <- comm_matrix_2018_2019_MLD[, 2:22] %>%
+transform_abundances_2018_2019_MLD <- comm_matrix_2018_2019_MLD[, 2:20] %>%
   sqrt()
 comm_matrix_2018_2019_MLD_transformed <- comm_matrix_2018_2019_MLD[,1] %>%
   bind_cols(.,transform_abundances_2018_2019_MLD)
-dissim_matrix_2018_2019_MLD <- vegdist(comm_matrix_2018_2019_MLD_transformed[,2:22], method = "bray")
+dissim_matrix_2018_2019_MLD <- vegdist(comm_matrix_2018_2019_MLD_transformed[,2:20], method = "bray")
 
 ##bin MLD data for plotting
 MLD_binned_2018_2019 <- MLD_2018_2019 %>%
