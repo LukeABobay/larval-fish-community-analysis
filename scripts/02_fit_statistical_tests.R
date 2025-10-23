@@ -41,11 +41,11 @@ mocness_major_taxa_wide_transformed <- mocness_major_taxa_wide[, 1:20] %>%
   bind_cols(., abundance_by_taxon)
 
 # Try a PERMANOVA
-permanova <- adonis2(abundance_by_taxon ~ seafloor_depth_m + shelf_position, data = mocness_major_taxa_wide_tranformed)
+permanova <- adonis2(abundance_by_taxon ~ seafloor_depth_m + shelf_position, data = mocness_major_taxa_wide_transformed)
 summary(permanova)
 
 ##create a data frame to exclude rows that're missing data for covariates for the time being
-filt_mocness_major_taxa_wide_transformed <- filter(mocness_major_taxa_wide_tranformed, 
+filt_mocness_major_taxa_wide_transformed <- filter(mocness_major_taxa_wide_transformed, 
                                                   !is.na(prey_zooplankton_abundance_ind_m3) & 
                                                     !is.na(mlotst))
 
@@ -53,5 +53,5 @@ mult_permanova <- adonis2(filt_mocness_major_taxa_wide_transformed[, 21:43] ~ se
                             shelf_position + depth_range + prey_zooplankton_abundance_ind_m3 + 
                             dissolved_oxygen_ml_l + seawater_density_1000_kg_m3 + chlorophyll_ug_l + 
                             mlotst + temperature_c + salinity,
-                          data = filt_mocness_major_taxa_wide_tranformed, method = "bray", by = "margin")
+                          data = filt_mocness_major_taxa_wide_transformed, method = "bray", by = "margin")
 view(mult_permanova)
