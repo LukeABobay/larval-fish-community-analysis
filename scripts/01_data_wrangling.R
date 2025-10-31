@@ -24,11 +24,14 @@ mocness_2019_03_fish_abundance <- read.csv(here("data/19_w_mezcal_fish_ids.csv")
 mocness_2022_03_fish_abundance_raw <- read.csv(here("data/22_w_SPECTRA_fish_inventory.csv"))
 mocness_2023_02_fish_abundance <- read.csv(here("data/23_w_SPECTRA_fish_inventory.csv"))
 
+# MEZCAL and SPECTRA MOCNESS metadata
+mocness_metadata <- read.csv(here("data/mocness_metadata.csv"))
+
 # MEZCAL metadata
 mocness_2018_2019_metadata <- read.csv(here("data/mezcal_envr.csv"))
 
 # MEZCAL MOCNESS environmental data
-mocness_2018_2019_environmental <- read.csv(here("data/mocness_metadata.csv"))
+mocness_2018_2019_environmental <- read.csv(here("data/mocness_metadata_old.csv"))
 
 # SPECTRA MOCNESS sampling station coordinates
 spectra_sampling_stations <- read.csv(here("data/spectra_mocness_coordinates.csv"))
@@ -165,7 +168,7 @@ spectra_sampling_times <- mocness_2018_2019_environmental %>%
   distinct(transect, station, date_pt, time)
 
 # Merge fish abundance data with metadata by haul_number
-mocness_full <- merge(mocness_winter_fish_abundance, 
+mocness_full_old_metadata <- merge(mocness_winter_fish_abundance, 
                            mocness_2018_2019_metadata_reformat_date, by = c("project", "haul_number"),
                       all.x = TRUE) %>%
   # Take 'collection_date' from 'date' column when NA
@@ -194,6 +197,23 @@ mocness_full <- merge(mocness_winter_fish_abundance,
   select(-cast_start_date_time_utc, -cast_start_date_time_pt, -date_time_closed_utc, 
          -date_time_closed_pt, -depth_closed_m, -volume_filtered_m3.x, -net)
 
+# Add convenient "collection_date" to mocness_metadata
+mocness_metadata_collection_date <- mocness_metadata %>%
+  mutate(start_time_pt = as.POSIXct(start_time_pt, tz = "America/Los_Angeles")) %>%
+  mutate(collection_date = as.Date(start_time_pt, tz = "America/Los_Angeles"))
+
+# Swap new metadata in for old
+mocness_full <- mocness_full_old_metadata %>%
+  mutate(
+    mocness_side = str_split(haul_number, "-", simplify = TRUE)[, 2],
+    net = str_split(haul_number, "-", simplify = TRUE)[, 3]) %>%
+  mutate(net = case_when(collection_date == "2023-02-17" & transect == "GH" & station == 6 & mocness_side == 4 ~ "0",
+                                .default = net)) %>%
+  select(project, transect, station, replicate, collection_date, mocness_side,
+         net, taxon, individuals_in_tow) %>%
+  # Add in new metadata
+  merge(., mocness_metadata_collection_date, by = c("transect", "station", "replicate", "collection_date", "mocness_side", "net"), all.x = TRUE)
+  
 
 # Geographic data ---------------------------------------------------------
 
