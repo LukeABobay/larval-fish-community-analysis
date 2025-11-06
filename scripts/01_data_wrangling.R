@@ -230,18 +230,18 @@ bathy <- readRDS(here("data/marmap_bathymetry.rds"))
 # Get list of sampling stations from whatever data frame contains the working version of the data set
 # Currently only returns MEZCAL stations because SPECTRA lat/lon haven't been added in yet
 sampling_stations_geographic <- mocness_full %>%
-  distinct(latitude_dd, longitude_dd) %>%
-  filter(!is.na(latitude_dd) & !is.na(longitude_dd)) %>%
+  distinct(start_latitude_dd, start_longitude_dd) %>%
+  filter(!is.na(start_latitude_dd) & !is.na(start_longitude_dd)) %>%
   # Get depth of each sampling station
-  mutate(seafloor_depth_m = get.depth(bathy, x = longitude_dd, y = latitude_dd, locator = FALSE)$depth) %>%
+  mutate(seafloor_depth_m = get.depth(bathy, x = start_longitude_dd, y = start_latitude_dd, locator = FALSE)$depth) %>%
   # Get distance to shore from each sampling station
-  mutate(distance_to_shore_km = dist2isobath(bathy, x = longitude_dd, y = latitude_dd, isobath = 0, locator = FALSE)$distance 
+  mutate(distance_to_shore_km = dist2isobath(bathy, x = start_longitude_dd, y = start_latitude_dd, isobath = 0, locator = FALSE)$distance 
          # Convert distance from m to km
          / 1000) %>%
   # Evaluate position relative to 200-m isobath
   mutate(shelf_position = ifelse(seafloor_depth_m > -200, "shelf", "offshore"))
 
-mocness_full_geographic <- merge(mocness_full, sampling_stations_geographic, all.x = TRUE, by = c("latitude_dd", "longitude_dd"))
+mocness_full_geographic <- merge(mocness_full, sampling_stations_geographic, all.x = TRUE, by = c("start_latitude_dd", "start_longitude_dd"))
 
 
 # ISIIS environmental data ------------------------------------------------
@@ -266,14 +266,13 @@ isiis_all <- do.call(smartbind, isiis_list) %>%
 
 # Get unique MOCNESS sampling events from mocness_full
 sampling_events <- mocness_full %>%
-  distinct(transect, station, collection_date, time, latitude_dd, longitude_dd, maximum_depth_m, minimum_depth_m) %>%
-  mutate(event_datetime = ymd_hms(paste(collection_date, time), tz = "America/Los_Angeles")) %>%
+  distinct(transect, station, collection_date, start_time_pt, start_latitude_dd, start_longitude_dd, maximum_depth_m, minimum_depth_m) %>%
   # 5 km is roughly 0.045 deg latitude near Oregon
-  mutate(latitude_max_dd = latitude_dd + 0.045,
-         latitude_min_dd = latitude_dd - 0.045,
+  mutate(latitude_max_dd = start_latitude_dd + 0.045,
+         latitude_min_dd = start_latitude_dd - 0.045,
          # 5 km is roughly 0.063 deg longitude near Oregon
-         longitude_max_dd = longitude_dd + 0.063,
-         longitude_min_dd = longitude_dd - 0.063,
+         longitude_max_dd = start_longitude_dd + 0.063,
+         longitude_min_dd = start_longitude_dd - 0.063,
          event_id = row_number())
 
 # Rectangles (polygons) for event boxes
@@ -320,7 +319,7 @@ isiis_pts <- isiis_all %>%
 # Candidate pairs via spatial join with depth filter
 cand_pts <- st_join(
   isiis_pts,
-  events_sf %>% select(event_id, event_datetime, minimum_depth_m, maximum_depth_m),
+  events_sf %>% select(event_id, start_time_pt, minimum_depth_m, maximum_depth_m),
   join = st_within,
   left = FALSE
 )
@@ -332,13 +331,13 @@ cand_pts <- cand_pts %>%
 # Compute representative mid_time PER (event_id, Transect_ID, grp_month) **from the points inside the event box**
 cand_grp <- cand_pts %>%
   st_drop_geometry() %>%
-  group_by(event_id, Transect_ID, grp_month, event_datetime) %>%
+  group_by(event_id, Transect_ID, grp_month, start_time_pt) %>%
   summarise(
     mid_time = as_datetime(median(as.numeric(time_Pacific), na.rm = TRUE)),
     .groups = "drop"
   ) %>%
   filter(!is.na(mid_time)) %>%
-  mutate(time_diff = abs(difftime(mid_time, event_datetime, units = "secs")))
+  mutate(time_diff = abs(difftime(mid_time, start_time_pt, units = "secs")))
 
 # Pick the nearest (Transect_ID, grp_month) per event
 event_to_group <- cand_grp %>%
@@ -417,10 +416,10 @@ isiis_means_by_mocness_tow <- pts_in_events %>%
   ) %>%
   # bring in event keys
   inner_join(
-    event_to_group %>% select(event_id, transect, station, event_datetime),
+    event_to_group %>% select(event_id, transect, station, start_time_pt),
     by = "event_id"
   ) %>%
-  group_by(transect, station, event_datetime, maximum_depth_m, minimum_depth_m) %>%
+  group_by(transect, station, start_time_pt, maximum_depth_m, minimum_depth_m) %>%
   summarise(
     # keep NA if every prey_row in the group is NA
     prey_zooplankton_abundance_ind_m3 =
@@ -436,8 +435,8 @@ isiis_means_by_mocness_tow <- pts_in_events %>%
     
     .groups = "drop"
   ) %>%
-  mutate(date = as_date(event_datetime)) %>%
-  select(-event_datetime)
+  mutate(date = as_date(start_time_pt)) %>%
+  select(-start_time_pt)
 
 # Merge with MOCNESS data
 mocness_full_geographic_isiis <- merge(
@@ -457,7 +456,7 @@ mixed_layer_depth <- glorys_covariates %>%
 
 mocness_full_geographic_isiis_mixing <- merge(mocness_full_geographic_isiis, mixed_layer_depth,
                                               all.x = TRUE,
-                                              by.x = c("collection_date", "latitude_dd", "longitude_dd"),
+                                              by.x = c("collection_date", "start_latitude_dd", "start_longitude_dd"),
                                               by.y = c("date", "latitude_dd", "longitude_dd"))
 
 
@@ -515,7 +514,8 @@ mocness_clean <- mocness_full_geographic_isiis_mixing %>%
                             "Chauliodus spp." ~ "Chauliodontidae",
                             "Trachipterus altivelis" ~ "Trachipterus altivelis",
                             .default = taxon)) %>%
-  mutate(individuals_in_tow = as.numeric(individuals_in_tow))
+  mutate(individuals_in_tow = as.numeric(individuals_in_tow))%>%
+  mutate(individuals_per_m3 = individuals_in_tow/volume_m3_best)
 
 
 # filter out rare taxa (present in <5% of samples) -----------------------
