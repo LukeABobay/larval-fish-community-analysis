@@ -22,36 +22,39 @@ source(here("scripts/01_data_wrangling.R"))
 mocness_major_taxa_wide <- mocness_major_taxa %>%
   # Removing NAs for now, but there shouldn't be any to begin with
   filter(!is.na(individuals_in_tow)) %>%
-  group_by(project, collection_date, time, replicate, depth_range, 
-           transect_station, transect, station, latitude_dd, longitude_dd, 
+  filter(!is.na(individuals_per_m3)) %>%
+  group_by(project, collection_date, start_time_pt, replicate, depth_range, 
+           transect_station, transect, station, start_latitude_dd, start_longitude_dd, 
            taxon, transect_station_rep, transect_station_rep_year, seafloor_depth_m, 
            shelf_position,prey_zooplankton_abundance_ind_m3, dissolved_oxygen_ml_l, 
            seawater_density_1000_kg_m3, chlorophyll_ug_l, mlotst, 
-           temperature_c, salinity) %>%
-  summarize(individuals_in_tow = sum(individuals_in_tow)) %>%
+           mean_temperature_c, mean_salinity_psu) %>%
+  summarize(individuals_per_m3 = sum(individuals_per_m3)) %>%
   ungroup() %>%
-  pivot_wider(names_from = taxon, values_from = individuals_in_tow, values_fill = 0)
+  pivot_wider(names_from = taxon, values_from = individuals_per_m3, values_fill = 0)
 
 # Create separate community matrix and apply sqrt tranformation
-abundance_by_taxon <- mocness_major_taxa_wide[, 21:43] %>%
+concentration_by_taxon <- mocness_major_taxa_wide[, 22:44] %>%
   sqrt()
 
 # Add tranformed abundances back into main data frame
-mocness_major_taxa_wide_transformed <- mocness_major_taxa_wide[, 1:20] %>%
-  bind_cols(., abundance_by_taxon)
+mocness_major_taxa_wide_transformed <- mocness_major_taxa_wide[, 1:21] %>%
+  bind_cols(., concentration_by_taxon)
 
 # Try a PERMANOVA
-permanova <- adonis2(abundance_by_taxon ~ seafloor_depth_m + shelf_position, data = mocness_major_taxa_wide_transformed)
+permanova <- adonis2(concentration_by_taxon ~ seafloor_depth_m + shelf_position, data = mocness_major_taxa_wide_transformed)
 summary(permanova)
 
 ##create a data frame to exclude rows that're missing data for covariates for the time being
+##right now this filters out all rows?? so I'm taking out the mlotst line for now and not including it in multiple permanova
 filt_mocness_major_taxa_wide_transformed <- filter(mocness_major_taxa_wide_transformed, 
-                                                  !is.na(prey_zooplankton_abundance_ind_m3) & 
-                                                    !is.na(mlotst))
+                                                  !is.na(prey_zooplankton_abundance_ind_m3)) 
+                                                    #& !is.na(mlotst))
 
-mult_permanova <- adonis2(filt_mocness_major_taxa_wide_transformed[, 21:43] ~ seafloor_depth_m + 
+mult_permanova <- adonis2(filt_mocness_major_taxa_wide_transformed[, 22:44] ~ seafloor_depth_m + 
                             shelf_position + depth_range + prey_zooplankton_abundance_ind_m3 + 
                             dissolved_oxygen_ml_l + seawater_density_1000_kg_m3 + chlorophyll_ug_l + 
-                            mlotst + temperature_c + salinity,
+                            mean_temperature_c + mean_salinity_psu,
                           data = filt_mocness_major_taxa_wide_transformed, method = "bray", by = "margin")
 view(mult_permanova)
+#not sure why this isn't giving R2, F, or Pr(>F) values... will need help I think
