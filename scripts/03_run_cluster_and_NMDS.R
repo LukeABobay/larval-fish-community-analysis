@@ -23,24 +23,25 @@ source(here("scripts/01_data_wrangling.R"))
 
 AHC_comm_matrix <- mocness_major_taxa_stations %>%
   filter(!is.na(individuals_in_tow)) %>%
+  filter(!is.na(individuals_per_m3)) %>%
   group_by(transect_station_rep_year, taxon) %>%
-  summarize(individuals_in_tow = sum(individuals_in_tow, na.rm = TRUE)) %>%
+  summarize(individuals_per_m3 = sum(individuals_per_m3, na.rm = TRUE)) %>%
   ungroup() %>%
-  pivot_wider(names_from = taxon, values_from = individuals_in_tow, values_fill = 0)
+  pivot_wider(names_from = taxon, values_from = individuals_per_m3, values_fill = 0)
 
-transform_taxa_abundances <- AHC_comm_matrix[, 2:24] %>%
+transform_taxa_concentrations <- AHC_comm_matrix[, 2:24] %>%
   sqrt()
 
 # Add rownames
-row.names(transform_taxa_abundances) <- AHC_comm_matrix$transect_station_rep_year
+row.names(transform_taxa_concentrations) <- AHC_comm_matrix$transect_station_rep_year
 
 AHC_comm_matrix_transformed <- AHC_comm_matrix[,1] %>%
-  bind_cols(.,transform_taxa_abundances)
+  bind_cols(.,transform_taxa_concentrations)
 
 
 # Calculate dissimilarity matrix ------------------------------------------
 
-dissim_matrix <- vegdist(transform_taxa_abundances, method = "bray")
+dissim_matrix <- vegdist(transform_taxa_concentrations, method = "bray")
 
 
 # Perform agglomerative hierarchical clustering ---------------------------
@@ -67,7 +68,7 @@ clusters <- data.frame(transect_station_rep_year = names(cutree(AHC_result, k = 
 
 # Add cluster identities to long version of AHC_comm_matrix_transformed
 AHC_comm_matrix_transformed_long <- AHC_comm_matrix_transformed %>%
-  pivot_longer(cols = 2:24, names_to = "taxon", values_to = "sqrt_individuals") %>%
+  pivot_longer(cols = 2:24, names_to = "taxon", values_to = "sqrt_concentration") %>%
   merge(., clusters, by = "transect_station_rep_year")
 
 # Categories of taxa in AHC_comm_matrix_transformed
@@ -90,13 +91,14 @@ ordered_taxa <- c(coastal_species, coastal_oceanic_species, oceanic_species)
 
 # Plot by transect_station_rep_year, sorted by cluster
 windows()
-ggplot(AHC_comm_matrix_transformed_long, aes(x = transect_station_rep_year, y = sqrt_individuals, fill = factor(taxon, levels = ordered_taxa))) +
+ggplot(AHC_comm_matrix_transformed_long, aes(x = transect_station_rep_year, y = sqrt_concentration, fill = factor(taxon, levels = ordered_taxa))) +
   geom_bar(stat = "identity", position = "stack") +
   scale_fill_manual(values = species_colors, breaks = ordered_taxa) +
   facet_grid(rows = vars(cluster)) +
-  labs(x = "Depth sampled (m)", y = "Count") +
+  labs(x = "Depth sampled (m)", y = "individuals/m3") +
   theme_light() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+##not sure if my adjustments here to account for standardizing counts by volume were correct and/or needed
 
 
 # Plot NMDS ordinations ---------------------------------------------------
