@@ -542,7 +542,7 @@ stations_w_gt_20ind <- mocness_major_taxa %>%
 mocness_major_taxa_stations <- inner_join(mocness_major_taxa, stations_w_gt_20ind, by = c("collection_date", "transect", "station", "replicate"))
 
 ##filter to keep only 2018-2019 data and those with values for mixed layer depth for the time being
-
-mocness_major_taxa_2018_2019 <- filter(mocness_major_taxa_stations, collection_date < "2020-01-01")
-mocness_major_taxa_2018_2019_MLD <- filter(mocness_major_taxa_2018_2019, !is.na(mlotst))
+##no longer necessary to filter out 2022 and 2023 so hiding these
+####mocness_major_taxa_2018_2019 <- filter(mocness_major_taxa_stations, collection_date < "2020-01-01")
+####mocness_major_taxa_2018_2019_MLD <- filter(mocness_major_taxa_2018_2019, !is.na(mlotst))
 
