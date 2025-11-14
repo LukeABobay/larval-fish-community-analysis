@@ -20,13 +20,14 @@ source(here("scripts/02_fit_statistical_tests.R"))
 
 #make data frame of environmental covariates from each sampling event
 env_covariates_wide <- mocness_major_taxa_wide %>%
-  select(collection_date, time, latitude_dd, longitude_dd, transect_station_rep_year, 
+  select(collection_date, start_time_pt, start_latitude_dd, start_longitude_dd, transect_station_rep_year, 
          depth_range, shelf_position, seafloor_depth_m, prey_zooplankton_abundance_ind_m3, 
          dissolved_oxygen_ml_l, seawater_density_1000_kg_m3, chlorophyll_ug_l, mlotst, 
-         temperature_c, salinity)
-env_covariates_wide$depth_range <- as.factor(env_covariates_wide$depth_range)
+         mean_temperature_c, mean_salinity_psu)
+env_covariates_wide$depth_range <- as.numeric(env_covariates_wide$depth_range)
 env_covariates_wide$shelf_position <- as.factor(env_covariates_wide$shelf_position)
 
+##getting an error here now that new meta data is added so will need to come back to this 
 #create scatter plot matrix of covariates
 ##base R method
 pairs(env_covariates_wide[,6:15], lower.panel = NULL, 
