@@ -3,6 +3,9 @@
 ##Create scatterplots for visualization of correation among covariates and to
 ##look at how specific taxa's abundances vary with different covariates
 
+###note: having trouble right now with depth_range and plotting. Correlations also not working. Will need to troubleshoot
+### and may also need some help finding and solving the issue
+
 # Load packages -----------------------------------------------------------
 
 library(here)
@@ -24,7 +27,7 @@ env_covariates_wide <- mocness_major_taxa_wide %>%
          depth_range, shelf_position, seafloor_depth_m, prey_zooplankton_abundance_ind_m3, 
          dissolved_oxygen_ml_l, seawater_density_1000_kg_m3, chlorophyll_ug_l, mlotst, 
          mean_temperature_c, mean_salinity_psu)
-env_covariates_wide$depth_range <- as.numeric(env_covariates_wide$depth_range)
+env_covariates_wide$depth_range <- as.factor(env_covariates_wide$depth_range)
 env_covariates_wide$shelf_position <- as.factor(env_covariates_wide$shelf_position)
 
 ##getting an error here now that new meta data is added so will need to come back to this 
