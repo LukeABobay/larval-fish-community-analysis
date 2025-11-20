@@ -3,7 +3,6 @@
 #explore assemplage structures and abundances with respect to environmental
 #covariates by plotting relationships and running PERMANOVAs.
 #currently missing some mixed layer depth values.
-#only looking at MEZCAL (2018-2019) data for right now.
 
 # Load packages -----------------------------------------------------------
 
