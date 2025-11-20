@@ -19,6 +19,30 @@ library(RColorBrewer)
 source(here("scripts/01_data_wrangling.R"))
 
 
+# Create wide environmental dataframe ---------------------------------------------------
+
+wide_major_taxa_stations <- mocness_major_taxa_stations %>%
+  # Removing NAs for now, but there shouldn't be any to begin with
+  filter(!is.na(individuals_in_tow)) %>%
+  filter(!is.na(individuals_per_m3)) %>%
+  group_by(project, collection_date, start_time_pt, replicate, depth_range, 
+           transect_station, transect, station, start_latitude_dd, start_longitude_dd, 
+           taxon, transect_station_rep, transect_station_rep_year, seafloor_depth_m, 
+           shelf_position,prey_zooplankton_abundance_ind_m3, dissolved_oxygen_ml_l, 
+           seawater_density_1000_kg_m3, chlorophyll_ug_l, mlotst, 
+           mean_temperature_c, mean_salinity_psu) %>%
+  summarize(individuals_per_m3 = sum(individuals_per_m3)) %>%
+  ungroup() %>%
+  pivot_wider(names_from = taxon, values_from = individuals_per_m3, values_fill = 0)
+
+env_wide <- wide_major_taxa_stations %>%
+  select(project, collection_date, transect_station_rep_year, start_time_pt,
+         start_latitude_dd, start_longitude_dd, depth_range, shelf_position,
+         seafloor_depth_m, prey_zooplankton_abundance_ind_m3, dissolved_oxygen_ml_l,
+         seawater_density_1000_kg_m3, chlorophyll_ug_l, mean_temperature_c, mean_salinity_psu)
+#removed mlotst for right now because all are NAs at the moment and I don't want this to cause errors down the line
+#also excluded redundant information like transect, transect_station, replicat, transect_station_rep, and so on
+
 # Create community matrix -------------------------------------------------
 
 AHC_comm_matrix <- mocness_major_taxa_stations %>%
@@ -121,3 +145,13 @@ ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
   geom_text_repel(aes(label = transect_station_rep_year), size = 3, max.overlaps = 10) +
   theme_classic() +
   labs(title = "NMDS Ordination of sampling events by LFC", x = "NMDS1", y = "NMDS2")   ##NMDS plot
+
+
+# overlays for NMDS plots -------------------------------------------------
+
+##vectors for environmental variables
+env_wide_aligned <- env_wide[match(rownames(scores(NMDS_result, display = "sites")),
+                                   rownames(env_wide)), ]
+env_numeric <- env_wide_aligned[, sapply(env_wide_aligned, is.numeric)]
+
+fit_vectors<- envfit(NMDS_result, env_numeric, permutations = 1000, na.rm = TRUE)
