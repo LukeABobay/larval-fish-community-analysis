@@ -33,11 +33,15 @@ env_covariates_wide$shelf_position <- as.factor(env_covariates_wide$shelf_positi
 ##getting an error here now that new meta data is added so will need to come back to this 
 #create scatter plot matrix of covariates
 ##base R method
-pairs(env_covariates_wide[,6:15], lower.panel = NULL, 
-      main = "Scatterplots of MOCNESS environmental covariates",
-      labels = c("depth range sampled", "shelf position", "seafloor depth", "prey abundance", 
-                 "dissolved oxygen", "seawater density", "[chlorophyll]", "mixed layer depth", 
-                 "temperature", "salinity"))
+pairs(env_covariates_wide[, c("shelf_position",
+                                "seafloor_depth_m",
+                                "prey_zooplankton_abundance_ind_m3",
+                                "dissolved_oxygen_ml_l",
+                                "seawater_density_1000_kg_m3",
+                                "chlorophyll_ug_l",
+                                "mean_temperature_c",
+                                "mean_salinity_psu")], lower.panel = NULL, 
+      main = "Scatterplots of MOCNESS environmental covariates")
 #view correlation coefficients for continuous variables
 correlations <- cor(env_covariates_wide[,8:15])
 
