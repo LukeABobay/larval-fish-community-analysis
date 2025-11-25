@@ -151,7 +151,7 @@ ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
 
 ##vectors for environmental variables
 env_wide_aligned <- env_wide[match(rownames(scores(NMDS_result, display = "sites")),
-                                   rownames(env_wide)), ]
+                                   env_wide$transect_station_rep_year), ]
 env_numeric <- env_wide_aligned[, sapply(env_wide_aligned, is.numeric)]
 
 fit_vectors<- envfit(NMDS_result, env_numeric, permutations = 1000, na.rm = TRUE)
