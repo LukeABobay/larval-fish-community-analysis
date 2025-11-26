@@ -468,7 +468,7 @@ mocness_clean <- mocness_full_geographic_isiis_mixing %>%
   unite(col = "transect_station_rep", transect_station, replicate, sep="_", remove=FALSE) %>%
   mutate(year = year(collection_date)) %>%
   unite(col = "transect_station_rep_year", transect_station_rep, year, sep = "_", remove = FALSE) %>%
-  unite(col = "depth_range", minimum_depth_m, maximum_depth_m, sep="-", remove = TRUE) %>%
+  unite(col = "depth_range", minimum_depth_m, maximum_depth_m, sep="-", remove = FALSE) %>%
   mutate(taxon = case_match(taxon, 
                             c("Xeneretmus spp.", "Xeneretmus latifrons", "Agonidae spp.") ~ "Agonidae",
                             "Ammodytes spp." ~ "Ammodytes",
@@ -515,7 +515,9 @@ mocness_clean <- mocness_full_geographic_isiis_mixing %>%
                             "Trachipterus altivelis" ~ "Trachipterus altivelis",
                             .default = taxon)) %>%
   mutate(individuals_in_tow = as.numeric(individuals_in_tow))%>%
-  mutate(individuals_per_m3 = individuals_in_tow/volume_m3_best)
+  mutate(individuals_per_m3 = individuals_in_tow/volume_m3_best) %>%
+  mutate(depth_mean_m = (maximum_depth_m - minimum_depth_m)/2) %>%
+  mutate(depth_diff_m = maximum_depth_m - minimum_depth_m)
 
 
 # filter out rare taxa (present in <5% of samples) -----------------------
