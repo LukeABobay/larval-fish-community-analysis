@@ -516,7 +516,7 @@ mocness_clean <- mocness_full_geographic_isiis_mixing %>%
                             .default = taxon)) %>%
   mutate(individuals_in_tow = as.numeric(individuals_in_tow))%>%
   mutate(individuals_per_m3 = individuals_in_tow/volume_m3_best) %>%
-  mutate(depth_mean_m = (maximum_depth_m - minimum_depth_m)/2) %>%
+  mutate(depth_mean_m = (maximum_depth_m + minimum_depth_m)/2) %>%
   mutate(depth_diff_m = maximum_depth_m - minimum_depth_m)
 
 
