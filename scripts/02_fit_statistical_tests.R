@@ -59,7 +59,7 @@ filt_mocness_major_taxa_wide_transformed <- filter(mocness_major_taxa_wide_trans
                                                     #& !is.na(mlotst))
 
 mult_permanova <- adonis2(filt_mocness_major_taxa_wide_transformed[, 26:48] ~ seafloor_depth_m + 
-                            shelf_position + depth_mean_bin + depth_diff_bin + prey_zooplankton_abundance_ind_m3 + 
+                            shelf_position + depth_mean_m + depth_diff_m + prey_zooplankton_abundance_ind_m3 + 
                             dissolved_oxygen_ml_l + seawater_density_1000_kg_m3 + chlorophyll_ug_l + 
                             mean_temperature_c + mean_salinity_psu,
                           data = filt_mocness_major_taxa_wide_transformed, method = "bray", by = "margin")
