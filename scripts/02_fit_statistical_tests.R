@@ -50,20 +50,14 @@ summary(permanova)
 ##right now this filters out all rows?? so I'm taking out the mlotst line for now and not including it in multiple permanova
 filt_mocness_major_taxa_wide_transformed <- filter(mocness_major_taxa_wide_transformed, 
                                                   !is.na(prey_zooplankton_abundance_ind_m3)) %>%
-  mutate(depth_mean_bin = cut(depth_mean_m,
-                         breaks = quantile(depth_mean_m, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE),
-                         include.lowest = TRUE)) %>%
-  mutate(depth_diff_bin = cut(depth_diff_m,
-                         breaks = quantile(depth_diff_m, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE),
-                         include.lowest = TRUE))
+  mutate(time_of_day = substr(replicate, 3, 3)) %>%
+  mutate(time_of_day = recode(time_of_day, "D" = "Day", "N" = "Night")) %>%
+  mutate(time_of_day = factor(time_of_day, levels = c("Day", "Night")))
                                                     #& !is.na(mlotst))
 
-mult_permanova <- adonis2(filt_mocness_major_taxa_wide_transformed[, 26:48] ~ seafloor_depth_m + 
+mult_permanova <- adonis2(filt_mocness_major_taxa_wide_transformed[, 26:48] ~ time_of_day + seafloor_depth_m + 
                             shelf_position + depth_mean_m + depth_diff_m + prey_zooplankton_abundance_ind_m3 + 
                             dissolved_oxygen_ml_l + seawater_density_1000_kg_m3 + chlorophyll_ug_l + 
                             mean_temperature_c + mean_salinity_psu,
                           data = filt_mocness_major_taxa_wide_transformed, method = "bray", by = "margin")
 view(mult_permanova)
-
-##depth_mean_m and depth_diff_m are yielding degrees of freedom = 0 in permanova, even when binned.
-## will need to come back to this and figure out how to fix that.
