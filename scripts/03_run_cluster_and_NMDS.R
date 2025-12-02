@@ -12,6 +12,8 @@ library(vegan)
 library(ggplot2)
 library(ggrepel)
 library(RColorBrewer)
+library(dplyr)
+library(purrr)
 
 
 # Source code -------------------------------------------------------------
@@ -30,18 +32,27 @@ wide_major_taxa_stations <- mocness_major_taxa_stations %>%
            taxon, transect_station_rep, transect_station_rep_year, seafloor_depth_m, 
            shelf_position,prey_zooplankton_abundance_ind_m3, dissolved_oxygen_ml_l, 
            seawater_density_1000_kg_m3, chlorophyll_ug_l, mlotst, 
-           mean_temperature_c, mean_salinity_psu) %>%
+           mean_temperature_c, mean_salinity_psu, depth_mean_m, depth_diff_m) %>%
   summarize(individuals_per_m3 = sum(individuals_per_m3)) %>%
   ungroup() %>%
   pivot_wider(names_from = taxon, values_from = individuals_per_m3, values_fill = 0)
 
 env_wide <- wide_major_taxa_stations %>%
-  select(project, collection_date, transect_station_rep_year, start_time_pt,
+  select(project, collection_date, transect_station_rep_year, replicate, start_time_pt,
          start_latitude_dd, start_longitude_dd, depth_range, shelf_position,
          seafloor_depth_m, prey_zooplankton_abundance_ind_m3, dissolved_oxygen_ml_l,
-         seawater_density_1000_kg_m3, chlorophyll_ug_l, mean_temperature_c, mean_salinity_psu)
+         seawater_density_1000_kg_m3, chlorophyll_ug_l, mean_temperature_c, mean_salinity_psu, 
+         depth_mean_m, depth_diff_m) %>%
+  mutate(time_of_day = substr(replicate, 3, 3)) %>%
+  mutate(time_of_day = recode(time_of_day, "D" = "Day", "N" = "Night")) %>%
+  mutate(time_of_day = factor(time_of_day, levels = c("Day", "Night"))) %>%
+  select(project, collection_date, transect_station_rep_year, time_of_day, start_time_pt,
+         start_latitude_dd, start_longitude_dd, depth_range, shelf_position,
+         seafloor_depth_m, prey_zooplankton_abundance_ind_m3, dissolved_oxygen_ml_l,
+         seawater_density_1000_kg_m3, chlorophyll_ug_l, mean_temperature_c, mean_salinity_psu, 
+         depth_mean_m, depth_diff_m)
 #removed mlotst for right now because all are NAs at the moment and I don't want this to cause errors down the line
-#also excluded redundant information like transect, transect_station, replicat, transect_station_rep, and so on
+#also excluded redundant information like transect, transect_station, transect_station_rep, and so on
 
 # Create community matrix -------------------------------------------------
 
@@ -149,9 +160,69 @@ ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
 
 # overlays for NMDS plots -------------------------------------------------
 
-##vectors for environmental variables
+#Vectors for environmental variables
 env_wide_aligned <- env_wide[match(rownames(scores(NMDS_result, display = "sites")),
                                    env_wide$transect_station_rep_year), ]
 env_numeric <- env_wide_aligned[, sapply(env_wide_aligned, is.numeric)]
-
 fit_vectors<- envfit(NMDS_result, env_numeric, permutations = 1000, na.rm = TRUE)
+
+##Extract vector scores for plotting
+vector_scores <- scores(fit_vectors, display = "vectors")
+vector_df <- as.data.frame(vector_scores)
+vector_df$variable <- rownames(vector_df)
+
+##Plot NMDS with vector overlays
+ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
+  scale_color_manual(values = c("red", "blue", "black")) +
+  geom_point(size = 3) +
+  #geom_text_repel(aes(label = transect_station_rep_year), size = 3, max.overlaps = 10) +
+  theme_classic() +
+  labs(title = "NMDS Ordination of sampling events by LFC", x = "NMDS1", y = "NMDS2") +
+  geom_segment(data = vector_df,
+             aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2),
+             arrow = arrow(length = unit(0.3, "cm")),
+             color = "darkgreen", linewidth = 1) +
+  geom_text(data = vector_df,
+          aes(x = NMDS1, y = NMDS2, label = variable),
+          color = "darkgreen", size = 3, vjust = -0.5)
+
+#Ellipses for categorical variables
+
+##shelf_position
+###fit ellipses
+ell_shelf <- ordiellipse(NMDS_result, env_wide_aligned$shelf_position,
+                        kind = "sd", conf = 0.95) 
+###convert ellipse output to data frames
+ell_shelf_df <- map_dfr(names(ell_shelf), ~ as.data.frame(ell_shelf[[.x]]) %>%
+                          mutate(group = .x))%>%
+  rename(NMDS1 = cov.NMDS1, NMDS2 = cov.NMDS2)
+###overlay ellipses on NMDS plot
+ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
+  geom_point(size = 3) +
+  geom_path(data = ell_shelf_df, aes(x = NMDS1, y = NMDS2, color = group),
+            size = 1, linetype = 2) +
+  scale_color_manual(values = c("red", "blue", "black", "green", "orange")) +
+  theme_classic() +
+  labs(title = "NMDS Ordination with Clustered Points and Shelf Position Ellipses",
+       x = "NMDS1", y = "NMDS2")
+
+##time_of_day
+###fit ellipses
+env_wide_aligned_time <- env_wide_aligned %>% filter(!is.na(time_of_day))
+NMDS_scores_time <- scores(NMDS_result, display = "sites")[rownames(env_wide_aligned_time), ]
+ell_time <- ordiellipse(NMDS_scores_time, env_wide_aligned_time$time_of_day,
+                        kind = "sd", conf = 0.95)
+
+###convert ellipse output to data frames
+ell_tod_df <- map_dfr(names(ell_tod), ~ as.data.frame(ell_tod[[.x]]) %>%
+                          mutate(group = .x))%>%
+  rename(NMDS1 = cov.NMDS1, NMDS2 = cov.NMDS2)
+###overlay ellipses on NMDS plot
+ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
+  geom_point(size = 3) +
+  geom_path(data = ell_tod_df, aes(x = NMDS1, y = NMDS2, color = group),
+            size = 1, linetype = 2) +
+  scale_color_manual(values = c("red", "blue", "black", "green", "orange")) +
+  theme_classic() +
+  labs(title = "NMDS Ordination with Clustered Points and Time of Day Ellipses",
+       x = "NMDS1", y = "NMDS2")
