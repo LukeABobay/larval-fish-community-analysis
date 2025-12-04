@@ -194,16 +194,30 @@ ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
 ###fit ellipses
 ell_shelf <- ordiellipse(NMDS_result, env_wide_aligned$shelf_position,
                         kind = "sd", conf = 0.95) 
+
 ###convert ellipse output to data frames
-ell_shelf_df <- map_dfr(names(ell_shelf), ~ as.data.frame(ell_shelf[[.x]]) %>%
-                          mutate(group = .x))%>%
-  rename(NMDS1 = cov.NMDS1, NMDS2 = cov.NMDS2)
+ell_shelf_df <- purrr::map_dfr(names(ell_shelf), ~ {
+  e     <- ell_shelf[[.x]]
+  theta <- seq(0, 2 * pi, length.out = 200)
+  circle <- cbind(cos(theta), sin(theta))
+  
+  # one ellipse per group: center + scale * chol(cov) %*% circle
+  xy <- circle %*% chol(e$cov)
+  xy <- sweep(xy * e$scale, 2, e$center, "+")
+  
+  dplyr::tibble(
+    NMDS1 = xy[, 1],
+    NMDS2 = xy[, 2],
+    group = .x
+  )
+})
+
 ###overlay ellipses on NMDS plot
 ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
   geom_point(size = 3) +
   geom_path(data = ell_shelf_df, aes(x = NMDS1, y = NMDS2, color = group),
-            size = 1, linetype = 2) +
-  scale_color_manual(values = c("red", "blue", "black", "green", "orange")) +
+            size = 1) +
+  scale_color_manual(values = c("red", "blue", "black", "green", "orange", "darkgreen", "darkorange")) +
   theme_classic() +
   labs(title = "NMDS Ordination with Clustered Points and Shelf Position Ellipses",
        x = "NMDS1", y = "NMDS2")
