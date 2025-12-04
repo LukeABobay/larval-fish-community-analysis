@@ -91,6 +91,7 @@ plot(AHC_result, labels = AHC_comm_matrix_transformed$transect_station_rep_year,
 rect.hclust(AHC_result, k = 2, border = c(2, 4))
 
 ##plot 3 clusters/rectangles
+windows()
 plot(AHC_result, labels = AHC_comm_matrix_transformed$transect_station_rep_year, main = "average linkage AHC of sampling events by LFC")
 rect.hclust(AHC_result, k = 5, border = c(2, 3, 4, 5, 6))
 
@@ -107,7 +108,7 @@ AHC_comm_matrix_transformed_long <- AHC_comm_matrix_transformed %>%
   merge(., clusters, by = "transect_station_rep_year")
 
 # Categories of taxa in AHC_comm_matrix_transformed
-coastal_species <- c("Agonidae", "Artedius", "Cottidae", "Hexagrammidae", "Liparis", "Paralichthyidae", "Parophrys vetulus", "Pholidae", "Pleuronectidae", "Sebastes", "Stichaeidae", "Ammodytes", "Microgadus proximus", "Osmeridae")
+coastal_species <- c("Agonidae", "Artedius", "Cottidae", "Hexagrammidae", "Liparis", "Paralichthyidae", "Parophrys vetulus", "Pholidae", "Pleuronectidae", "Sebastes", "Stichaeidae", "Ammodytes", "Gadidae", "Osmeridae")
 coastal_colors <- colorRampPalette(brewer.pal(9, "Greens")[2:9])(length(coastal_species))
 
 coastal_oceanic_species <- c("Engraulis mordax", "Sardinops sagax")
@@ -144,14 +145,14 @@ NMDS_result$stress  ##check stress
 stressplot(NMDS_result)   ##Shepard diagram
 
 site_scores <- as.data.frame(scores(NMDS_result, display = "sites"))
-cluster_groups <- cutree(AHC_result, k = 3)
+cluster_groups <- cutree(AHC_result, k = 5)
 station_scores <- mutate(site_scores, transect_station_rep_year = AHC_comm_matrix_transformed$transect_station_rep_year)
 stations_clustered <- mutate(station_scores, cluster = cluster_groups)
 stations_clustered$cluster <- as.numeric(as.character(stations_clustered$cluster))
-stations_clustered$cluster <- factor(stations_clustered$cluster, levels = c(1,2,3), labels = c("Cluster 1", "Cluster 2", "Cluster 3"))
+stations_clustered$cluster <- factor(stations_clustered$cluster, levels = c(1,2,3,4,5), labels = c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster 4", "Cluster 5"))
 
 ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
-  scale_color_manual(values = c("red", "blue", "black")) +
+  scale_color_manual(values = c("red", "blue", "black", "green", "orange")) +
   geom_point(size = 3) +
   geom_text_repel(aes(label = transect_station_rep_year), size = 3, max.overlaps = 10) +
   theme_classic() +
@@ -172,8 +173,9 @@ vector_df <- as.data.frame(vector_scores)
 vector_df$variable <- rownames(vector_df)
 
 ##Plot NMDS with vector overlays
+windows()
 ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
-  scale_color_manual(values = c("red", "blue", "black")) +
+  scale_color_manual(values = c("red", "blue", "black", "green", "orange")) +
   geom_point(size = 3) +
   #geom_text_repel(aes(label = transect_station_rep_year), size = 3, max.overlaps = 10) +
   theme_classic() +
