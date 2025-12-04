@@ -159,7 +159,8 @@ spectra_sampling_stations_clean <- spectra_sampling_stations %>%
   rename(latitude_dd = Latitude,
          longitude_dd = Longitude) %>%
   mutate(transect = substr(Name, 1, 2),
-         station = substr(Name, 3, n())) %>%
+         station = substr(Name, 3, n()),
+         project = "SPECTRA") %>%
   select(-Station.Type, -Name)
 
 # Get separate column for time of SPECTRA MOCNESS sampling events
@@ -179,7 +180,7 @@ mocness_full_old_metadata <- merge(mocness_winter_fish_abundance,
          transect, station, latitude_dd = Station.lat, longitude_dd = Station.lon, taxon, 
          volume_filtered_m3 = Volume.filtered, individuals_in_tow) %>%
   # Add in lat/lon for SPECTRA sampling stations
-  merge(., spectra_sampling_stations_clean, by = c("transect", "station")) %>%
+  merge(., spectra_sampling_stations_clean, by = c("project", "transect", "station"), all.x = TRUE) %>%
   # Make latitude_dd column with values of latitude_dd.x if available, or values of latitude_dd.y if not
   mutate(latitude_dd = ifelse(!is.na(latitude_dd.x), latitude_dd.x, latitude_dd.y)) %>%
   # Make longitude_dd column with values of longitude_dd.x if available, or values of longitude_dd.y if not
