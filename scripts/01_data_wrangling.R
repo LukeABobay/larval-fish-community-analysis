@@ -515,7 +515,12 @@ mocness_clean <- mocness_full_geographic_isiis_mixing %>%
                             "Chauliodus spp." ~ "Chauliodontidae",
                             "Trachipterus altivelis" ~ "Trachipterus altivelis",
                             .default = taxon)) %>%
-  mutate(individuals_in_tow = as.numeric(individuals_in_tow))%>%
+  group_by(transect_station_rep_year, mocness_side, net, taxon) %>%
+  mutate(individuals_in_tow = as.numeric(individuals_in_tow),
+         # Sum number of individuals within each net and return one row per net
+         individuals_in_tow = sum(individuals_in_tow)) %>%
+  ungroup() %>%
+  distinct(transect_station_rep_year, mocness_side, net, taxon, .keep_all = TRUE) %>%
   mutate(individuals_per_m3 = individuals_in_tow/volume_m3_best) %>%
   mutate(depth_mean_m = (maximum_depth_m + minimum_depth_m)/2) %>%
   mutate(depth_diff_m = maximum_depth_m - minimum_depth_m)
