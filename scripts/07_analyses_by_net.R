@@ -36,8 +36,13 @@ nets_major_taxa_wide <- mocness_major_taxa_stations %>%
   merge(., volume_sampled_by_both_sides, by = c("transect_station_rep_year", "net"), all.x = TRUE) %>%
   ungroup() %>%
   distinct(transect_station_rep_year, net, taxon, .keep_all = TRUE) %>%
-  ungroup() %>%
   mutate(avg_taxa_conc = sum_individuals/combined_volume_m3_best) %>%
-  select(-individuals_in_tow, -volume_from_flow_meter_m3, -volume_from_ships_stw_m3, -volume_m3_best,
-         -individuals_per_m3, -individuals_per_station) %>%
+  select(project, cruise, year, collection_date, transect, replicate, station, net, 
+         transect_station_rep_year, start_time_utc, start_time_pt, end_time_utc, end_time_pt, 
+         start_longitude_dd, start_latitude_dd, end_longitude_dd, end_latitude_dd,
+         maximum_depth_m, minimum_depth_m, depth_mean_m, depth_diff_m,
+         mean_temperature_c, mean_salinity_psu, mean_density_kgm3, seafloor_depth_m,
+         distance_to_shore_km, shelf_position, prey_zooplankton_abundance_ind_m3,
+         dissolved_oxygen_ml_l, chlorophyll_ug_l, mlotst, taxon,
+         avg_taxa_conc, combined_volume_m3_best) %>%
   pivot_wider(names_from = taxon, values_from = avg_taxa_conc, values_fill = 0)
