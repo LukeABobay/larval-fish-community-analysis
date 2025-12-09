@@ -470,50 +470,52 @@ mocness_clean <- mocness_full_geographic_isiis_mixing %>%
   mutate(year = year(collection_date)) %>%
   unite(col = "transect_station_rep_year", transect_station_rep, year, sep = "_", remove = FALSE) %>%
   unite(col = "depth_range", minimum_depth_m, maximum_depth_m, sep="-", remove = FALSE) %>%
+  # Eliminate spaces to avoid inconvenient behavior later when each taxon is made into its own column
   mutate(taxon = case_match(taxon, 
                             c("Xeneretmus spp.", "Xeneretmus latifrons", "Agonidae spp.") ~ "Agonidae",
-                            "Ammodytes spp." ~ "Ammodytes",
-                            "Anarrhichthys ocellatus" ~ "Anarrhichthys ocellatus",
+                            c("Ammodytes spp.", "Ammodytidae") ~ "Ammodytidae",
+                            "Anarrhichthys ocellatus" ~ "Anarrhichthys_ocellatus",
                             c("Anoplopomatidae spp.", "Anoploploma fimbria", "Anaploploma fimbria") ~ "Anoplopomatidae",
-                            "Lipolagus ochotensis" ~ "Lipolagus ochotensis",
-                            "Bathylagus pacificus" ~ "Bathylagus pacificus",
-                            "Ronquilus jordani" ~ "Ronquilus jordani",
-                            "Chauliodus macouni" ~ "Chauliodus macouni",
-                            c("Sardinops sagax", "Sardinops sargax") ~ "Sardinops sagax",
+                            "Lipolagus ochotensis" ~ "Lipolagus_ochotensis",
+                            c("Bathylagus pacificus", "Bathylagidae") ~ "Bathylagidae",
+                            "Ronquilus jordani" ~ "Ronquilus_jordani",
+                            "Chauliodus macouni" ~ "Chauliodus_macouni",
+                            c("Sardinops sagax", "Sardinops sargax") ~ "Sardinops_sagax",
                             c("Artedius spp.", "Artedius harringtoni", "Artedius fenestralis") ~ "Artedius",
-                            c("Cottidae spp.", "Cottid spp.", "Cottidae", "Scorpaenichthys marmoratus", "Nautichthys spp.", 
+                            c("Cottidae spp.", "Cottid spp.", "Cottidae", "Scorpaenichthys marmoratus", "Nautichthys spp.",
+                              "Nautichthys spp. ", "Cottid spp. ", 
                               "Leptocottus armatus", "Hemilepidotus spp.", "Hemilepidotus spinosus", "Radulinus spp.", 
                               "Radulinus asprellus", "Radulina asprellus") ~ "Cottidae",
                             c("Cryptacanthodes spp.", "Cryptacanthodes aleutensis") ~ "Cryptacanthodes",
                             c("Liparis spp.", "Liparis fucensis") ~ "Liparis",
-                            "Engraulis mordax" ~ "Engraulis mordax",
+                            "Engraulis mordax" ~ "Engraulis_mordax",
                             c("Gadid spp.", "Microgadus proximus") ~ "Gadidae",
                             "Gobiidae spp." ~ "Gobiidae",
                             c("Hexagrammidae spp.", "Hexagrammos octogrammus", "Hexagrammos decagrammus", "Ophiodon elongatus", 
                               "Hexagrammos lagocephalus", "Hexagrammos lagocephalus") ~ "Hexagrammidae",
                             c("Macrourid spp.", "Coryphaenoids acrolepis", "Coryphaenoides acrolepis", 
                               "Albatrossia pectoralis", "Macrouridae") ~ "Macrouridae",
-                            "Merluccius productus" ~ "Merluccius productus",
-                            "Nansenia candida" ~ "Nansenia candida",
+                            "Merluccius productus" ~ "Merluccius_productus",
+                            "Nansenia candida" ~ "Nansenia_candida",
                             c("Myctophid spp.", "Nannobrachium regalis", "Protomyctophum crockeri", "Protomyctophum thompsoni", 
                               "Stenobrachius leucopsarus", "Tarletonbeania crenularis", "Diaphus theta", 
                               "Nannobrachium spp.") ~ "Myctophidae",
-                            "Chilara taylori" ~ "Chilara taylori",
+                            c("Chilara taylori", "Ophidiidae") ~ "Ophidiidae",
                             c("Osmerid spp", "Osmerid spp.") ~ "Osmeridae",
-                            "Lestidiops ringens" ~"Lestidiops ringens",
+                            c("Lestidiops ringens", "Paralepididae") ~ "Paralepididae",
                             c("Citharichthys spp.", "Citharichthys sordidus", "Citharichthys stigmaeus") ~ "Paralichthyidae",
                             c("Pholidae spp.", "Apodichthus flavidus", "Apodichthys flavidus") ~ "Pholidae",
-                            "Parophrys vetulus" ~ "Parophrys vetulus",
+                            "Parophrys vetulus" ~ "Parophrys_vetulus",
                             c("Atheresthes stomias", "Glyptocephalus zachirus", "Psettichthys melanostictus", "Lyopsetta exilis", 
                               "Isopsetta isolepis", "Microstomus pacificus", "Lepidopsetta bilineata", "Embassichthys bathybius", 
-                              "Eopsetta jordani", "Pleuronichthys decurrens") ~ "Pleuronectidae",
-                            "Ptilichthys goodei" ~ "Ptilichthys goodei",
+                              "Eopsetta jordani", "Pleuronichthys decurrens") ~ "Pleuronectidae_other",
+                            "Ptilichthys goodei" ~ "Ptilichthys_goodei",
                             "Sebastolobus spp." ~ "Sebastolobus",
                             "Sebastes spp." ~ "Sebastes",
                             c("Chirolophis spp.", "Xiphister atrophurpureus", "Xiphister atrophurpureus", 
                               "Plectobranchus evides") ~ "Stichaeidae",
                             "Chauliodus spp." ~ "Chauliodontidae",
-                            "Trachipterus altivelis" ~ "Trachipterus altivelis",
+                            "Trachipterus altivelis" ~ "Trachipterus_altivelis",
                             .default = taxon)) %>%
   group_by(transect_station_rep_year, mocness_side, net, taxon) %>%
   mutate(individuals_in_tow = as.numeric(individuals_in_tow),
@@ -538,7 +540,9 @@ taxa_w_gt_5pct <- mocness_clean %>%
   filter(freq >= 0.05 * n_distinct(mocness_clean$transect_station_rep))
 
 mocness_major_taxa <- mocness_clean %>%
-  filter(taxon %in% taxa_w_gt_5pct$taxon & taxon != "Unknown" & !is.na(taxon) & taxon != "Damaged" & taxon != "" & taxon != "Fish eggs")
+  filter(taxon %in% taxa_w_gt_5pct$taxon & taxon != "Unknown" & !is.na(taxon) & taxon != "Damaged" & 
+           taxon != "" & taxon != "Fish eggs" & taxon != "Unknown spotted" & 
+           taxon != "No fish" & !is.na(taxon))
 
 # Get list of date/station/replicate with > 20 individuals of any "major" taxa
 stations_w_gt_20ind <- mocness_major_taxa %>%
