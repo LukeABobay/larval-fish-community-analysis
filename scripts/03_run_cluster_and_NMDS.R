@@ -64,7 +64,7 @@ AHC_comm_matrix <- mocness_major_taxa_stations %>%
   ungroup() %>%
   pivot_wider(names_from = taxon, values_from = individuals_per_m3, values_fill = 0)
 
-transform_taxa_concentrations <- AHC_comm_matrix[, 2:24] %>%
+transform_taxa_concentrations <- AHC_comm_matrix[, 2:23] %>%
   sqrt()
 
 # Add rownames
@@ -104,7 +104,7 @@ clusters <- data.frame(transect_station_rep_year = names(cutree(AHC_result, k = 
 
 # Add cluster identities to long version of AHC_comm_matrix_transformed
 AHC_comm_matrix_transformed_long <- AHC_comm_matrix_transformed %>%
-  pivot_longer(cols = 2:24, names_to = "taxon", values_to = "sqrt_concentration") %>%
+  pivot_longer(cols = 2:23, names_to = "taxon", values_to = "sqrt_concentration") %>%
   merge(., clusters, by = "transect_station_rep_year")
 
 # Categories of taxa in AHC_comm_matrix_transformed
@@ -193,7 +193,7 @@ ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
 ##shelf_position
 ###fit ellipses
 ell_shelf <- ordiellipse(NMDS_result, env_wide_aligned$shelf_position,
-                        kind = "sd", conf = 0.95) 
+                        kind = "sd", conf = 0.95, plot = FALSE) 
 
 ###convert ellipse output to data frames
 ell_shelf_df <- purrr::map_dfr(names(ell_shelf), ~ {
