@@ -4,6 +4,11 @@
 #clusters in stacked barplot and NMDS ordination with environmental variables
 #overlayed as vectors
 
+#Note to self (steps):
+#1) stacked barplots by net. look at how noisy data are by net vs by station
+#2) if data has consitent trends, cluster analysis
+#3) regardless, plot NMDS by net and overlay vectors and ellipses
+
 
 # Load packages -----------------------------------------------------------
 
