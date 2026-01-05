@@ -108,13 +108,13 @@ AHC_comm_matrix_transformed_long <- AHC_comm_matrix_transformed %>%
   merge(., clusters, by = "transect_station_rep_year")
 
 # Categories of taxa in AHC_comm_matrix_transformed
-coastal_species <- c("Agonidae", "Artedius", "Cottidae", "Hexagrammidae", "Liparis", "Paralichthyidae", "Parophrys vetulus", "Pholidae", "Pleuronectidae", "Sebastes", "Stichaeidae", "Ammodytes", "Gadidae", "Osmeridae")
+coastal_species <- c("Agonidae", "Artedius", "Cottidae", "Hexagrammidae", "Liparis", "Paralichthyidae", "Parophrys_vetulus", "Pholidae", "Pleuronectidae", "Sebastes", "Stichaeidae", "Ammodytidae", "Gadidae", "Osmeridae", "Pleuronectidae_other")
 coastal_colors <- colorRampPalette(brewer.pal(9, "Greens")[2:9])(length(coastal_species))
 
-coastal_oceanic_species <- c("Engraulis mordax", "Sardinops sagax")
+coastal_oceanic_species <- c("Engraulis_mordax", "Sardinops_sagax")
 coastal_oceanic_colors <- colorRampPalette(brewer.pal(3, "Blues")[2:3])(length(coastal_oceanic_species))
 
-oceanic_species <- c("Bathylagus pacificus", "Chauliodus macouni", "Lestidiops ringens", "Lipolagus ochotensis", "Macrouridae", "Myctophidae", "Paralepididae")
+oceanic_species <- c("Bathylagidae", "Chauliodus_macouni", "Lestidiops_ringens", "Lipolagus_ochotensis", "Macrouridae", "Myctophidae", "Paralepididae")
 oceanic_colors <- colorRampPalette(brewer.pal(9, "Purples")[2:9])(length(oceanic_species))
 
 # Named species color vector
