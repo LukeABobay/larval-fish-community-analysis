@@ -193,7 +193,7 @@ ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
 ##shelf_position
 ###fit ellipses
 ell_shelf <- ordiellipse(NMDS_result, env_wide_aligned$shelf_position,
-                        kind = "sd", conf = 0.95, plot = FALSE) 
+                        kind = "sd", conf = 0.95) 
 
 ###convert ellipse output to data frames
 ell_shelf_df <- purrr::map_dfr(names(ell_shelf), ~ {
@@ -224,21 +224,37 @@ ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
 
 ##time_of_day
 ###fit ellipses
-env_wide_aligned_time <- env_wide_aligned %>% filter(!is.na(time_of_day))
-NMDS_scores_time <- scores(NMDS_result, display = "sites")[rownames(env_wide_aligned_time), ]
-ell_time <- ordiellipse(NMDS_scores_time, env_wide_aligned_time$time_of_day,
-                        kind = "sd", conf = 0.95)
+time_groups <- env_wide_aligned$time_of_day
 
-###convert ellipse output to data frames
-ell_tod_df <- map_dfr(names(ell_tod), ~ as.data.frame(ell_tod[[.x]]) %>%
-                          mutate(group = .x))%>%
-  rename(NMDS1 = cov.NMDS1, NMDS2 = cov.NMDS2)
+ell_time <- ordiellipse(
+  NMDS_result,
+  time_groups,
+  kind = "sd",
+  conf = 0.95
+)
+
+### convert ellipse output to data frame
+ell_time_df <- purrr::map_dfr(names(ell_time), ~ {
+  e     <- ell_time[[.x]]
+  theta <- seq(0, 2 * pi, length.out = 200)
+  circle <- cbind(cos(theta), sin(theta))
+  
+  xy <- circle %*% chol(e$cov)
+  xy <- sweep(xy * e$scale, 2, e$center, "+")
+  
+  tibble(
+    NMDS1 = xy[, 1],
+    NMDS2 = xy[, 2],
+    group = .x
+  )
+})
+
 ###overlay ellipses on NMDS plot
 ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
   geom_point(size = 3) +
-  geom_path(data = ell_tod_df, aes(x = NMDS1, y = NMDS2, color = group),
+  geom_path(data = ell_time_df, aes(x = NMDS1, y = NMDS2, color = group),
             size = 1, linetype = 2) +
-  scale_color_manual(values = c("red", "blue", "black", "green", "orange")) +
+  scale_color_manual(values = c("red", "blue", "black", "green", "orange", "darkgrey", "darkblue")) +
   theme_classic() +
   labs(title = "NMDS Ordination with Clustered Points and Time of Day Ellipses",
        x = "NMDS1", y = "NMDS2")
