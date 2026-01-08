@@ -14,6 +14,7 @@ library(ggrepel)
 library(RColorBrewer)
 library(dplyr)
 library(purrr)
+library(suncalc)
 
 
 # Source code -------------------------------------------------------------
@@ -41,16 +42,37 @@ env_wide <- wide_major_taxa_stations %>%
   select(project, collection_date, transect_station_rep_year, replicate, start_time_pt,
          start_latitude_dd, start_longitude_dd, depth_range, shelf_position,
          seafloor_depth_m, prey_zooplankton_abundance_ind_m3, dissolved_oxygen_ml_l,
-         seawater_density_1000_kg_m3, chlorophyll_ug_l, mean_temperature_c, mean_salinity_psu, 
-         depth_mean_m, depth_diff_m) %>%
-  mutate(time_of_day = substr(replicate, 3, 3)) %>%
-  mutate(time_of_day = recode(time_of_day, "D" = "Day", "N" = "Night")) %>%
-  mutate(time_of_day = factor(time_of_day, levels = c("Day", "Night"))) %>%
-  select(project, collection_date, transect_station_rep_year, time_of_day, start_time_pt,
-         start_latitude_dd, start_longitude_dd, depth_range, shelf_position,
-         seafloor_depth_m, prey_zooplankton_abundance_ind_m3, dissolved_oxygen_ml_l,
-         seawater_density_1000_kg_m3, chlorophyll_ug_l, mean_temperature_c, mean_salinity_psu, 
-         depth_mean_m, depth_diff_m)
+         seawater_density_1000_kg_m3, chlorophyll_ug_l, mean_temperature_c, 
+         mean_salinity_psu, depth_mean_m, depth_diff_m) %>%
+  mutate(
+    time_of_day = substr(replicate, 3, 3),
+    time_of_day = recode(time_of_day, "D" = "Day", "N" = "Night", .default = NA_character_)
+  ) %>%
+  group_by(transect_station_rep_year) %>%   # or collection_date, or station, etc.
+  mutate(
+    # compute sunrise/sunset at that station/date
+    sunrise = getSunlightTimes(
+      date = as.Date(collection_date),
+      lat  = first(start_latitude_dd),
+      lon  = first(start_longitude_dd),
+      keep = c("sunrise", "sunset")
+    )$sunrise,
+    sunset  = getSunlightTimes(
+      date = as.Date(collection_date),
+      lat  = first(start_latitude_dd),
+      lon  = first(start_longitude_dd),
+      keep = c("sunrise", "sunset")
+    )$sunset,
+    
+    time_of_day = case_when(
+      !is.na(time_of_day) ~ time_of_day,
+      start_time_pt >= sunrise & start_time_pt < sunset ~ "Day",
+      TRUE                                              ~ "Night"
+    ),
+    time_of_day = factor(time_of_day, levels = c("Day", "Night"))
+  ) %>%
+  ungroup() %>%
+  select(-sunrise, -sunset)
 #removed mlotst for right now because all are NAs at the moment and I don't want this to cause errors down the line
 #also excluded redundant information like transect, transect_station, transect_station_rep, and so on
 
