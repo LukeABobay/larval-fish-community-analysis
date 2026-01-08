@@ -215,7 +215,7 @@ ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
 ##shelf_position
 ###fit ellipses
 ell_shelf <- ordiellipse(NMDS_result, env_wide_aligned$shelf_position,
-                        kind = "sd", conf = 0.95) 
+                        kind = "sd", conf = 0.95, draw = "none") 
 
 ###convert ellipse output to data frames
 ell_shelf_df <- purrr::map_dfr(names(ell_shelf), ~ {
@@ -252,7 +252,8 @@ ell_time <- ordiellipse(
   NMDS_result,
   time_groups,
   kind = "sd",
-  conf = 0.95
+  conf = 0.95, 
+  draw = "none"
 )
 
 ### convert ellipse output to data frame
