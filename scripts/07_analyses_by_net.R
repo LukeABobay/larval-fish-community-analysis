@@ -102,9 +102,9 @@ nets_AHC_comm_matrix <- nets_major_taxa_wide %>%
          Parophrys_vetulus, Pholidae, Agonidae, Stichaeidae, Hexagrammidae, Myctophidae, Lipolagus_ochotensis, Anarrhichthys_ocellatus,
          Anoplopomatidae, Sebastolobus, Paralichthyidae, Bathylagidae, Ptilichthys_goodei, Ophidiidae, Chauliodus_macouni, Nansenia_candida, 
          Paralepididae, Trachipterus_altivelis, Merluccius_productus, Macrouridae, Artedius, Sardinops_sagax, Engraulis_mordax, Gobiidae,
-         Ronquilus_jordani, Pleuronectidae, Chauliodontidae, Cryptacanthodes)
+         Ronquilus_jordani, Pleuronectidae)
 
-nets_transform_taxa_concentrations <- nets_AHC_comm_matrix[, 3:37] %>%
+nets_transform_taxa_concentrations <- nets_AHC_comm_matrix[, 3:35] %>%
   sqrt()
 
 # Add rownames
