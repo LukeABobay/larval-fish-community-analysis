@@ -166,7 +166,7 @@ nets_stations_clustered$cluster <- factor(nets_stations_clustered$cluster, level
                                           labels = c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster 4", "Cluster 5", "Cluster 6", "Cluster 7", "Cluster 8", "Cluster 9", "Cluster 10"))
 
 ggplot(nets_stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
-  scale_color_manual(values = c("red", "orange", "blue", "green", "yellow2", "purple", "cyan", "deeppink", "chocolate4", "darkolivegreen4")) +
+  scale_color_manual(values = c("indianred", "lightsalmon", "lightblue", "palegreen", "khaki", "plum", "turquoise", "pink", "tan3", "darkolivegreen4")) +
   geom_point(size = 3) +
   geom_text_repel(aes(label = transect_station_rep_year_net), size = 3, max.overlaps = 10) +
   theme_classic() +
@@ -188,11 +188,11 @@ nets_vector_df$variable <- rownames(nets_vector_df)
 
 ##Plot NMDS with vector overlays
 ggplot(nets_stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
-  scale_color_manual(values = c("red", "orange", "blue", "green", "yellow2", "purple", "cyan", "deeppink", "chocolate4", "darkolivegreen4")) +
+  scale_color_manual(values = c("indianred", "lightsalmon", "lightblue", "palegreen", "khaki", "plum", "turquoise", "pink", "tan3", "darkolivegreen4")) +
   geom_point(size = 3) +
   #geom_text_repel(aes(label = transect_station_rep_year_net), size = 3, max.overlaps = 10) +
   theme_classic() +
-  labs(title = "NMDS Ordination of sampling events by LFC", x = "NMDS1", y = "NMDS2") +
+  labs(title = "NMDS Ordination of depth-stratified samples by LFC", x = "NMDS1", y = "NMDS2") +
   geom_segment(data = nets_vector_df,
                aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2),
                arrow = arrow(length = unit(0.3, "cm")),
@@ -200,3 +200,75 @@ ggplot(nets_stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
   geom_text(data = nets_vector_df,
             aes(x = NMDS1, y = NMDS2, label = variable),
             color = "black", size = 3, vjust = -0.5)
+
+#Ellipses for categorical variables
+
+##shelf_position
+###fit ellipses
+nets_ell_shelf <- ordiellipse(nets_NMDS_result, nets_env_wide_aligned$shelf_position,
+                         kind = "sd", conf = 0.95, draw = "none") 
+
+###convert ellipse output to data frames
+nets_ell_shelf_df <- purrr::map_dfr(names(nets_ell_shelf), ~ {
+  e     <- nets_ell_shelf[[.x]]
+  theta <- seq(0, 2 * pi, length.out = 200)
+  circle <- cbind(cos(theta), sin(theta))
+  
+  # one ellipse per group: center + scale * chol(cov) %*% circle
+  xy <- circle %*% chol(e$cov)
+  xy <- sweep(xy * e$scale, 2, e$center, "+")
+  
+  dplyr::tibble(
+    NMDS1 = xy[, 1],
+    NMDS2 = xy[, 2],
+    group = .x
+  )
+})
+
+###overlay ellipses on NMDS plot
+ggplot(nets_stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
+  geom_point(size = 3) +
+  geom_path(data = nets_ell_shelf_df, aes(x = NMDS1, y = NMDS2, color = group),
+            linewidth = 1) +
+  scale_color_manual(values = c("indianred", "lightsalmon", "lightblue", "palegreen", "khaki", "plum", "turquoise", "pink", "tan3", "darkolivegreen4", "royalblue4", "orangered4")) +
+  theme_classic() +
+  labs(title = "NMDS Ordination with Clustered Points and Shelf Position Ellipses",
+       x = "NMDS1", y = "NMDS2")
+
+##time_of_day
+###fit ellipses
+nets_time_groups <- nets_env_wide_aligned$time_of_day
+
+nets_ell_time <- ordiellipse(
+  nets_NMDS_result,
+  nets_time_groups,
+  kind = "sd",
+  conf = 0.95, 
+  draw = "none"
+)
+
+### convert ellipse output to data frame
+nets_ell_time_df <- purrr::map_dfr(names(nets_ell_time), ~ {
+  e     <- nets_ell_time[[.x]]
+  theta <- seq(0, 2 * pi, length.out = 200)
+  circle <- cbind(cos(theta), sin(theta))
+  
+  xy <- circle %*% chol(e$cov)
+  xy <- sweep(xy * e$scale, 2, e$center, "+")
+  
+  tibble(
+    NMDS1 = xy[, 1],
+    NMDS2 = xy[, 2],
+    group = .x
+  )
+})
+
+###overlay ellipses on NMDS plot
+ggplot(nets_stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
+  geom_point(size = 3) +
+  geom_path(data = nets_ell_time_df, aes(x = NMDS1, y = NMDS2, color = group),
+            size = 1, linetype = 2) +
+  scale_color_manual(values = c("indianred", "lightsalmon", "lightblue", "palegreen", "khaki", "plum", "turquoise", "pink", "tan3", "darkolivegreen4", "royalblue4", "orangered4")) +
+  theme_classic() +
+  labs(title = "NMDS Ordination with Clustered Points and Time of Day Ellipses",
+       x = "NMDS1", y = "NMDS2")
