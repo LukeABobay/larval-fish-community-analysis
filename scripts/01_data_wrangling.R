@@ -473,7 +473,7 @@ mocness_clean <- mocness_full_geographic_isiis_mixing %>%
   unite(col = "depth_range", minimum_depth_m, maximum_depth_m, sep="-", remove = FALSE) %>%
   # Eliminate spaces to avoid inconvenient behavior later when each taxon is made into its own column
   mutate(taxon = case_match(taxon, 
-                            c("Xeneretmus spp.", "Xeneretmus latifrons", "Agonidae spp.") ~ "Agonidae",
+                            c("Xeneretmus spp.", "Xeneretmus latifrons", "Agonidae spp.", "Hemilepodotus spp.") ~ "Agonidae",
                             c("Ammodytes spp.", "Ammodytidae") ~ "Ammodytidae",
                             "Anarrhichthys ocellatus" ~ "Anarrhichthys_ocellatus",
                             c("Anoplopomatidae spp.", "Anoploploma fimbria", "Anaploploma fimbria", "Anoplopoma fimbria") ~ "Anoplopomatidae",
@@ -516,6 +516,8 @@ mocness_clean <- mocness_full_geographic_isiis_mixing %>%
                               "Stichaeidae spp.") ~ "Stichaeidae",
                             "Chauliodus spp." ~ "Chauliodontidae",
                             "Trachipterus altivelis" ~ "Trachipterus_altivelis",
+                            "Clupeidae" ~ "Clupeidae_other",
+                            "Alepocephalidae" ~ "Alepocephalidae",
                             .default = taxon)) %>%
   group_by(transect_station_rep_year, mocness_side, net, taxon) %>%
   mutate(individuals_in_tow = as.numeric(individuals_in_tow),
