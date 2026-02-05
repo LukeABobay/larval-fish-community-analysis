@@ -35,7 +35,7 @@ mocness_major_taxa_wide <- mocness_major_taxa %>%
   pivot_wider(names_from = taxon, values_from = individuals_per_m3, values_fill = 0)
 
 # Create separate community matrix and apply sqrt tranformation
-concentration_by_taxon <- mocness_major_taxa_wide[, 27:70] %>%
+concentration_by_taxon <- mocness_major_taxa_wide[, 27:61] %>%
   sqrt()
 
 # Add tranformed abundances back into main data frame
@@ -55,7 +55,7 @@ filt_mocness_major_taxa_wide_transformed <- filter(mocness_major_taxa_wide_trans
   mutate(time_of_day = factor(time_of_day, levels = c("Day", "Night")))
                                                     #& !is.na(mlotst))
 
-mult_permanova <- adonis2(filt_mocness_major_taxa_wide_transformed[, 27:70] ~ mean_temperature_c * mean_salinity_psu +
+mult_permanova <- adonis2(filt_mocness_major_taxa_wide_transformed[, 27:61] ~ mean_temperature_c * mean_salinity_psu +
                             year + dissolved_oxygen_ml_l + time_of_day + start_latitude_dd + depth_mean_m + 
                             seafloor_depth_m,
                           data = filt_mocness_major_taxa_wide_transformed, method = "bray", by = "margin")
