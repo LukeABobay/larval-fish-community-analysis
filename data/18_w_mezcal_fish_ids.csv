@@ -1,259 +1,478 @@
 Haul.no,Haul,Moc,Net.no,Season,Location,Station,Transect,no.individuals.raw,family,species,split.mult,no.individuals,volume.filtered.m3,concentration.1000m3,notes
-101-1-1,101,1,1,winter,NH,1,MaN,,,,,,,,
-,101,1,1,winter,NH,1,MaN,,,,,,,,
-,101,1,1,winter,NH,1,MaN,,,,,,,,
-,101,1,1,winter,NH,1,MaN,,,,,,,,
-,101,1,1,winter,NH,1,MaN,,,,,,,,
-,101,1,1,winter,NH,1,MaN,,,,,,,,
-,101,1,1,winter,NH,1,MaN,,,,,,,,
-,101,1,1,winter,NH,1,MaN,,,,,,,,
-,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,
+101-1-0,101,1,0,winter,NH,1,MaN,,,,,,,,sample 101-1-0 completely lost due to a spill
+101-1-1,101,1,1,winter,NH,1,MaN,2,Scorpaenidae,Sebastes spp.,1,2,,,With CR's fish
+,101,1,1,winter,NH,1,MaN,1,Cyclopteridae,Liparis spp.,1,1,,,
+,101,1,1,winter,NH,1,MaN,9,Pleuronectidae,Parophrys vetulus,1,9,,,with EC's fish
+,101,1,1,winter,NH,1,MaN,2,Pleuronectidae,Psettichthys melanostictus,1,2,,,
+,101,1,1,winter,NH,1,MaN,7,unknown,Damaged,1,7,,,
+,101,1,1,winter,NH,1,MaN,1,unknown,fish egg(s),1,1,,,
+,101,1,1,winter,NH,1,MaN,1,unknown,Unknown,1,1,,,"small, not much pigment, can't see gut. was ID'd as Lipolagus ochotensis"
+101-1-2,101,1,2,winter,NH,1,MaN,1,Myctophidae,Stenobrachius leucopsarus,1,1,,,
+,101,1,2,winter,NH,1,MaN,22,Scorpaenidae,Sebastes spp.,1,22,,,With CR's fish
+,101,1,2,winter,NH,1,MaN,4,Pleuronectidae,Parophrys vetulus,1,4,,,with EC's fish
+,101,1,2,winter,NH,1,MaN,5,Pleuronectidae,Unknown,1,5,,,tiny pleuronectids
+,101,1,2,winter,NH,1,MaN,1,Cottidae,Hemilepodotus spp.,1,1,,,might have some yolk sac
+,101,1,2,winter,NH,1,MaN,2,unknown,Damaged,1,2,,,
+101-1-3,101,1,3,winter,NH,1,MaN,1,Scorpaenidae,Sebastes spp.,1,1,,,with CR's fish
+,101,1,3,winter,NH,1,MaN,1,Cyclopteridae,Liparis spp.,1,1,,,
+,101,1,3,winter,NH,1,MaN,1,Pleuronectidae,Glyptocephalus zachirus,1,1,,,
+,101,1,3,winter,NH,1,MaN,3,Pleuronectidae,Parophrys vetulus,1,3,,,with EC's fish
+,101,1,3,winter,NH,1,MaN,4,unknown,Damaged,1,4,,,
+101-1-4,101,1,4,winter,NH,1,MaN,5,Scorpaenidae,Sebastes spp.,1,5,,,with CR's fish
+,101,1,4,winter,NH,1,MaN,1,Paralichthyidae,Citharichthys stigmaeus,1,1,,,
+,101,1,4,winter,NH,1,MaN,1,Pleuronectidae,Glyptocephalus zachirus,1,1,,,
+,101,1,4,winter,NH,1,MaN,5,Pleuronectidae,Isopsetta isolepis,1,5,,,
+,101,1,4,winter,NH,1,MaN,5,Pleuronectidae,Parophrys vetulus,1,5,,,with EC's fish
+101-4-0,101,4,0,winter,NH,1,MaN,6,Scorpaenidae,Sebastes spp.,1,6,,,with CR's fish
+,101,4,0,winter,NH,1,MaN,3,unknown,Damaged,1,3,,,
+,101,4,0,winter,NH,1,MaN,3,Pleuronectidae,Parophrys vetulus,1,3,,,with EC's fish
+,101,4,0,winter,NH,1,MaN,7,unknown,fish egg(s),1,7,,,4 G. zachirus eggs
+101-4-1,101,4,1,winter,NH,1,MaN,1,Bathylagidae,Lipolagus ochotensis,1,1,,,"of two jars in this sample, jar 1/2 was completely lost due to a spill"
+,101,4,1,winter,NH,1,MaN,1,Scorpaenidae,Sebastes spp.,1,1,,,With CR's fish
+,101,4,1,winter,NH,1,MaN,2,unknown,fish egg(s),1,2,,,
+,101,4,1,winter,NH,1,MaN,2,Pleuronectidae,Parophrys vetulus,1,2,,,with EC's fish
+,101,4,1,winter,NH,1,MaN,1,unknown,Damaged,1,1,,,
+101-4-2,101,4,2,winter,NH,1,MaN,,,,,,,,this sample completely lost due to a spill
+101-4-3,101,4,3,winter,NH,1,MaN,,,,,,,,this sample completely lost due to a spill
+101-4-4,101,4,4,winter,NH,1,MaN,8,Scorpaenidae,Sebastes spp.,1,8,,,With CR's fish
+,101,4,4,winter,NH,1,MaN,4,unknown,fish egg(s),1,4,,,
+,101,4,4,winter,NH,1,MaN,6,Pleuronectidae,Parophrys vetulus,1,6,,,with EC's fish
+,101,4,4,winter,NH,1,MaN,1,Hexagrammidae,Ophiodon elongatus,1,1,,,
+,101,4,4,winter,NH,1,MaN,1,unknown,Damaged,1,1,,,
+102-1-0,102,1,0,winter,NH,3,MaN,1,Myctophidae,Stenobrachius leucopsarus,1,1,,,
+,102,1,0,winter,NH,3,MaN,5,Myctophidae,Stenobrachius leucopsarus,1,5,,,
+,102,1,0,winter,NH,3,MaN,64,Scorpaenidae,Sebastes spp.,1,64,,,With CR's fish
+,102,1,0,winter,NH,3,MaN,17,Pleuronectidae,Parophrys vetulus,1,17,,,with EC's fish
+,102,1,0,winter,NH,3,MaN,4,unknown,fish egg(s),1,4,,,
+,102,1,0,winter,NH,3,MaN,11,unknown,Damaged,1,11,,,
+102-1-1,102,1,1,winter,NH,3,MaN,1,Bathylagidae,Bathylagus pacificus,1,1,,,
+,102,1,1,winter,NH,3,MaN,2,Myctophidae,Stenobrachius leucopsarus,1,2,,,
+,102,1,1,winter,NH,3,MaN,214,Scorpaenidae,Sebastes spp.,1,214,,,with CR's fish
+,102,1,1,winter,NH,3,MaN,16,Pleuronectidae,Parophrys vetulus,1,16,,,with EC's fish
+,102,1,1,winter,NH,3,MaN,1,unknown,Unknown,1,1,,,NH - don't think I've seen this one before
+,102,1,1,winter,NH,3,MaN,5,unknown,Damaged,1,5,,,
+,102,1,1,winter,NH,3,MaN,2,Myctophidae,Protomyctophum crockeri,1,2,,,
+,102,1,1,winter,NH,3,MaN,1,unknown,fish egg(s),1,1,,,
+102-1-2,102,1,2,winter,NH,3,MaN,1,Bathylagidae,Lipolagus ochotensis,1,1,,,
+,102,1,2,winter,NH,3,MaN,3,Myctophidae,Stenobrachius leucopsarus,1,3,,,
+,102,1,2,winter,NH,3,MaN,1,Myctophidae,Tarletonbeania crenularis,1,1,,,
+,102,1,2,winter,NH,3,MaN,30,Scorpaenidae,Sebastes spp.,1,30,,,With CR's fish
+,102,1,2,winter,NH,3,MaN,3,Cyclopteridae,Liparis fucensis,1,3,,,
+,102,1,2,winter,NH,3,MaN,61,Pleuronectidae,Parophrys vetulus,1,61,,,with EC's fish
+,102,1,2,winter,NH,3,MaN,3,unknown,fish egg(s),1,3,,,
+,102,1,2,winter,NH,3,MaN,2,Myctophidae,Protomyctophum crockeri,1,2,,,
+,102,1,2,winter,NH,3,MaN,2,unknown,Damaged,1,2,,,
+102-1-3,102,1,3,winter,NH,3,MaN,12,Myctophidae,Stenobrachius leucopsarus,1,12,,,
+,102,1,3,winter,NH,3,MaN,2,Myctophidae,Tarletonbeania crenularis,1,2,,,
+,102,1,3,winter,NH,3,MaN,23,Scorpaenidae,Sebastes spp.,1,23,,,With CR's fish
+,102,1,3,winter,NH,3,MaN,39,Pleuronectidae,Parophrys vetulus,1,39,,,with EC's fish
+,102,1,3,winter,NH,3,MaN,2,unknown,fish egg(s),1,2,,,
+,102,1,3,winter,NH,3,MaN,8,unknown,Damaged,1,8,,,
+102-1-4,102,1,4,winter,NH,3,MaN,9,Myctophidae,Stenobrachius leucopsarus,1,9,,,
+,102,1,4,winter,NH,3,MaN,37,Scorpaenidae,Sebastes spp.,1,37,,,With CR's fish
+,102,1,4,winter,NH,3,MaN,2,Hexagrammidae,Hemilepodotus spp.,1,2,,,
+,102,1,4,winter,NH,3,MaN,1,Paralichthyidae,Citharichthys spp.,1,1,,,
+,102,1,4,winter,NH,3,MaN,2,Pleuronectidae,Isopsetta isolepis,1,2,,,
+,102,1,4,winter,NH,3,MaN,3,Pleuronectidae,Parophrys vetulus,1,3,,,with EC's fish
+,102,1,4,winter,NH,3,MaN,21,unknown,fish egg(s),1,21,,,
+,102,1,4,winter,NH,3,MaN,3,unknown,Damaged,1,3,,,
+102-4-0,102,4,0,winter,NH,3,MaN,1,Myctophidae,Tarletonbeania crenularis,1,1,,,
+,102,4,0,winter,NH,3,MaN,90,Scorpaenidae,Sebastes spp.,1,90,,,With CR's fish
+,102,4,0,winter,NH,3,MaN,5,Pleuronectidae,Parophrys vetulus,1,5,,,with EC's fish
+,102,4,0,winter,NH,3,MaN,215,unknown,fish egg(s),1,215,,,
+,102,4,0,winter,NH,3,MaN,9,unknown,Damaged,1,9,,,
+,102,4,0,winter,NH,3,MaN,1,Paralepididae,Lestidiops ringens,1,1,,,
+,102,4,0,winter,NH,3,MaN,2,Myctophidae,Unknown,1,2,,,juveniles
+,102,4,0,winter,NH,3,MaN,2,Cyclopteridae,Liparis spp.,1,2,,,
+102-4-1,102,4,1,winter,NH,3,MaN,1,Pleuronectidae,Parophrys vetulus,1,1,,,with EC's fish
+,102,4,1,winter,NH,3,MaN,2,unknown,Damaged,1,2,,,
+102-4-2,102,4,2,winter,NH,3,MaN,,,,,,,,this sample completely lost due to a spill
+102-4-3,102,4,3,winter,NH,3,MaN,1,unknown,Damaged,1,1,,,
+102-4-4,102,4,4,winter,NH,3,MaN,1,Scorpaenidae,Sebastes spp.,1,1,,,With CR's fish
+103-1-oblique,103,1,,winter,NH ,5,MaN,1,Bathylagidae,Bathylagus pacificus,1,1,,,
+,103,1,,winter,NH ,5,MaN,5,Bathylagidae,Lipolagus ochotensis,1,5,,,
+,103,1,,winter,NH ,5,MaN,1,Myctophidae,Stenobrachius leucopsarus,1,1,,,juvenile
+,103,1,,winter,NH ,5,MaN,11,Myctophidae,Stenobrachius leucopsarus,1,11,,,
+,103,1,,winter,NH ,5,MaN,3,Myctophidae,Protomyctophum crockeri,1,3,,,
+,103,1,,winter,NH ,5,MaN,2,Myctophidae,Tarletonbeania crenularis,1,2,,,
+,103,1,,winter,NH ,5,MaN,108,Scorpaenidae,Sebastes spp.,1,108,,,With CR's fish
+,103,1,,winter,NH ,5,MaN,3,Pleuronectidae,Parophrys vetulus,1,3,,,with EC's fish
+,103,1,,winter,NH ,5,MaN,2,Chauliodontidae,Chauliodus macouni,1,2,,,
+,103,1,,winter,NH ,5,MaN,11,unknown,Damaged,1,11,,,
+103-4-oblique,103,4,,winter,NH,5,MaN,3,Bathylagidae,Lipolagus ochotensis,1,3,,,
+,103,4,,winter,NH,5,MaN,1,Myctophidae,Unknown,1,1,,,juvenile
+,103,4,,winter,NH,5,MaN,1,Myctophidae,Stenobrachius leucopsarus,1,1,,,
+,103,4,,winter,NH,5,MaN,1,Myctophidae,Protomyctophum crockeri,1,1,,,
+,103,4,,winter,NH,5,MaN,1,Myctophidae,Tarletonbeania crenularis,1,1,,,
+,103,4,,winter,NH,5,MaN,52,Scorpaenidae,Sebastes spp.,1,52,,,With CR's fish
+,103,4,,winter,NH,5,MaN,1,Cyclopteridae,Liparis spp.,1,1,,,
+,103,4,,winter,NH,5,MaN,3,Paralichthyidae,Citharichthys stigmaeus,1,3,,,
+,103,4,,winter,NH,5,MaN,2.5,Paralepididae,Lestidiops ringens,1,2.5,,,
+,103,4,,winter,NH,5,MaN,2,unknown,Damaged,1,2,,,
+,103,4,,winter,NH,5,MaN,1,unknown,dessicated,1,1,,,
 104-1-oblique,104,1,oblique,winter,NH,5,MaD,2,Bathylagidae,Lipolagus ochotensis,NA,3,1655.31,1.812349348,split multiple used differently in this spreadsheet due to combining nets--see lab book
 ,104,1,oblique,winter,NH,5,MaD,9,Myctophidae,Stenobrachius leucopsarus,NA,17,1655.31,10.26997964,
 ,104,1,oblique,winter,NH,5,MaD,2,Myctophidae,Protomyctophum crockeri,NA,4,1655.31,2.416465798,
 ,104,1,oblique,winter,NH,5,MaD,2,Myctophidae,Tarletonbeania crenularis,NA,4,1655.31,2.416465798,
-,104,1,oblique,winter,NH,5,MaD,66,Scorpenidae,Sebastes spp.,NA,125,1655.31,75.51455619,
-,104,1,oblique,winter,NH,5,MaD,1,Pleuronectidae,Parophrys vetulus,NA,1,1655.31,0.6041164495,
-,104,1,oblique,winter,NH,5,MaD,4,Unknown,Damaged,NA,6,1655.31,3.624698697,
+,104,1,oblique,winter,NH,5,MaD,68,Scorpaenidae,Sebastes spp.,NA,129,1655.31,77.93102198,With CR's fish
+,104,1,oblique,winter,NH,5,MaD,1,Pleuronectidae,Parophrys vetulus,NA,1,1655.31,0.6041164495,with EC's fish
+,104,1,oblique,winter,NH,5,MaD,4,unknown,Damaged,NA,6,1655.31,3.624698697,
 104-4-oblique,104,4,oblique,winter,NH,5,MaD,1,Bathylagidae,Lipolagus ochotensis,1,1,6621.22,0.1510295686,
 ,104,4,oblique,winter,NH,5,MaD,1,Myctophidae,Stenobrachius leucopsarus,1,1,6621.22,0.1510295686,
 ,104,4,oblique,winter,NH,5,MaD,1,Myctophidae,Protomyctophum crockeri,1,1,6621.22,0.1510295686,
 ,104,4,oblique,winter,NH,5,MaD,2,Myctophidae,Tarletonbeania crenularis,1,2,6621.22,0.3020591371,
-,104,4,oblique,winter,NH,5,MaD,31,Scorpenidae,Sebastes spp.,1,31,6621.22,4.681916626,
-,104,4,oblique,winter,NH,5,MaD,3,Unknown,Fish eggs,1,3,6621.22,0.4530887057,
+,104,4,oblique,winter,NH,5,MaD,31,Scorpaenidae,Sebastes spp.,1,31,6621.22,4.681916626,With CR's fish
+,104,4,oblique,winter,NH,5,MaD,3,unknown,fish egg(s),1,3,6621.22,0.4530887057,
 105-1-oblique,105,1,oblique,winter,NH,3,MaD,2,Myctophidae,Stenobrachius leucopsarus,NA,3,1510.39,1.986241964,
 ,105,1,oblique,winter,NH,3,MaD,2,Myctophidae,Protomyctophum crockeri,NA,4,1510.39,2.648322619,
 ,105,1,oblique,winter,NH,3,MaD,1,Myctophidae,Tarletonbeania crenularis,NA,1,1510.39,0.6620806547,
-,105,1,oblique,winter,NH,3,MaD,17,Scorpenidae,Sebastes spp.,NA,27,1510.39,17.87617768,
+,105,1,oblique,winter,NH,3,MaD,17,Scorpaenidae,Sebastes spp.,NA,27,1510.39,17.87617768,With CR's fish
 ,105,1,oblique,winter,NH,3,MaD,1,Cottidae,Unknown,NA,2,1510.39,1.324161309,
-,105,1,oblique,winter,NH,3,MaD,1,Pleuronectidae,Atheresthes stomias,NA,2,1510.39,1.324161309,
-,105,1,oblique,winter,NH,3,MaD,1,Unknown,Fish eggs,NA,2,1510.39,1.324161309,
+,105,1,oblique,winter,NH,3,MaD,1,Pleuronectidae,Atherestes stomias,NA,2,1510.39,1.324161309,
+,105,1,oblique,winter,NH,3,MaD,1,unknown,fish egg(s),NA,2,1510.39,1.324161309,
 ,105,1,oblique,winter,NH,3,MaD,1,Agonidae,Unknown,NA,2,1510.39,1.324161309,
-,105,1,oblique,winter,NH,3,MaD,7,Unknown,Damaged,NA,13,1510.39,8.607048511,
+,105,1,oblique,winter,NH,3,MaD,8,unknown,Damaged,NA,15,1510.39,9.93120982,
 105-1-0*,105,1,0*,winter,NH,3,MaD,1,Myctophidae,Stenobrachius leucopsarus,NA,NA,NA,NA,
-,105,1,0*,winter,NH,3,MaD,2,Scorpenidae,Sebastes spp.,NA,NA,NA,NA,
-105-1-4*,105,1,4*,winter,NH,3,MaD,0,,,NA,NA,NA,NA,
+,105,1,0*,winter,NH,3,MaD,2,Scorpaenidae,Sebastes spp.,NA,NA,NA,NA,With CR's fish
+105-1-4*,105,1,4*,winter,NH,3,MaD,0,no fish,no fish,NA,NA,NA,NA,
 105-4-oblique,105,4,oblique,winter,NH,3,MaD,1,Bathylagidae,Lipolagus ochotensis,NA,2,6041.54,0.3310414232,
 ,105,4,oblique,winter,NH,3,MaD,1,Myctophidae,Tarletonbeania crenularis,NA,2,6041.54,0.3310414232,
 ,105,4,oblique,winter,NH,3,MaD,1,Paralichthyidae,Citharichthys sordidus,NA,2,6041.54,0.3310414232,
 105-4-0*,105,4,0*,winter,NH,3,MaD,1,Myctophidae,Stenobrachius leucopsarus,NA,NA,NA,NA,
 ,105,4,0*,winter,NH,3,MaD,2,Myctophidae,Tarletonbeania crenularis,NA,NA,NA,NA,
-,105,4,0*,winter,NH,3,MaD,2,Scorpenidae,Sebastes spp.,NA,NA,NA,NA,
+,105,4,0*,winter,NH,3,MaD,2,Scorpaenidae,Sebastes spp.,NA,NA,NA,NA,With CR's fish
 ,105,4,0*,winter,NH,3,MaD,1,Cyclopteridae,Liparis spp.,NA,NA,NA,NA,
 ,105,4,0*,winter,NH,3,MaD,2,Paralichthyidae,Citharichthys stigmaeus,NA,NA,NA,NA,
-,105,4,0*,winter,NH,3,MaD,2,Unknown,Fish eggs,NA,NA,NA,NA,
-,105,4,0*,winter,NH,3,MaD,1,Unknown,Damaged,NA,NA,NA,NA,
-106-1-0,106,1,0,winter,NH,1,MaD,8,Scorpenidae,Sebastes spp.,2,16,401.51,39.84956788,
-,106,1,0,winter,NH,1,MaD,1,Pleuronectidae,Parophrys vetulus,2,2,401.51,4.981195985,
-106-1-0*,106,1,0*,winter,NH,1,MaD,1,Scorpenidae,Sebastes spp.,NA,NA,NA,NA,
-,106,1,0*,winter,NH,1,MaD,1,Pleuronectidae,Parophrys vetulus,NA,NA,NA,NA,
-106-1-3,106,1,3,winter,NH,1,MaD,2,Scorpenidae,Sebastes spp.,1,2,158.15,12.64622194,
-,106,1,3,winter,NH,1,MaD,1,Pleuronectidae,Parophrys vetulus,1,1,158.15,6.323110971,
+,105,4,0*,winter,NH,3,MaD,2,unknown,fish egg(s),NA,NA,NA,NA,
+,105,4,0*,winter,NH,3,MaD,1,unknown,Damaged,NA,NA,NA,NA,
+106-1-0,106,1,0,winter,NH,1,MaD,8,Scorpaenidae,Sebastes spp.,2,16,401.51,39.84956788,With CR's fish
+,106,1,0,winter,NH,1,MaD,1,Pleuronectidae,Parophrys vetulus,2,2,401.51,4.981195985,with EC's fish
+106-1-0*,106,1,0*,winter,NH,1,MaD,1,Scorpaenidae,Sebastes spp.,NA,NA,NA,NA,With CR's fish
+,106,1,0*,winter,NH,1,MaD,1,Pleuronectidae,Parophrys vetulus,NA,NA,NA,NA,with EC's fish
+106-1-3,106,1,3,winter,NH,1,MaD,2,Scorpaenidae,Sebastes spp.,1,2,158.15,12.64622194,With CR's fish
+,106,1,3,winter,NH,1,MaD,1,Pleuronectidae,Parophrys vetulus,1,1,158.15,6.323110971,"Several notes (oldest to most recent): 1. changed from unknown A, 2. taken to toby, 3. dried out and destroyed in sorting, 4. no fish in vial & not with EC"
 ,106,1,3,winter,NH,1,MaD,1,Agonidae,Unknown,1,1,158.15,6.323110971,
 ,106,1,3,winter,NH,1,MaD,1,Cottidae,Unknown,1,1,158.15,6.323110971,
-106-1-4,106,1,4,winter,NH,1,MaD,7,Scorpenidae,Sebastes spp.,2,14,224.82,62.27203985,
-106-1-4*,106,1,4*,winter,NH,1,MaD,7,Scorpenidae,Sebastes spp.,NA,NA,NA,NA,
+,106,1,3,winter,NH,1,MaD,1,Pleuronectidae,Glyptocephalus zachirus,1,1,158.15,6.323110971,
+106-1-4,106,1,4,winter,NH,1,MaD,7,Scorpaenidae,Sebastes spp.,2,14,224.82,62.27203985,With CR's fish
+106-1-4*,106,1,4*,winter,NH,1,MaD,7,Scorpaenidae,Sebastes spp.,NA,NA,NA,NA,With CR's fish
 ,106,1,4*,winter,NH,1,MaD,1,Paralichthyidae,Citharichthys sordidus,NA,NA,NA,NA,
-,106,1,4*,winter,NH,1,MaD,2,Pleuronectidae,Glyptocephalus zachirus,NA,NA,NA,NA,
-106-4-0,106,4,0,winter,NH,1,MaD,24,Scorpenidae,Sebastes spp.,1,24,1606.06,14.94340187,
+,106,1,4*,winter,NH,1,MaD,1,Pleuronectidae,Glyptocephalus zachirus,NA,NA,NA,NA,
+106-4-0,106,4,0,winter,NH,1,MaD,24,Scorpaenidae,Sebastes spp.,1,24,1606.06,14.94340187,With CR's fish
 ,106,4,0,winter,NH,1,MaD,1,Cyclopteridae,Liparis fucensis,1,1,1606.06,0.6226417444,
-,106,4,0,winter,NH,1,MaD,1,Pleuronectidae,Parophrys vetulus,1,1,1606.06,0.6226417444,
-106-4-3,106,4,3,winter,NH,1,MaD,86,Scorpenidae,Sebastes spp.,1,86,632.6,135.9468859,
-,106,4,3,winter,NH,1,MaD,8,Pleuronectidae,Parophrys vetulus,1,8,632.6,12.64622194,
-,106,4,3,winter,NH,1,MaD,4,Unknown,Fish eggs,1,4,632.6,6.323110971,
-106-4-4,106,4,4,winter,NH,1,MaD,2,Scorpenidae,Sebastes spp.,1,2,899.28,2.224001423,
+,106,4,0,winter,NH,1,MaD,1,Pleuronectidae,Parophrys vetulus,1,1,1606.06,0.6226417444,with EC's fish
+106-4-3,106,4,3,winter,NH,1,MaD,86,Scorpaenidae,Sebastes spp.,1,86,632.6,135.9468859,With CR's fish
+,106,4,3,winter,NH,1,MaD,8,Pleuronectidae,Parophrys vetulus,1,8,632.6,12.64622194,with EC's fish
+,106,4,3,winter,NH,1,MaD,4,unknown,fish egg(s),1,4,632.6,6.323110971,
+106-4-4,106,4,4,winter,NH,1,MaD,2,Scorpaenidae,Sebastes spp.,1,2,899.28,2.224001423,With CR's fish
+107-1-0,107,1,0,winter,TR,1,MaN,1,Myctophidae,Stenobrachius leucopsarus,1,1,,,
+,107,1,0,winter,TR,1,MaN,1,Myctophidae,Tarletonbeania crenularis,1,1,,,
+,107,1,0,winter,TR,1,MaN,21,Scorpaenidae,Sebastes spp.,1,21,,,With CR's fish
+,107,1,0,winter,TR,1,MaN,1,Pleuronectidae,Lyopsetta exilis,1,1,,,
+,107,1,0,winter,TR,1,MaN,1,Cottidae,Hemilepodotus spinosus,1,1,,,
+,107,1,0,winter,TR,1,MaN,1,unknown,Damaged,1,1,,,
+107-1-3,107,1,3,winter,TR,1,MaN,6,Myctophidae,Stenobrachius leucopsarus,1,6,,,
+,107,1,3,winter,TR,1,MaN,5,Scorpaenidae,Sebastes spp.,1,5,,,With CR's fish
+,107,1,3,winter,TR,1,MaN,1,Pleuronectidae,Lyopsetta exilis,1,1,,,
+,107,1,3,winter,TR,1,MaN,1,Cottidae,Hemilepodotus spinosus,1,1,,,
+107-1-4,107,1,4,winter,TR,1,MaN,3,Myctophidae,Stenobrachius leucopsarus,1,3,,,
+,107,1,4,winter,TR,1,MaN,24,Scorpaenidae,Sebastes spp.,1,24,,,With CR's fish
+,107,1,4,winter,TR,1,MaN,1,Pleuronectidae,Lyopsetta exilis,1,1,,,
+,107,1,4,winter,TR,1,MaN,1,Cottidae,Hemilepodotus spinosus,1,1,,,
+,107,1,4,winter,TR,1,MaN,1,unknown,Damaged,1,1,,,
+107-4-0,107,4,0,winter,TR,1,MaN,1,Bathylagidae,Lipolagus ochotensis,1,1,,,
+,107,4,0,winter,TR,1,MaN,2,Scorpaenidae,Sebastes spp.,1,2,,,With CR's fish
+,107,4,0,winter,TR,1,MaN,1,Hexagrammidae,Ophiodon elongatus,1,1,,,
+107-4-3,107,4,3,winter,TR,1,MaN,1,unknown,Damaged,1,1,,,
+107-4-4,107,4,4,winter,TR,1,MaN,3,Scorpaenidae,Sebastes spp.,1,3,,,With CR's fish
+108-1-0,108,1,0,winter,TR,3,MaN,1,Bathylagidae,Lipolagus ochotensis,1,1,,,
+,108,1,0,winter,TR,3,MaN,9,Myctophidae,Stenobrachius leucopsarus,1,9,,,
+,108,1,0,winter,TR,3,MaN,1,Myctophidae,Protomyctophum crockeri,1,1,,,
+,108,1,0,winter,TR,3,MaN,21,Scorpaenidae,Sebastes spp.,1,21,,,With CR's fish
+,108,1,0,winter,TR,3,MaN,1,Cottidae,Unknown,1,1,,,
+,108,1,0,winter,TR,3,MaN,1,Cyclopteridae,Liparis spp.,1,1,,,
+,108,1,0,winter,TR,3,MaN,3,unknown,Damaged,1,3,,,
+108-1-1,108,1,1,winter,TR,3,MaN,1,Bathylagidae,Lipolagus ochotensis,1,1,,,
+,108,1,1,winter,TR,3,MaN,1,Myctophidae,Protomyctophum crockeri,1,1,,,
+,108,1,1,winter,TR,3,MaN,12,Scorpaenidae,Sebastes spp.,1,12,,,With CR's fish
+,108,1,1,winter,TR,3,MaN,2,Pleuronectidae,Lyopsetta exilis,1,2,,,
+,108,1,1,winter,TR,3,MaN,4,unknown,Damaged,1,4,,,
+108-1-2,108,1,2,winter,TR,3,MaN,7,Myctophidae,Stenobrachius leucopsarus,1,7,,,
+,108,1,2,winter,TR,3,MaN,4,Scorpaenidae,Sebastes spp.,1,4,,,With CR's fish
+,108,1,2,winter,TR,3,MaN,1,Ptilichthyidae,Ptilichthys goodei,1,1,,,
+,108,1,2,winter,TR,3,MaN,1,unknown,Damaged,1,1,,,
+108-1-3,108,1,3,winter,TR,3,MaN,2,Bathylagidae,Lipolagus ochotensis,1,2,,,
+,108,1,3,winter,TR,3,MaN,2,Myctophidae,Stenobrachius leucopsarus,1,2,,,
+,108,1,3,winter,TR,3,MaN,4,Scorpaenidae,Sebastes spp.,1,4,,,With CR's fish
+,108,1,3,winter,TR,3,MaN,2,unknown,Damaged,1,2,,,
+108-1-4,108,1,4,winter,TR,3,MaN,3,Myctophidae,Stenobrachius leucopsarus,1,3,,,
+,108,1,4,winter,TR,3,MaN,11,Scorpaenidae,Sebastes spp.,1,11,,,With CR's fish
+,108,1,4,winter,TR,3,MaN,7,unknown,Damaged,1,7,,,
+108-4-0,108,4,0,winter,TR,3,MaN,3,Bathylagidae,Lipolagus ochotensis,1,3,,,
+,108,4,0,winter,TR,3,MaN,1,Myctophidae,Stenobrachius leucopsarus,1,1,,,juveniles
+,108,4,0,winter,TR,3,MaN,2,Myctophidae,Protomyctophum crockeri,1,2,,,
+,108,4,0,winter,TR,3,MaN,1,Scorpaenidae,Sebastes spp.,1,1,,,With CR's fish
+,108,4,0,winter,TR,3,MaN,2,unknown,Damaged,1,2,,,
+,108,4,0,winter,TR,3,MaN,1,Cottidae,Scorpaenichthys marmoratus,1,1,,,
+108-4-1,108,4,1,winter,TR,3,MaN,2,Myctophidae,Stenobrachius leucopsarus,1,2,,,juveniles
+,108,4,1,winter,TR,3,MaN,2,Myctophidae,Protomyctophum crockeri,1,2,,,
+,108,4,1,winter,TR,3,MaN,1,Myctophidae,Tarletonbeania crenularis,1,1,,,
+,108,4,1,winter,TR,3,MaN,5,Scorpaenidae,Sebastes spp.,1,5,,,With CR's fish
+,108,4,1,winter,TR,3,MaN,1,unknown,Damaged,1,1,,,"could be Ptilichthys goodei, in very poor shape"
+108-4-2,108,4,2,winter,TR,3,MaN,2,Bathylagidae,Lipolagus ochotensis,1,2,,,
+,108,4,2,winter,TR,3,MaN,3,Myctophidae,Stenobrachius leucopsarus,1,3,,,juveniles
+,108,4,2,winter,TR,3,MaN,2,Myctophidae,Stenobrachius leucopsarus,1,2,,,
+,108,4,2,winter,TR,3,MaN,3,Scorpaenidae,Sebastes spp.,1,3,,,With CR's fish
+,108,4,2,winter,TR,3,MaN,1,Pleuronectidae,Unknown,1,1,,,juvenile
+108-4-3,108,4,3,winter,TR,3,MaN,1,Bathylagidae,Lipolagus ochotensis,1,1,,,
+,108,4,3,winter,TR,3,MaN,3,Myctophidae,Stenobrachius leucopsarus,1,3,,,
+,108,4,3,winter,TR,3,MaN,3,Scorpaenidae,Sebastes spp.,1,3,,,With CR's fish
+,108,4,3,winter,TR,3,MaN,1,Paralichthyidae,Citharichthys stigmaeus,1,1,,,
+,108,4,3,winter,TR,3,MaN,2,unknown,Damaged,1,2,,,
+108-4-4,108,4,4,winter,TR,3,MaN,1,Myctophidae,Tarletonbeania crenularis,1,1,,,juvenile - so pretty
+109-1-0,109,1,0,winter,TR,5,MaN,3,Myctophidae,Stenobrachius leucopsarus,1,3,,,juveniles
+,109,1,0,winter,TR,5,MaN,1,Myctophidae,Stenobrachius leucopsarus,1,1,,,
+,109,1,0,winter,TR,5,MaN,4,Myctophidae,Protomyctophum crockeri,1,4,,,
+,109,1,0,winter,TR,5,MaN,287,Scorpaenidae,Sebastes spp.,1,287,,,With CR's fish
+,109,1,0,winter,TR,5,MaN,14,Cottidae,Hemilepodotus spinosus,1,14,,,
+,109,1,0,winter,TR,5,MaN,11,Cyclopteridae,Liparis spp.,1,11,,,
+,109,1,0,winter,TR,5,MaN,2,Pleuronectidae,Parophrys vetulus,1,2,,,with EC's fish
+,109,1,0,winter,TR,5,MaN,1,Cottidae,Scorpaenichthys marmoratus,1,1,,,
+,109,1,0,winter,TR,5,MaN,37,unknown,Damaged,1,37,,,
+109-1-1,109,1,1,winter,TR,5,MaN,1,Bathylagidae,Bathylagus pacificus,1,1,,,
+,109,1,1,winter,TR,5,MaN,1,Myctophidae,Stenobrachius leucopsarus,1,1,,,juvenile
+,109,1,1,winter,TR,5,MaN,12,Myctophidae,Protomyctophum crockeri,1,12,,,
+,109,1,1,winter,TR,5,MaN,31,Scorpaenidae,Sebastes spp.,1,31,,,With CR's fish
+,109,1,1,winter,TR,5,MaN,2,Cyclopteridae,Liparis fucensis,1,2,,,
+,109,1,1,winter,TR,5,MaN,2,Pleuronectidae,Parophrys vetulus,1,2,,,with EC's fish
+,109,1,1,winter,TR,5,MaN,8,unknown,Damaged,1,8,,,
+109-1-2,109,1,2,winter,TR,5,MaN,1,Myctophidae,Stenobrachius leucopsarus,1,1,,,juvenile
+,109,1,2,winter,TR,5,MaN,102,Scorpaenidae,Sebastes spp.,1,102,,,With CR's fish
+,109,1,2,winter,TR,5,MaN,1,Cyclopteridae,Liparis spp.,1,1,,,
+,109,1,2,winter,TR,5,MaN,4,Pleuronectidae,Parophrys vetulus,1,4,,,with EC's fish
+,109,1,2,winter,TR,5,MaN,6,unknown,Damaged,1,6,,,
+109-1-3,109,1,3,winter,TR,5,MaN,12,Cottidae,Hemilepodotus spinosus,1,12,,,
+,109,1,3,winter,TR,5,MaN,1,Myctophidae,Stenobrachius leucopsarus,1,1,,,juvenile
+,109,1,3,winter,TR,5,MaN,1,Myctophidae,Stenobrachius leucopsarus,1,1,,,
+,109,1,3,winter,TR,5,MaN,1,Myctophidae,Tarletonbeania crenularis,1,1,,,juvenile - also very pretty
+,109,1,3,winter,TR,5,MaN,505,Scorpaenidae,Sebastes spp.,1,505,,,With CR's fish
+,109,1,3,winter,TR,5,MaN,1,Hexagrammidae,Ophiodon elongatus,1,1,,,
+,109,1,3,winter,TR,5,MaN,2,Cyclopteridae,Liparis spp.,1,2,,,
+,109,1,3,winter,TR,5,MaN,1,Pleuronectidae,Isopsetta isolepis,1,1,,,
+,109,1,3,winter,TR,5,MaN,7,Pleuronectidae,Parophrys vetulus,1,7,,,with EC's fish
+,109,1,3,winter,TR,5,MaN,34,unknown,Damaged,1,34,,,
+109-1-4,109,1,4,winter,TR,5,MaN,1,Myctophidae,Stenobrachius leucopsarus,1,1,,,juvenile
+,109,1,4,winter,TR,5,MaN,93,Scorpaenidae,Sebastes spp.,1,93,,,With CR's fish
+,109,1,4,winter,TR,5,MaN,3,Cottidae,Hemilepodotus spinosus,1,3,,,
+,109,1,4,winter,TR,5,MaN,1,Paralichthyidae,Citharichthys spp.,1,1,,,
+,109,1,4,winter,TR,5,MaN,1,Pleuronectidae,Parophrys vetulus,1,1,,,with EC's fish
+,109,1,4,winter,TR,5,MaN,9,unknown,Damaged,1,9,,,
+109-4-0,109,4,0,winter,TR,5,MaN,5,Myctophidae,Stenobrachius leucopsarus,1,5,,,juveniles
+,109,4,0,winter,TR,5,MaN,7,Myctophidae,Protomyctophum crockeri,1,7,,,
+,109,4,0,winter,TR,5,MaN,7,Scorpaenidae,Sebastes spp.,1,7,,,With CR's fish
+,109,4,0,winter,TR,5,MaN,3,Hexagrammidae,Ophiodon elongatus,1,3,,,
+,109,4,0,winter,TR,5,MaN,1,Cottidae,Hemilepodotus spp.,1,1,,,
+,109,4,0,winter,TR,5,MaN,3,Cyclopteridae,Liparis fucensis,1,3,,,
+,109,4,0,winter,TR,5,MaN,2,Pleuronectidae,Parophrys vetulus,1,2,,,with EC's fish
+,109,4,0,winter,TR,5,MaN,1,unknown,Damaged,1,1,,,
+109-4-1,109,4,1,winter,TR,5,MaN,1,Bathylagidae,Lipolagus ochotensis,1,1,,,
+,109,4,1,winter,TR,5,MaN,3,Myctophidae,Stenobrachius leucopsarus,1,3,,,juveniles
+,109,4,1,winter,TR,5,MaN,7,Myctophidae,Protomyctophum crockeri,1,7,,,
+,109,4,1,winter,TR,5,MaN,1,Myctophidae,Tarletonbeania crenularis,1,1,,,juvenile
+,109,4,1,winter,TR,5,MaN,1,Cyclopteridae,Liparis fucensis,1,1,,,
+,109,4,1,winter,TR,5,MaN,1,unknown,Unknown,1,1,,,juvenile fish
+109-4-2,109,4,2,winter,TR,5,MaN,9,Myctophidae,Stenobrachius leucopsarus,1,9,,,
+,109,4,2,winter,TR,5,MaN,2,Scorpaenidae,Sebastes spp.,1,2,,,With CR's fish
+,109,4,2,winter,TR,5,MaN,1,Hexagrammidae,Ophiodon elongatus,1,1,,,
+,109,4,2,winter,TR,5,MaN,3,Cyclopteridae,Liparis spp.,1,3,,,
+,109,4,2,winter,TR,5,MaN,1,Pleuronectidae,Parophrys vetulus,1,1,,,with EC's fish
+,109,4,2,winter,TR,5,MaN,1,unknown,Damaged,1,1,,,
+109-4-3,109,4,3,winter,TR,5,MaN,2,Myctophidae,Stenobrachius leucopsarus,1,2,,,
+,109,4,3,winter,TR,5,MaN,29,Scorpaenidae,Sebastes spp.,1,29,,,With CR's fish
+,109,4,3,winter,TR,5,MaN,3,Hexagrammidae,Ophiodon elongatus,1,3,,,
+,109,4,3,winter,TR,5,MaN,5,Cottidae,Scorpaenichthys marmoratus,1,5,,,
+,109,4,3,winter,TR,5,MaN,4,Cyclopteridae,Liparis fucensis,1,4,,,
+,109,4,3,winter,TR,5,MaN,7,Pleuronectidae,Parophrys vetulus,1,7,,,with EC's fish
+,109,4,3,winter,TR,5,MaN,2,unknown,Unknown,1,2,,,"some damage, interesting pigment"
+,109,4,3,winter,TR,5,MaN,2,unknown,Damaged,1,2,,,
+109-4-4,109,4,4,winter,TR,5,MaN,18,Scorpaenidae,Sebastes spp.,1,18,,,With CR's fish
+,109,4,4,winter,TR,5,MaN,13,Cottidae,Scorpaenichthys marmoratus,1,13,,,
+,109,4,4,winter,TR,5,MaN,4,unknown,Damaged,1,4,,,
 110-1-oblique,110,1,oblique,winter,TR,5,MaD,1,Bathylagidae,Lipolagus ochotensis,NA,2,1506.89,1.327236892,
 ,110,1,oblique,winter,TR,5,MaD,2,Myctophidae,Protomyctophum crockeri,NA,4,1506.89,2.654473784,
-,110,1,oblique,winter,TR,5,MaD,1,Myctophidae,Tarletonbeania crenularis,NA,1,1506.89,0.6636184459,
-,110,1,oblique,winter,TR,5,MaD,19,Scorpenidae,Sebastes spp.,NA,27,1506.89,17.91769804,
-,110,1,oblique,winter,TR,5,MaD,1,Paralichthyidae,Citharichthys spp.,NA,2,1506.89,1.327236892,
-,110,1,oblique,winter,TR,5,MaD,1,Unknown,Damaged,NA,1,1506.89,0.6636184459,
+,110,1,oblique,winter,TR,5,MaD,1,Myctophidae,Tarletonbeania crenularis,NA,2,1506.89,1.327236892,
+,110,1,oblique,winter,TR,5,MaD,17,Scorpaenidae,Sebastes spp.,NA,25,1506.89,16.59046115,With CR's fish
+,110,1,oblique,winter,TR,5,MaD,1,Pleuronectidae,Parophrys vetulus,NA,2,1506.89,1.327236892,with EC's fish
+,110,1,oblique,winter,TR,5,MaD,5,unknown,Damaged,NA,7,1506.89,4.645329122,
 110-1-0*,110,1,0*,winter,TR,5,MaD,1,Bathylagidae,Lipolagus ochotensis,NA,NA,NA,NA,
 ,110,1,0*,winter,TR,5,MaD,1,Myctophidae,Stenobrachius leucopsarus,NA,NA,NA,NA,
 ,110,1,0*,winter,TR,5,MaD,1,Myctophidae,Tarletonbeania crenularis,NA,NA,NA,NA,
-,110,1,0*,winter,TR,5,MaD,9,Scorpenidae,Sebastes spp.,NA,NA,NA,NA,
-,110,1,0*,winter,TR,5,MaD,1,Pleuronectidae,Parophrys vetulus,NA,NA,NA,NA,
-,110,1,0*,winter,TR,5,MaD,1,Unknown,Damaged,NA,NA,NA,NA,
-110-1-4*,110,1,4*,winter,TR,5,MaD,0,,,NA,NA,NA,NA,
+,110,1,0*,winter,TR,5,MaD,9,Scorpaenidae,Sebastes spp.,NA,NA,NA,NA,With CR's fish
+,110,1,0*,winter,TR,5,MaD,1,Pleuronectidae,Parophrys vetulus,NA,NA,NA,NA,with EC's fish
+,110,1,0*,winter,TR,5,MaD,1,unknown,Damaged,NA,NA,NA,NA,
+110-1-4*,110,1,4*,winter,TR,5,MaD,0,no fish,no fish,NA,NA,NA,NA,
 110-4-oblique,110,4,oblique,winter,TR,5,MaD,3,Bathylagidae,Lipolagus ochotensis,1,3,6027.56,0.4977138345,
 ,110,4,oblique,winter,TR,5,MaD,3,Myctophidae,Protomyctophum crockeri,1,3,6027.56,0.4977138345,
 ,110,4,oblique,winter,TR,5,MaD,2,Myctophidae,Tarletonbeania crenularis,1,2,6027.56,0.331809223,
-,110,4,oblique,winter,TR,5,MaD,2,Scorpenidae,Sebastes spp.,1,2,6027.56,0.331809223,
-,110,4,oblique,winter,TR,5,MaD,1,Cottidae,Unknown,1,1,6027.56,0.1659046115,
+,110,4,oblique,winter,TR,5,MaD,2,Scorpaenidae,Sebastes spp.,1,2,6027.56,0.331809223,With CR's fish
+,110,4,oblique,winter,TR,5,MaD,1,Pleuronectidae,Pleuronichthys decurrens,1,1,6027.56,0.1659046115,
 ,110,4,oblique,winter,TR,5,MaD,5,Cyclopteridae,Liparis fucensis,1,5,6027.56,0.8295230574,
 ,110,4,oblique,winter,TR,5,MaD,1,Pleuronectidae,Psettichthys melanostictus,1,1,6027.56,0.1659046115,
-,110,4,oblique,winter,TR,5,MaD,4,Clupeidae,Sardinops sargax,1,4,6027.56,0.6636184459,
-,110,4,oblique,winter,TR,5,MaD,1,Unknown,Damaged,1,1,6027.56,0.1659046115,
+,110,4,oblique,winter,TR,5,MaD,4,Osmeridae,Unknown,1,4,6027.56,0.6636184459,
+,110,4,oblique,winter,TR,5,MaD,1,unknown,Damaged,1,1,6027.56,0.1659046115,
 111-1-oblique,111,1,oblique,winter,TR,3,MaD,1,Bathylagidae,Lipolagus ochotensis,NA,2,2217.81,0.901790505,
 ,111,1,oblique,winter,TR,3,MaD,17,Myctophidae,Stenobrachius leucopsarus,NA,24,2217.81,10.82148606,
 ,111,1,oblique,winter,TR,3,MaD,1,Myctophidae,Protomyctophum crockeri,NA,2,2217.81,0.901790505,
 ,111,1,oblique,winter,TR,3,MaD,2,Myctophidae,Tarletonbeania crenularis,NA,4,2217.81,1.80358101,
-,111,1,oblique,winter,TR,3,MaD,158,Scorpenidae,Sebastes spp.,NA,233,2217.81,105.0585938,
+,111,1,oblique,winter,TR,3,MaD,161,Scorpaenidae,Sebastes spp.,NA,239,2217.81,107.7639654,With CR's fish
 ,111,1,oblique,winter,TR,3,MaD,3,Pleuronectidae,Lyopsetta exilis,NA,3,2217.81,1.352685758,
 111-1-0*,111,1,0*,winter,TR,3,MaD,2,Bathylagidae,Lipolagus ochotensis,NA,NA,NA,NA,
 ,111,1,0*,winter,TR,3,MaD,3,Myctophidae,Stenobrachius leucopsarus,NA,NA,NA,NA,
 ,111,1,0*,winter,TR,3,MaD,5,Myctophidae,Tarletonbeania crenularis,NA,NA,NA,NA,
-,111,1,0*,winter,TR,3,MaD,51,Scorpenidae,Sebastes spp.,NA,NA,NA,NA,
-111-1-4*,111,1,4*,winter,TR,3,MaD,0,,,NA,NA,NA,NA,
+,111,1,0*,winter,TR,3,MaD,51,Scorpaenidae,Sebastes spp.,NA,NA,NA,NA,With CR's fish
+,111,1,0*,winter,TR,3,MaD,1,Pleuronectidae,Lyopsetta exilis,NA,NA,NA,NA,
+111-1-4*,111,1,4*,winter,TR,3,MaD,0,no fish,no fish,NA,NA,NA,NA,
 111-4-oblique,111,4,oblique,winter,TR,3,MaD,2,Bathylagidae,Lipolagus ochotensis,1,2,8871.25,0.2254473721,
 ,111,4,oblique,winter,TR,3,MaD,5,Myctophidae,Stenobrachius leucopsarus,1,5,8871.25,0.5636184303,
 ,111,4,oblique,winter,TR,3,MaD,3,Myctophidae,Protomyctophum crockeri,1,3,8871.25,0.3381710582,
 ,111,4,oblique,winter,TR,3,MaD,3,Myctophidae,Tarletonbeania crenularis,1,3,8871.25,0.3381710582,
-,111,4,oblique,winter,TR,3,MaD,9,Scorpenidae,Sebastes spp.,1,9,8871.25,1.014513175,
+,111,4,oblique,winter,TR,3,MaD,9,Scorpaenidae,Sebastes spp.,1,9,8871.25,1.014513175,With CR's fish
 ,111,4,oblique,winter,TR,3,MaD,1,Paralichthyidae,Citharichthys stigmaeus,1,1,8871.25,0.1127236861,
 ,111,4,oblique,winter,TR,3,MaD,1,Macrouridae,Unknown,1,1,8871.25,0.1127236861,
-112-1-oblique,112,1,oblique,winter,TR,2,MaD,1,Myctophidae,Stenobrachius leucopsarus,NA,1,997.08,1.002928551,
-,112,1,oblique,winter,TR,2,MaD,3,Myctophidae,Protomyctophum crockeri,NA,3,997.08,3.008785654,
-,112,1,oblique,winter,TR,2,MaD,104,Scorpenidae,Sebastes spp.,NA,104,997.08,104.3045693,
-112-1-4*,112,1,4*,winter,TR,2,MaD,0,,,NA,NA,NA,NA,
+112-1-oblique,112,1,oblique,winter,TR,2,MaD,2,Myctophidae,Stenobrachius leucopsarus,NA,2,997.08,2.005857103,
+,112,1,oblique,winter,TR,2,MaD,5,Myctophidae,Tarletonbeania crenularis,NA,5,997.08,5.014642757,
+,112,1,oblique,winter,TR,2,MaD,126,Scorpaenidae,Sebastes spp.,NA,126,997.08,126.3689975,With CR's fish
+,112,1,oblique,winter,TR,2,MaD,2,unknown,Damaged,NA,2,997.08,2.005857103,
+112-1-4*,112,1,4*,winter,TR,2,MaD,0,no fish,no fish,NA,NA,NA,NA,
 112-4-oblique,112,4,oblique,winter,TR,2,MaD,1,Bathylagidae,Lipolagus ochotensis,1,1,3988.32,0.2507321378,
 ,112,4,oblique,winter,TR,2,MaD,3,Myctophidae,Stenobrachius leucopsarus,1,3,3988.32,0.7521964135,
-,112,4,oblique,winter,TR,2,MaD,1,Scorpenidae,Sebastes spp.,1,1,3988.32,0.2507321378,
+,112,4,oblique,winter,TR,2,MaD,1,Scorpaenidae,Sebastes spp.,1,1,3988.32,0.2507321378,With CR's fish
 ,112,4,oblique,winter,TR,2,MaD,1,Cyclopteridae,Liparis fucensis,1,1,3988.32,0.2507321378,
 113-1-oblique,113,1,oblique,winter,TR,1,MaD,2,Bathylagidae,Lipolagus ochotensis,NA,4,660.72,6.054001695,
 ,113,1,oblique,winter,TR,1,MaD,1,Myctophidae,Tarletonbeania crenularis,NA,2,660.72,3.027000848,
-,113,1,oblique,winter,TR,1,MaD,3,Scorpenidae,Sebastes spp.,NA,6,660.72,9.081002543,
-,113,1,oblique,winter,TR,1,MaD,1,Unknown,Damaged,NA,1,660.72,1.513500424,
-113-1-0*,113,1,0*,winter,TR,1,MaD,1,Scorpenidae,Sebastes spp.,NA,NA,NA,NA,
-113-1-4*,113,1,4*,winter,TR,1,MaD,0,,,NA,NA,NA,NA,
+,113,1,oblique,winter,TR,1,MaD,4,Scorpaenidae,Sebastes spp.,NA,8,660.72,12.10800339,With CR's fish
+,113,1,oblique,winter,TR,1,MaD,1,unknown,Damaged,NA,1,660.72,1.513500424,
+113-1-0*,113,1,0*,winter,TR,1,MaD,1,Scorpaenidae,Sebastes spp.,NA,NA,NA,NA,With CR's fish
+113-1-4*,113,1,4*,winter,TR,1,MaD,0,no fish,no fish,NA,NA,NA,NA,
 113-4-oblique,113,4,oblique,winter,TR,1,MaD,1,Bathylagidae,Lipolagus ochotensis,1,1,2642.86,0.3783779693,
 ,113,4,oblique,winter,TR,1,MaD,6,Myctophidae,Protomyctophum crockeri,1,6,2642.86,2.270267816,
-,113,4,oblique,winter,TR,1,MaD,1,Scorpenidae,Sebastes spp.,1,1,2642.86,0.3783779693,
+,113,4,oblique,winter,TR,1,MaD,1,Scorpaenidae,Sebastes spp.,1,1,2642.86,0.3783779693,With CR's fish
 ,113,4,oblique,winter,TR,1,MaD,2,Cyclopteridae,Liparis fucensis,1,2,2642.86,0.7567559386,
 ,113,4,oblique,winter,TR,1,MaD,1,Cottidae,Artedius spp.,1,1,2642.86,0.3783779693,
-,113,4,oblique,winter,TR,1,MaD,4,Unknown,Damaged,1,4,2642.86,1.513511877,
+,113,4,oblique,winter,TR,1,MaD,4,unknown,Damaged,1,4,2642.86,1.513511877,
 114-1-oblique,114,1,oblique,winter,NH,5,MbD,2,Bathylagidae,Lipolagus ochotensis,NA,3,1237.01,2.425202707,
 ,114,1,oblique,winter,NH,5,MbD,25,Myctophidae,Stenobrachius leucopsarus,NA,46,1237.01,37.1864415,
 ,114,1,oblique,winter,NH,5,MbD,1,Myctophidae,Protomyctophum crockeri,NA,2,1237.01,1.616801804,
 ,114,1,oblique,winter,NH,5,MbD,2,Myctophidae,Tarletonbeania crenularis,NA,3,1237.01,2.425202707,
-,114,1,oblique,winter,NH,5,MbD,137,Scorpenidae,Sebastes spp.,NA,240,1237.01,194.0162165,
+,114,1,oblique,winter,NH,5,MbD,139,Scorpaenidae,Sebastes spp.,NA,244,1237.01,197.2498201,With CR's fish
 ,114,1,oblique,winter,NH,5,MbD,1,Paralichthyidae,Citharichthys sordidus,NA,1,1237.01,0.8084009022,
 ,114,1,oblique,winter,NH,5,MbD,4,Pleuronectidae,Lyopsetta exilis,NA,8,1237.01,6.467207217,
-,114,1,oblique,winter,NH,5,MbD,1,Ophidiidae,Chilara taylori,NA,2,1237.01,1.616801804,
+,114,1,oblique,winter,NH,5,MbD,1,unknown,Unknown,NA,2,1237.01,1.616801804,
 ,114,1,oblique,winter,NH,5,MbD,2,Paralichthyidae,Citharichthys spp.,NA,4,1237.01,3.233603609,
-,114,1,oblique,winter,NH,5,MbD,1,Unknown,Fish eggs,NA,2,1237.01,1.616801804,
-,114,1,oblique,winter,NH,5,MbD,9,Unknown,Damaged,NA,18,1237.01,14.55121624,
+,114,1,oblique,winter,NH,5,MbD,1,unknown,fish egg(s),NA,2,1237.01,1.616801804,
+,114,1,oblique,winter,NH,5,MbD,9,unknown,Damaged,NA,18,1237.01,14.55121624,
 114-1-0*,114,1,0*,winter,NH,5,MbD,4,Bathylagidae,Lipolagus ochotensis,NA,NA,NA,NA,
 ,114,1,0*,winter,NH,5,MbD,9,Myctophidae,Stenobrachius leucopsarus,NA,NA,NA,NA,
 ,114,1,0*,winter,NH,5,MbD,2,Myctophidae,Tarletonbeania crenularis,NA,NA,NA,NA,
-,114,1,0*,winter,NH,5,MbD,130,Scorpenidae,Sebastes spp.,NA,NA,NA,NA,
-,114,1,0*,winter,NH,5,MbD,9,Unknown,Damaged,NA,NA,NA,NA,
+,114,1,0*,winter,NH,5,MbD,130,Scorpaenidae,Sebastes spp.,NA,NA,NA,NA,With CR's fish
+,114,1,0*,winter,NH,5,MbD,9,unknown,Damaged,NA,NA,NA,NA,
 114-1-4*,114,1,4*,winter,NH,5,MbD,5,Myctophidae,Stenobrachius leucopsarus,NA,NA,NA,NA,
-,114,1,4*,winter,NH,5,MbD,8,Scorpenidae,Sebastes spp.,NA,NA,NA,NA,
+,114,1,4*,winter,NH,5,MbD,8,Scorpaenidae,Sebastes spp.,NA,NA,NA,NA,With CR's fish
 114-4-oblique,114,4,oblique,winter,NH,5,MbD,4,Bathylagidae,Lipolagus ochotensis,1,4,4948.02,0.8084041697,
 ,114,4,oblique,winter,NH,5,MbD,6,Myctophidae,Stenobrachius leucopsarus,1,6,4948.02,1.212606255,
 ,114,4,oblique,winter,NH,5,MbD,3,Myctophidae,Protomyctophum crockeri,1,3,4948.02,0.6063031273,
 ,114,4,oblique,winter,NH,5,MbD,10,Myctophidae,Tarletonbeania crenularis,1,10,4948.02,2.021010424,
-,114,4,oblique,winter,NH,5,MbD,49,Scorpenidae,Sebastes spp.,1,49,4948.02,9.902951079,
+,114,4,oblique,winter,NH,5,MbD,49,Scorpaenidae,Sebastes spp.,1,49,4948.02,9.902951079,With CR's fish
 ,114,4,oblique,winter,NH,5,MbD,1,Cyclopteridae,Liparis fucensis,1,1,4948.02,0.2021010424,
 ,114,4,oblique,winter,NH,5,MbD,3,Paralichthyidae,Citharichthys sordidus,1,3,4948.02,0.6063031273,
-,114,4,oblique,winter,NH,5,MbD,4,Pleuronectidae,Glyptocephalus zachirus,1,4,4948.02,0.8084041697,
-,114,4,oblique,winter,NH,5,MbD,1,Pleuronectidae,Parophrys vetulus,1,1,4948.02,0.2021010424,
-,114,4,oblique,winter,NH,5,MbD,1,Unknown,Fish eggs,1,1,4948.02,0.2021010424,
-,114,4,oblique,winter,NH,5,MbD,4,Unknown,Damaged,1,4,4948.02,0.8084041697,
-,114,4,oblique,winter,NH,5,MbD,5,Cottidae,Hemilepidotus spinosus,1,5,4948.02,1.010505212,
+,114,4,oblique,winter,NH,5,MbD,3,Pleuronectidae,Glyptocephalus zachirus,1,3,4948.02,0.6063031273,
+,114,4,oblique,winter,NH,5,MbD,1,Pleuronectidae,Parophrys vetulus,1,1,4948.02,0.2021010424,with EC's fish
+,114,4,oblique,winter,NH,5,MbD,1,unknown,fish egg(s),1,1,4948.02,0.2021010424,
+,114,4,oblique,winter,NH,5,MbD,5,unknown,Damaged,1,5,4948.02,1.010505212,
+,114,4,oblique,winter,NH,5,MbD,3,Cottidae,Hemilepodotus spinosus,1,3,4948.02,0.6063031273,
 ,114,4,oblique,winter,NH,5,MbD,1,Paralichthyidae,Citharichthys stigmaeus,1,1,4948.02,0.2021010424,
-115-1-oblique,115,1,oblique,winter,NH,3,MbD,3,Bathylagidae,Lipolagus ochotensis,NA,5,1360.11,3.676173251,
-,115,1,oblique,winter,NH,3,MbD,1,Myctophidae,Stenobrachius leucopsarus,NA,2,1360.11,1.4704693,
-,115,1,oblique,winter,NH,3,MbD,216,Scorpenidae,Sebastes spp.,NA,399,1360.11,293.3586254,
+115-1-oblique,115,1,oblique,winter,NH,3,MbD,4,Bathylagidae,Lipolagus ochotensis,NA,7,1360.11,5.146642551,
+,115,1,oblique,winter,NH,3,MbD,4,Myctophidae,Stenobrachius leucopsarus,NA,8,1360.11,5.881877201,
+,115,1,oblique,winter,NH,3,MbD,263,Scorpaenidae,Sebastes spp.,NA,493,1360.11,362.4706825,With CR's fish
 ,115,1,oblique,winter,NH,3,MbD,6,Cyclopteridae,Liparis fucensis,NA,12,1360.11,8.822815802,
 ,115,1,oblique,winter,NH,3,MbD,1,Paralichthyidae,Citharichthys stigmaeus,NA,2,1360.11,1.4704693,
 ,115,1,oblique,winter,NH,3,MbD,1,Chauliodontidae,Chauliodus macouni,NA,1,1360.11,0.7352346501,
-,115,1,oblique,winter,NH,3,MbD,7,Unknown,Damaged,NA,12,1360.11,8.822815802,
+,115,1,oblique,winter,NH,3,MbD,8,Scorpaenidae,Damaged,NA,14,1360.11,10.2932851,
 115-1-0*,115,1,0*,winter,NH,3,MbD,5,Bathylagidae,Lipolagus ochotensis,NA,NA,NA,NA,
-,115,1,0*,winter,NH,3,MbD,1,Hexagrammidae,Unknown,NA,NA,NA,NA,
+,115,1,0*,winter,NH,3,MbD,1,Hexagrammidae,Unknown,NA,NA,NA,NA,NH cannot locate this vial
 ,115,1,0*,winter,NH,3,MbD,2,Myctophidae,Stenobrachius leucopsarus,NA,NA,NA,NA,
 ,115,1,0*,winter,NH,3,MbD,1,Myctophidae,Protomyctophum crockeri,NA,NA,NA,NA,
 ,115,1,0*,winter,NH,3,MbD,1,Myctophidae,Tarletonbeania crenularis,NA,NA,NA,NA,
-,115,1,0*,winter,NH,3,MbD,87,Scorpenidae,Sebastes spp.,NA,NA,NA,NA,
-,115,1,0*,winter,NH,3,MbD,1,Pleuronectidae,Parophrys vetulus,NA,NA,NA,NA,
-,115,1,0*,winter,NH,3,MbD,1,Cottidae,Hemilepidotus spinosus,NA,NA,NA,NA,
-115-1-4*,115,1,4*,winter,NH,3,MbD,4,Scorpenidae,Sebastes spp.,NA,NA,NA,NA,
+,115,1,0*,winter,NH,3,MbD,87,Scorpaenidae,Sebastes spp.,NA,NA,NA,NA,With CR's fish
+,115,1,0*,winter,NH,3,MbD,1,Pleuronectidae,Parophrys vetulus,NA,NA,NA,NA,with EC's fish
+,115,1,0*,winter,NH,3,MbD,1,Cottidae,Hemilepodotus spinosus,NA,NA,NA,NA,
+115-1-4*,115,1,4*,winter,NH,3,MbD,4,Scorpaenidae,Sebastes spp.,NA,NA,NA,NA,With CR's fish
 115-4-oblique,115,4,oblique,winter,NH,3,MbD,3,Bathylagidae,Lipolagus ochotensis,1,3,5440.43,0.5514270012,
 ,115,4,oblique,winter,NH,3,MbD,1,Myctophidae,Stenobrachius leucopsarus,1,1,5440.43,0.1838090004,
 ,115,4,oblique,winter,NH,3,MbD,2,Myctophidae,Tarletonbeania crenularis,1,2,5440.43,0.3676180008,
-,115,4,oblique,winter,NH,3,MbD,1,Scorpenidae,Sebastes spp.,1,1,5440.43,0.1838090004,
+,115,4,oblique,winter,NH,3,MbD,1,Scorpaenidae,Sebastes spp.,1,1,5440.43,0.1838090004,With CR's fish
 ,115,4,oblique,winter,NH,3,MbD,12,Cyclopteridae,Liparis fucensis,1,12,5440.43,2.205708005,
 ,115,4,oblique,winter,NH,3,MbD,1,Paralichthyidae,Citharichthys stigmaeus,1,1,5440.43,0.1838090004,
 ,115,4,oblique,winter,NH,3,MbD,1,Macrouridae,Unknown,1,1,5440.43,0.1838090004,
 116-1-oblique,116,1,oblique,winter,NH,2,MbD,1,Myctophidae,Stenobrachius leucopsarus,NA,1,834.05,1.198968887,
-,116,1,oblique,winter,NH,2,MbD,8,Scorpenidae,Sebastes spp.,NA,9,834.05,10.79071998,
-,116,1,oblique,winter,NH,2,MbD,1,Hexagrammidae,Unknown,NA,1,834.05,1.198968887,
+,116,1,oblique,winter,NH,2,MbD,10,Scorpaenidae,Sebastes spp.,NA,11,834.05,13.18865775,With CR's fish
+,116,1,oblique,winter,NH,2,MbD,1,Cottidae,Hemilepodotus spinosus,NA,1,834.05,1.198968887,
 ,116,1,oblique,winter,NH,2,MbD,10,Cyclopteridae,Liparis fucensis,NA,10,834.05,11.98968887,
 ,116,1,oblique,winter,NH,2,MbD,1,Paralichthyidae,Citharichthys spp.,NA,1,834.05,1.198968887,
 ,116,1,oblique,winter,NH,2,MbD,2,Paralichthyidae,Citharichthys sordidus,NA,3,834.05,3.59690666,
 ,116,1,oblique,winter,NH,2,MbD,2,Pleuronectidae,Isopsetta isolepis,NA,4,834.05,4.795875547,
-,116,1,oblique,winter,NH,2,MbD,1,Pleuronectidae,Lyopsetta exilis,NA,1,834.05,1.198968887,
-,116,1,oblique,winter,NH,2,MbD,5,Pleuronectidae,Parophrys vetulus,NA,6,834.05,7.193813321,
-,116,1,oblique,winter,NH,2,MbD,1,Unknown,Unknown,NA,2,834.05,2.397937774,
-,116,1,oblique,winter,NH,2,MbD,1,Pleuronectidae,Atheresthes stomias,NA,1,834.05,1.198968887,
-,116,1,oblique,winter,NH,2,MbD,4,Unknown,Damaged,NA,4,834.05,4.795875547,
+,116,1,oblique,winter,NH,2,MbD,5,Pleuronectidae,Parophrys vetulus,NA,6,834.05,7.193813321,with EC's fish
+,116,1,oblique,winter,NH,2,MbD,2,unknown,Unknown,NA,3,834.05,3.59690666,
+,116,1,oblique,winter,NH,2,MbD,1,Pleuronectidae,Atherestes stomias,NA,1,834.05,1.198968887,
+,116,1,oblique,winter,NH,2,MbD,4,unknown,Damaged,NA,4,834.05,4.795875547,
 116-1-4*,116,1,4*,winter,NH,2,MbD,1,Cyclopteridae,Liparis fucensis,NA,NA,NA,NA,
-,116,1,4*,winter,NH,2,MbD,1,Pleuronectidae,Parophrys vetulus,NA,NA,NA,NA,
-,116,1,4*,winter,NH,2,MbD,1,Unknown,Damaged,NA,NA,NA,NA,
-116-4-oblique,116,4,oblique,winter,NH,2,MbD,41,Cyclopteridae,Liparis fucensis,1,41,3336.2,12.28943109,
+,116,1,4*,winter,NH,2,MbD,1,Pleuronectidae,Parophrys vetulus,NA,NA,NA,NA,with EC's fish
+,116,1,4*,winter,NH,2,MbD,1,unknown,Damaged,NA,NA,NA,NA,
+116-4-oblique,116,4,oblique,winter,NH,2,MbD,43,Cyclopteridae,Liparis fucensis,1,43,3336.2,12.88891553,
 ,116,4,oblique,winter,NH,2,MbD,5,Paralichthyidae,Citharichthys sordidus,1,5,3336.2,1.498711108,
-,116,4,oblique,winter,NH,2,MbD,14,Pleuronectidae,Parophrys vetulus,1,14,3336.2,4.196391104,
+,116,4,oblique,winter,NH,2,MbD,14,Pleuronectidae,Parophrys vetulus,1,14,3336.2,4.196391104,with EC's fish
 ,116,4,oblique,winter,NH,2,MbD,3,Paralichthyidae,Citharichthys stigmaeus,1,3,3336.2,0.8992266651,
-,116,4,oblique,winter,NH,2,MbD,2,Unknown,Damaged,1,2,3336.2,0.5994844434,
-117-1-0,117,1,0,winter,NH,1,MbD,2,Scorpenidae,Sebastes spp.,2,4,300.55,13.30893362,
-,117,1,0,winter,NH,1,MbD,173,Pleuronectidae,Parophrys vetulus,2,346,300.55,1151.222758,
-,117,1,0,winter,NH,1,MbD,1,Pleuronectidae,Microstomus pacificus,2,2,300.55,6.654466811,
-,117,1,0,winter,NH,1,MbD,1,Pleuronectidae,Psettichthys melanostictus,2,2,300.55,6.654466811,
-,117,1,0,winter,NH,1,MbD,3,Pleuronectidae,Lepidopsetta bilineata,2,6,300.55,19.96340043,
+,116,4,oblique,winter,NH,2,MbD,2,unknown,Damaged,1,2,3336.2,0.5994844434,
+117-1-0,117,1,0,winter,NH,1,MbD,2,Scorpaenidae,Sebastes spp.,2,4,300.55,13.30893362,With CR's fish
+,117,1,0,winter,NH,1,MbD,174,Pleuronectidae,Parophrys vetulus,2,348,300.55,1157.877225,with EC's fish
+,117,1,0,winter,NH,1,MbD,1,unknown,Unknown,2,2,300.55,6.654466811,"yolk sac, no eye pigment, melanophores dispersed across body surface = too young to ID "
+,117,1,0,winter,NH,1,MbD,3,Pleuronectidae,Psettichthys melanostictus,2,6,300.55,19.96340043,
+,117,1,0,winter,NH,1,MbD,1,Ammodytidae,Ammodytes spp.,2,2,300.55,6.654466811,
 ,117,1,0,winter,NH,1,MbD,2,Cottidae,Artedius spp.,2,4,300.55,13.30893362,
-,117,1,0,winter,NH,1,MbD,3,Pleuronectidae,Embassichthys bathybius,2,6,300.55,19.96340043,
-,117,1,0,winter,NH,1,MbD,2,Clupeidae,Sardinops sargax,2,4,300.55,13.30893362,
-,117,1,0,winter,NH,1,MbD,2,Unknown,Unknown,2,4,300.55,13.30893362,
+,117,1,0,winter,NH,1,MbD,3,Pleuronectidae,Isopsetta isolepis,2,6,300.55,19.96340043,
+,117,1,0,winter,NH,1,MbD,2,Osmeridae,Unknown,2,4,300.55,13.30893362,
+,117,1,0,winter,NH,1,MbD,2,Stichaeidae,Unknown,2,4,300.55,13.30893362,
 117-1-0*,117,1,0*,winter,NH,1,MbD,1,Cottidae,Artedius spp.,NA,NA,NA,NA,
-,117,1,0*,winter,NH,1,MbD,5,Pleuronectidae,Embassichthys bathybius,NA,NA,NA,NA,
-,117,1,0*,winter,NH,1,MbD,94,Pleuronectidae,Parophrys vetulus,NA,NA,NA,NA,
+,117,1,0*,winter,NH,1,MbD,3,Pleuronectidae,Isopsetta isolepis,NA,NA,NA,NA,
+,117,1,0*,winter,NH,1,MbD,95,Pleuronectidae,Parophrys vetulus,NA,NA,NA,NA,with EC's fish
 ,117,1,0*,winter,NH,1,MbD,1,Pleuronectidae,Psettichthys melanostictus,NA,NA,NA,NA,
-,117,1,0*,winter,NH,1,MbD,1,Unknown,Unknown,NA,NA,NA,NA,
-117-1-3,117,1,3,winter,NH,1,MbD,6,Pleuronectidae,Parophrys vetulus,1,6,230.52,26.02811036,
+,117,1,0*,winter,NH,1,MbD,1,unknown,Unknown,NA,NA,NA,NA,"tiny, yolk sac, no eye pigment"
+,117,1,0*,winter,NH,1,MbD,1,unknown,Damaged,NA,NA,NA,NA,
+117-1-3,117,1,3,winter,NH,1,MbD,14,Pleuronectidae,Parophrys vetulus,1,14,230.52,60.7322575,with EC's fish
 ,117,1,3,winter,NH,1,MbD,1,Cottidae,Artedius spp.,1,1,230.52,4.338018393,
 ,117,1,3,winter,NH,1,MbD,1,Stichaeidae,Plectobranchus evides,1,1,230.52,4.338018393,
-117-1-4,117,1,4,winter,NH,1,MbD,17,Pleuronectidae,Parophrys vetulus,2,34,237.48,143.1699512,
-,117,1,4,winter,NH,1,MbD,1,Unknown,Unknown,2,2,237.48,8.421761833,
-117-1-4*,117,1,4*,winter,NH,1,MbD,3,Pleuronectidae,Unknown,NA,NA,NA,NA,
-,117,1,4*,winter,NH,1,MbD,22,Pleuronectidae,Parophrys vetulus,NA,NA,NA,NA,
+,117,1,3,winter,NH,1,MbD,1,Pleuronectidae,Psettichthys melanostictus,1,1,,,
+,117,1,3,winter,NH,1,MbD,3,unknown,Damaged,1,3,,,
+,117,1,3,winter,NH,1,MbD,4,unknown,Unknown,1,4,,,"tiny, unpigmented eyes"
+117-1-4,117,1,4,winter,NH,1,MbD,18,Pleuronectidae,Parophrys vetulus,2,36,237.48,151.591713,with EC's fish
+,117,1,4,winter,NH,1,MbD,2,unknown,Unknown,2,4,237.48,16.84352367,"one is very young, not able to ID. The other is in a chaetognath gut"
+117-1-4*,117,1,4*,winter,NH,1,MbD,2,Pleuronectidae,Unknown,NA,NA,NA,NA,"tiny, little pigment"
+,117,1,4*,winter,NH,1,MbD,22,Pleuronectidae,Parophrys vetulus,NA,NA,NA,NA,with EC's fish
 ,117,1,4*,winter,NH,1,MbD,2,Cottidae,Artedius spp.,NA,NA,NA,NA,
 117-4-0,117,4,0,winter,NH,1,MbD,1,Hexagrammidae,Ophiodon elongatus,1,1,1202.18,0.8318221897,
 ,117,4,0,winter,NH,1,MbD,1,Cottidae,Radulinus asprellus,1,1,1202.18,0.8318221897,
-,117,4,0,winter,NH,1,MbD,6,Pleuronectidae,Embassichthys bathybius,1,6,1202.18,4.990933138,
+,117,4,0,winter,NH,1,MbD,3,Pleuronectidae,Isopsetta isolepis,1,3,1202.18,2.495466569,
 ,117,4,0,winter,NH,1,MbD,1,Pleuronectidae,Lyopsetta exilis,1,1,1202.18,0.8318221897,
-,117,4,0,winter,NH,1,MbD,197,Pleuronectidae,Parophrys vetulus,1,197,1202.18,163.8689714,
-,117,4,0,winter,NH,1,MbD,2,Pleuronectidae,Psettichthys melanostictus,1,2,1202.18,1.663644379,
-,117,4,0,winter,NH,1,MbD,5,Cottidae,Artedius spp.,1,5,1202.18,4.159110948,
-,117,4,0,winter,NH,1,MbD,4,Unknown,Damaged,1,4,1202.18,3.327288759,
-,117,4,0,winter,NH,1,MbD,2,Unknown,Unknown,1,2,1202.18,1.663644379,
+,117,4,0,winter,NH,1,MbD,197,Pleuronectidae,Parophrys vetulus,1,197,1202.18,163.8689714,with EC's fish
+,117,4,0,winter,NH,1,MbD,4,Pleuronectidae,Psettichthys melanostictus,1,4,1202.18,3.327288759,
+,117,4,0,winter,NH,1,MbD,4,Cottidae,Artedius spp.,1,4,1202.18,3.327288759,
+,117,4,0,winter,NH,1,MbD,5,unknown,Damaged,1,5,1202.18,4.159110948,
+,117,4,0,winter,NH,1,MbD,2,Stichaeidae,Unknown,1,2,1202.18,1.663644379,
 ,117,4,0,winter,NH,1,MbD,1,Stichaeidae,Plectobranchus evides,1,1,1202.18,0.8318221897,
 117-4-3,117,4,3,winter,NH,1,MbD,1,Cottidae,Radulinus asprellus,1,1,922.07,1.08451636,
 ,117,4,3,winter,NH,1,MbD,1,Agonidae,Unknown,1,1,922.07,1.08451636,
 ,117,4,3,winter,NH,1,MbD,1,Cyclopteridae,Liparis fucensis,1,1,922.07,1.08451636,
-,117,4,3,winter,NH,1,MbD,1,Pleuronectidae,Parophrys vetulus,1,1,922.07,1.08451636,
+,117,4,3,winter,NH,1,MbD,1,Pleuronectidae,Parophrys vetulus,1,1,922.07,1.08451636,with EC's fish
 ,117,4,3,winter,NH,1,MbD,1,Cottidae,Unknown,1,1,922.07,1.08451636,
 117-4-4,117,4,4,winter,NH,1,MbD,1,Cyclopteridae,Liparis fucensis,1,1,949.9,1.052742394,
 ,117,4,4,winter,NH,1,MbD,1,Paralichthyidae,Citharichthys spp.,1,1,949.9,1.052742394,
