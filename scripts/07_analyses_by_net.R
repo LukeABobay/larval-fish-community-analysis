@@ -77,10 +77,7 @@ nets_env_wide <- nets_major_taxa_wide %>%
 # Perform cluster analysis ------------------------------------------------
 
 nets_AHC_comm_matrix <- nets_major_taxa_wide %>%
-  select(transect_station_rep_year_net, depth_mean_m, Osmeridae, Sebastes, Liparis, Pleuronectidae_other, Parophrys_vetulus, Ammodytidae,
-         Cottidae, Gadidae, Agonidae, Stichaeidae, Hexagrammidae, Myctophidae, Anarrhichthys_ocellatus, Lipolagus_ochotensis, Anoplopomatidae,
-         Paralichthyidae, Sebastolobus, Bathylagidae, Ptilichthys_goodei, Pholidae, Chauliodus_macouni, Nansenia_candida, Trachipterus_altivelis, 
-         Paralepididae, Merluccius_productus, Macrouridae, Artedius, Sardinops_sagax, Engraulis_mordax, Gobiidae, Ophidiidae)
+  select(transect_station_rep_year_net, depth_mean_m, 35:71)
 
 nets_transform_taxa_concentrations <- nets_AHC_comm_matrix[, 3:33] %>%
   sqrt()
@@ -103,13 +100,15 @@ plot(nets_AHC_result, labels = nets_AHC_comm_matrix_transformed$transect_station
 rect.hclust(nets_AHC_result, k = 10, border = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
 
 # Extract list of sampling events belonging to each cluster
-nets_clusters <- data.frame(transect_station_rep_year_net = names(cutree(nets_AHC_result, k = 10)),
-                       cluster = cutree(nets_AHC_result, k = 10)) %>%
-  mutate(approx_sample_size = mocness_major_taxa_stations %>%
-           group_by(transect_station_rep_year_net) %>%
-           summarise(sum(individuals_in_tow)) %>%
-           ungroup())
+approx_sample_size_df <- mocness_major_taxa_stations %>%
+  group_by(transect_station_rep_year_net) %>%
+  summarise(approx_sample_size = sum(individuals_in_tow), .groups = "drop")
 
+nets_clusters <- data.frame(
+  transect_station_rep_year_net = names(cutree(nets_AHC_result, k = 10)),
+  cluster = cutree(nets_AHC_result, k = 10)
+) %>%
+  left_join(approx_sample_size_df, by = "transect_station_rep_year_net")
 
 # Plot abundance of each taxon, grouped by cluster ------------------------
   
