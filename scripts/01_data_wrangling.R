@@ -281,13 +281,16 @@ events_sf <- sampling_events %>%
   mutate(
     geometry = pmap(
       list(longitude_min_dd, latitude_min_dd, longitude_max_dd, latitude_max_dd),
-      \(xmin, ymin, xmax, ymax)
-      st_polygon(list(matrix(
-        c(xmin, ymin,
-          xmax, ymin,
-          xmax, ymax,
-          xmin, ymax,
-          xmin, ymin), ncol = 2, byrow = TRUE)))
+      \(xmin, ymin, xmax, ymax) {
+        if (anyNA(c(xmin, ymin, xmax, ymax))) return(st_geometrycollection())
+        st_polygon(list(matrix(
+          c(xmin, ymin,
+            xmax, ymin,
+            xmax, ymax,
+            xmin, ymax,
+            xmin, ymin),
+          ncol = 2, byrow = TRUE)))
+      }
     )
   ) %>%
   st_as_sf(crs = 4326)
