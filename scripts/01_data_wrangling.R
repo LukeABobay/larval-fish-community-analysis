@@ -68,6 +68,9 @@ isiis_w23_env <- read.csv(here("data/W23_ISIIS3_enviro.csv"))
 # Load anchovy observational data that have been matched with GLORYS mixed layer depth
 glorys_covariates <- read.csv(here("data/glorys_covariates_all_derived.csv"))
 
+# CTD fluorescence data
+ctd_fluorescence <- read.csv(here("data/ctd_fluorescence_binned.csv"))
+
 
 # Data wrangling ----------------------------------------------------------
 
@@ -464,10 +467,63 @@ mocness_full_geographic_isiis_mixing <- merge(mocness_full_geographic_isiis, mix
                                               by.y = c("date", "latitude_dd", "longitude_dd"))
 
 
+# CTD fluorescence --------------------------------------------------------
+
+# Get coordinates for each MOCNESS net tow (start_time_pt, transect, replicate, station, net)
+mocness_tow_coordinates <- mocness_metadata %>%
+  distinct(start_time_pt, transect, replicate, station, net, .keep_all = TRUE) %>%
+  select(cruise, transect, replicate, station, net, start_time_pt,
+         start_longitude_dd, start_latitude_dd) %>%
+  mutate(moc_id = row_number(),
+         start_time_pt = as.POSIXct(start_time_pt, tz = "America/Los_Angeles")) %>%
+  # Add point geometries
+  st_as_sf(coords = c("start_longitude_dd", "start_latitude_dd"), crs = 4326, remove = FALSE)
+
+# Calculate average fluorescence in top 100 m of water column
+ctd_fluorescence_0_100_m <- ctd_fluorescence %>%
+  filter(depth_bin_mid_m < 100) %>%
+  group_by(start_time_pt, start_longitude_dd, start_latitude_dd) %>%
+  summarize(mean_chl_0_100_m_mgm3 = mean(mean_fluor), .groups = "drop")
+
+# Get coordinates for each CTD cast
+ctd_coordinates <- ctd_fluorescence_0_100_m %>%
+  st_as_sf(coords = c("start_longitude_dd", "start_latitude_dd"), crs = 4326, remove = FALSE) %>%
+  mutate(ctd_id = row_number()) %>%
+  select(ctd_id, ctd_time_pt = start_time_pt, mean_chl_0_100_m_mgm3)
+
+# Get all candidate pairs within 1 km
+pairs <- st_join(mocness_tow_coordinates, ctd_coordinates,
+                 join = st_is_within_distance,
+                 dist = 5000,
+                 left = TRUE)
+
+# Compute time diff and spatial distance for each candidate
+pairs <- pairs %>%
+  mutate(time_diff_min = if_else(is.na(ctd_time_pt), NA_real_,
+                                 abs(as.numeric(difftime(ctd_time_pt, start_time_pt, units = "mins")))),
+         dist_m = if_else(is.na(ctd_id), NA_real_,
+                          as.numeric(st_distance(geometry, st_geometry(ctd_coordinates)[ctd_id], by_element = TRUE))))
+
+# Pick best CTD per MOC: closest in time, tie-break by distance
+ctd_with_mocness <- pairs %>%
+  group_by(moc_id) %>%
+  slice_min(order_by = time_diff_min, n = 1, with_ties = TRUE) %>%
+  slice_min(order_by = dist_m, n = 1, with_ties = FALSE) %>%
+  ungroup() %>%
+  select(start_time_pt, mean_chl_0_100_m_mgm3) %>%
+  st_drop_geometry(geometry)
+
+# Merge with full data frame
+mocness_full_geographic_isiis_mixing_fluor <- left_join(mocness_full_geographic_isiis_mixing, ctd_with_mocness,
+                                                        by = c("start_time_pt")) %>%
+  # Remove ISIIS chlorophyll values
+  select(-chlorophyll_ug_l)
+
+
 # MOCNESS data cleanup ----------------------------------------------------
 
 # Add columns with combined location/station and min/max depth
-mocness_clean <- mocness_full_geographic_isiis_mixing %>%
+mocness_clean <- mocness_full_geographic_isiis_mixing_fluor %>%
   unite(col = "transect_station", transect, station, sep="_", remove = FALSE) %>%
   unite(col = "transect_station_rep", transect_station, replicate, sep="_", remove=FALSE) %>%
   mutate(year = year(collection_date)) %>%
