@@ -66,7 +66,7 @@ isiis_w22_env <- read.csv(here("data/W22_ISIIS3_enviro.csv"))
 isiis_w23_env <- read.csv(here("data/W23_ISIIS3_enviro.csv"))
 
 # Load anchovy observational data that have been matched with GLORYS mixed layer depth
-glorys_covariates <- read.csv(here("data/glorys_covariates_all.csv"))
+glorys_covariates <- read.csv(here("data/glorys_covariates_all_derived.csv"))
 
 
 # Data wrangling ----------------------------------------------------------
