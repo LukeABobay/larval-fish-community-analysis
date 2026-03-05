@@ -28,22 +28,18 @@ wide_major_taxa_stations <- mocness_major_taxa_stations %>%
   # Removing NAs for now, but there shouldn't be any to begin with
   filter(!is.na(individuals_in_tow)) %>%
   filter(!is.na(individuals_per_m3)) %>%
-  group_by(project, collection_date, start_time_pt, replicate, depth_range, 
-           transect_station, transect, station, start_latitude_dd, start_longitude_dd, 
-           taxon, transect_station_rep, transect_station_rep_year, seafloor_depth_m, 
-           shelf_position,prey_zooplankton_abundance_ind_m3, dissolved_oxygen_ml_l, 
-           seawater_density_1000_kg_m3, chlorophyll_ug_l, mlotst, 
-           mean_temperature_c, mean_salinity_psu, depth_mean_m, depth_diff_m) %>%
-  summarize(individuals_per_m3 = sum(individuals_per_m3)) %>%
+  group_by(collection_date, replicate, transect, station, taxon) %>%
+  mutate(individuals_per_m3 = sum(individuals_per_m3)) %>%
   ungroup() %>%
+  distinct(collection_date, replicate, transect, station, taxon, .keep_all = TRUE) %>%
   pivot_wider(names_from = taxon, values_from = individuals_per_m3, values_fill = 0)
 
 env_wide <- wide_major_taxa_stations %>%
   select(project, collection_date, transect_station_rep_year, replicate, start_time_pt,
          start_latitude_dd, start_longitude_dd, depth_range, shelf_position,
          seafloor_depth_m, prey_zooplankton_abundance_ind_m3, dissolved_oxygen_ml_l,
-         seawater_density_1000_kg_m3, chlorophyll_ug_l, mean_temperature_c, 
-         mean_salinity_psu, depth_mean_m, depth_diff_m) %>%
+         mean_temperature_c, mean_salinity_psu, depth_mean_m, depth_diff_m,
+         mean_density_kgm3, mean_chl_0_100_m_mgm3) %>%
   mutate(
     time_of_day = substr(replicate, 3, 3),
     time_of_day = recode(time_of_day, "D" = "Day", "N" = "Night", .default = NA_character_)
