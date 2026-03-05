@@ -40,29 +40,27 @@ nets_major_taxa_wide <- mocness_major_taxa %>%
   distinct(transect_station_rep_year_net, taxon, .keep_all = TRUE) %>%
   mutate(avg_taxa_conc = sum_individuals/combined_volume_m3_best) %>%
   select(project, cruise, year, collection_date, transect, replicate, station, net, 
-         transect_station_rep_year, transect_station_rep_year_net, start_time_utc, start_time_pt, end_time_utc, end_time_pt, 
-         start_longitude_dd, start_latitude_dd, end_longitude_dd, end_latitude_dd,
+         transect_station_rep_year, transect_station_rep_year_net, start_time_pt, 
+         start_longitude_dd, start_latitude_dd,
          maximum_depth_m, minimum_depth_m, depth_mean_m, depth_diff_m,
          mean_temperature_c, mean_salinity_psu, mean_density_kgm3, seafloor_depth_m,
          distance_to_shore_km, shelf_position, prey_zooplankton_abundance_ind_m3,
-         dissolved_oxygen_ml_l, chlorophyll_ug_l, mlotst, taxon,
-         avg_taxa_conc, combined_volume_m3_best, seawater_density_1000_kg_m3) %>%
+         dissolved_oxygen_ml_l, mean_chl_0_100_m_mgm3, mlotst, taxon,
+         avg_taxa_conc, combined_volume_m3_best) %>%
   # For some reason, MOC 1 and MOC 4 have different values of mean_temperature_c, mean_salinity_psu, and mean_density_kgm3 in 6 cases. To eliminate differences, calculate mean
   group_by(transect_station_rep_year_net) %>%
   mutate(mean_temperature_c = mean(mean_temperature_c),
          mean_salinity_psu = mean(mean_salinity_psu),
-         mean_density_kgm3 = mean(mean_density_kgm3),
-         end_longitude_dd = mean(end_longitude_dd),
-         end_latitude_dd = mean(end_latitude_dd)) %>%
+         mean_density_kgm3 = mean(mean_density_kgm3)) %>%
   ungroup() %>%
   pivot_wider(names_from = taxon, values_from = avg_taxa_conc, values_fill = 0)
 
 nets_env_wide <- nets_major_taxa_wide %>%
   select(project, cruise, collection_date, year, replicate, transect_station_rep_year_net, start_time_pt,
-         end_time_pt, start_latitude_dd, start_longitude_dd, end_longitude_dd, end_latitude_dd, 
+         start_latitude_dd, start_longitude_dd, 
          maximum_depth_m, minimum_depth_m, depth_mean_m, depth_diff_m, shelf_position,
-         seafloor_depth_m, dissolved_oxygen_ml_l, distance_to_shore_km, seawater_density_1000_kg_m3, 
-         chlorophyll_ug_l, mean_temperature_c, mean_salinity_psu, combined_volume_m3_best) %>%
+         seafloor_depth_m, dissolved_oxygen_ml_l, distance_to_shore_km, mean_density_kgm3, 
+         mean_chl_0_100_m_mgm3, mean_temperature_c, mean_salinity_psu, combined_volume_m3_best) %>%
   mutate(time_of_day = substr(replicate, 3, 3)) %>%
   mutate(time_of_day = recode(time_of_day, "D" = "Day", "N" = "Night")) %>%
   mutate(time_of_day = factor(time_of_day, levels = c("Day", "Night"))) %>%
@@ -77,9 +75,9 @@ nets_env_wide <- nets_major_taxa_wide %>%
 # Perform cluster analysis ------------------------------------------------
 
 nets_AHC_comm_matrix <- nets_major_taxa_wide %>%
-  select(transect_station_rep_year_net, depth_mean_m, 35:71)
+  select(transect_station_rep_year_net, depth_mean_m, 29:66)
 
-nets_transform_taxa_concentrations <- nets_AHC_comm_matrix[, 3:33] %>%
+nets_transform_taxa_concentrations <- nets_AHC_comm_matrix[, 3:40] %>%
   sqrt()
 
 # Add rownames
