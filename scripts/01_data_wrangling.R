@@ -459,12 +459,13 @@ mocness_full_geographic_isiis <- merge(
 
 # Get unique MOCNESS sampling events from mocness_full
 mixed_layer_depth <- glorys_covariates %>%
-  distinct(date, latitude_dd, longitude_dd, mlotst)
+  distinct(date, latitude_dd, longitude_dd, mlotst) %>%
+  mutate(date = as.Date(date))
 
-mocness_full_geographic_isiis_mixing <- merge(mocness_full_geographic_isiis, mixed_layer_depth,
-                                              all.x = TRUE,
-                                              by.x = c("collection_date", "start_latitude_dd", "start_longitude_dd"),
-                                              by.y = c("date", "latitude_dd", "longitude_dd"))
+mocness_full_geographic_isiis_mixing <- left_join(mocness_full_geographic_isiis, mixed_layer_depth,
+                                              by = c("collection_date" = "date",
+                                                     "start_latitude_dd" = "latitude_dd",
+                                                     "start_longitude_dd" = "longitude_dd"))
 
 
 # CTD fluorescence --------------------------------------------------------
