@@ -587,7 +587,14 @@ mocness_clean <- mocness_full_geographic_isiis_mixing_fluor %>%
   distinct(transect_station_rep_year, mocness_side, net, taxon, .keep_all = TRUE) %>%
   mutate(individuals_per_m3 = individuals_in_tow/volume_m3_best) %>%
   mutate(depth_mean_m = (maximum_depth_m + minimum_depth_m)/2) %>%
-  mutate(depth_diff_m = maximum_depth_m - minimum_depth_m)
+  mutate(depth_diff_m = maximum_depth_m - minimum_depth_m) %>%
+  select(project, year, collection_date, start_time_pt, start_latitude_dd, start_longitude_dd, 
+         transect_station_rep_year_net, transect_station_rep_year, transect_station_rep,
+         transect_station, transect, station, replicate, mocness_side, net, volume_m3_best,
+         depth_range, maximum_depth_m, minimum_depth_m, depth_mean_m, depth_diff_m, taxon, individuals_in_tow,
+         individuals_per_m3, mean_temperature_c, mean_salinity_psu, mean_density_kgm3,
+         seafloor_depth_m, distance_to_shore_km, shelf_position, prey_zooplankton_abundance_ind_m3,
+         dissolved_oxygen_ml_l, mlotst, mean_chl_0_100_m_mgm3)
 
 
 # filter out rare taxa (present in <5% of samples) -----------------------
