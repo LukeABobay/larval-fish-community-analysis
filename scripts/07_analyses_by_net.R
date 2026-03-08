@@ -22,38 +22,38 @@ source(here("scripts/01_data_wrangling.R"))
 
 
 # Create wide environmental dataframe ---------------------------------------------------
-volume_sampled_by_both_sides <- mocness_major_taxa %>%
+volume_sampled_by_both_sides <- mocness_major_taxa_nets %>%
   distinct(transect_station_rep_year, mocness_side, net, .keep_all = TRUE) %>%
   group_by(transect_station_rep_year, net) %>%
   mutate(combined_volume_m3_best = sum(volume_m3_best)) %>%
   ungroup() %>%
   distinct(transect_station_rep_year, net, combined_volume_m3_best)
 
-nets_major_taxa_wide <- mocness_major_taxa %>%
+nets_major_taxa_wide <- mocness_major_taxa_nets %>%
   # Removing NAs for now, but there shouldn't be any to begin with
   filter(!is.na(individuals_in_tow)) %>%
   filter(!is.na(individuals_per_m3)) %>%
-  group_by(transect, station, replicate, year, depth_mean_m, taxon) %>%
-  mutate(sum_individuals = sum(individuals_in_tow)) %>%
+  group_by(transect, station, replicate, year, net, taxon) %>%
+  mutate(individuals_in_tow_total = sum(individuals_in_tow)) %>%
   merge(., volume_sampled_by_both_sides, by = c("transect_station_rep_year", "net"), all.x = TRUE) %>%
   ungroup() %>%
   distinct(transect_station_rep_year_net, taxon, .keep_all = TRUE) %>%
-  mutate(avg_taxa_conc = sum_individuals/combined_volume_m3_best) %>%
+  mutate(avg_taxa_conc = individuals_in_tow_total/combined_volume_m3_best) %>%
   select(project, cruise, year, collection_date, transect, replicate, station, net, 
          transect_station_rep_year, transect_station_rep_year_net, start_time_pt, 
          start_longitude_dd, start_latitude_dd,
          maximum_depth_m, minimum_depth_m, depth_mean_m, depth_diff_m,
          mean_temperature_c, mean_salinity_psu, mean_density_kgm3, seafloor_depth_m,
          distance_to_shore_km, shelf_position, prey_zooplankton_abundance_ind_m3,
-         dissolved_oxygen_ml_l, mean_chl_0_100_m_mgm3, mlotst, taxon,
-         avg_taxa_conc, combined_volume_m3_best) %>%
+         dissolved_oxygen_ml_l, mean_chl_0_100_m_mgm3, mlotst, taxon, individuals_in_tow_total,
+         combined_volume_m3_best) %>%
   # For some reason, MOC 1 and MOC 4 have different values of mean_temperature_c, mean_salinity_psu, and mean_density_kgm3 in 6 cases. To eliminate differences, calculate mean
   group_by(transect_station_rep_year_net) %>%
   mutate(mean_temperature_c = mean(mean_temperature_c),
          mean_salinity_psu = mean(mean_salinity_psu),
          mean_density_kgm3 = mean(mean_density_kgm3)) %>%
   ungroup() %>%
-  pivot_wider(names_from = taxon, values_from = avg_taxa_conc, values_fill = 0)
+  pivot_wider(names_from = taxon, values_from = individuals_in_tow_total, values_fill = 0)
 
 nets_env_wide <- nets_major_taxa_wide %>%
   select(project, cruise, collection_date, year, replicate, transect_station_rep_year_net, start_time_pt,
@@ -75,9 +75,9 @@ nets_env_wide <- nets_major_taxa_wide %>%
 # Perform cluster analysis ------------------------------------------------
 
 nets_AHC_comm_matrix <- nets_major_taxa_wide %>%
-  select(transect_station_rep_year_net, depth_mean_m, 29:66)
+  select(transect_station_rep_year_net, depth_mean_m, 29:65)
 
-nets_transform_taxa_concentrations <- nets_AHC_comm_matrix[, 3:40] %>%
+nets_transform_taxa_concentrations <- nets_AHC_comm_matrix[, 3:39] %>%
   sqrt()
 
 # Add rownames
@@ -93,7 +93,6 @@ nets_dissim_matrix <- vegdist(nets_transform_taxa_concentrations, method = "bray
 nets_AHC_result <- hclust(nets_dissim_matrix, method = "average")
 
 # Plot the dendrograms
-windows()
 plot(nets_AHC_result, labels = nets_AHC_comm_matrix_transformed$transect_station_rep_year_net, main = "average linkage AHC of net tows by LFC")
 rect.hclust(nets_AHC_result, k = 10, border = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
 
@@ -137,7 +136,6 @@ species_colors <- c(setNames(coastal_colors, coastal_species),
 ordered_taxa <- c(coastal_species, coastal_oceanic_species, oceanic_species)
 
 # Plot by transect_station_rep_year, sorted by cluster
-windows()
 ggplot(nets_AHC_comm_matrix_transformed_long, aes(x = transect_station_rep_year_net, y = sqrt_concentration, fill = factor(taxon, levels = ordered_taxa))) +
   geom_bar(stat = "identity", position = "stack") +
   scale_fill_manual(values = species_colors, breaks = ordered_taxa) +
@@ -162,7 +160,7 @@ nets_stations_clustered$cluster <- as.numeric(as.character(nets_stations_cluster
 nets_stations_clustered$cluster <- factor(nets_stations_clustered$cluster, levels = c(1,2,3,4,5,6,7,8,9,10), 
                                           labels = c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster 4", "Cluster 5", "Cluster 6", "Cluster 7", "Cluster 8", "Cluster 9", "Cluster 10"))
 
-ggplot(nets_stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
+ggplot(filter(nets_stations_clustered, transect_station_rep_year_net != "TR_4_MaN_2019_2"), aes(x = NMDS1, y = NMDS2, color = cluster)) +
   scale_color_manual(values = c("indianred", "lightsalmon", "lightblue", "palegreen", "khaki", "plum", "turquoise", "pink", "tan3", "darkolivegreen4")) +
   geom_point(size = 3) +
   geom_text_repel(aes(label = transect_station_rep_year_net), size = 3, max.overlaps = 10) +
