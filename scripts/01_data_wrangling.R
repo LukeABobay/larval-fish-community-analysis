@@ -533,50 +533,59 @@ mocness_clean <- mocness_full_geographic_isiis_mixing_fluor %>%
   unite(col = "depth_range", minimum_depth_m, maximum_depth_m, sep="-", remove = FALSE) %>%
   # Eliminate spaces to avoid inconvenient behavior later when each taxon is made into its own column
   mutate(taxon = case_match(taxon, 
-                            c("Xeneretmus spp.", "Xeneretmus latifrons", "Agonidae spp.", "Hemilepodotus spp.") ~ "Agonidae",
+                            c("Xeneretmus spp.", "Xeneretmus latifrons", "Agonidae spp.", 
+                              "Hemilepidotus spinosus", "Hemilepodotus spinosus", "Hemilepidotus spp.", "Hemilepodotus spp.", 
+                              "Nautichthys spp.", "Nautichthys spp. ") ~ "Agonidae",
                             c("Ammodytes spp.", "Ammodytidae") ~ "Ammodytidae",
                             "Anarrhichthys ocellatus" ~ "Anarrhichthys_ocellatus",
                             c("Anoplopomatidae spp.", "Anoploploma fimbria", "Anaploploma fimbria", "Anoplopoma fimbria") ~ "Anoplopomatidae",
-                            "Lipolagus ochotensis" ~ "Lipolagus_ochotensis",
-                            c("Bathylagus pacificus", "Bathylagidae") ~ "Bathylagidae",
+                            c("Lipolagus ochotensis", "Bathylagus pacificus", "Bathylagidae") ~ "Bathylagidae",
                             c("Ronquilus jordani", "Bathymasterid spp.") ~ "Bathymasteridae",
-                            "Chauliodus macouni" ~ "Chauliodus_macouni",
+                            c("Chauliodus macouni", "stomiidae") ~ "Stomiidae",
                             c("Sardinops sagax", "Sardinops sargax") ~ "Sardinops_sagax",
-                            c("Artedius spp.", "Artedius harringtoni", "Artedius fenestralis") ~ "Artedius",
-                            c("Cottidae spp.", "Cottid spp.", "Cottidae", "Scorpaenichthys marmoratus", "Nautichthys spp.",
-                              "Nautichthys spp. ", "Cottid spp. ", "Leptocottus armatus", "Hemilepidotus spp.", 
-                              "Hemilepidotus spinosus", "Radulinus spp.", "Radulinus asprellus", "Radulina asprellus",
+                            c("Artedius spp.", "Artedius fenestralis", "Cottidae spp.", "Cottid spp.", "Cottidae", "Scorpaenichthys marmoratus",
+                              "Cottid spp. ", "Leptocottus armatus", 
+                              "Radulinus spp.", "Radulinus asprellus", "Radulina asprellus",
                               "Enophrys bison") ~ "Cottidae",
-                            c("Cryptacanthodes spp.", "Cryptacanthodes aleutensis", "Lyconectes aleutensis") ~ "Cryptacanthodes",
-                            c("Liparis spp.", "Liparis fucensis", "Liparis pulchellus") ~ "Liparis",
+                            c("Lyconectes aleutensis") ~ "Cryptacanthodes_aleutensis",
+                            c("Liparis spp.", "Liparis fucensis", "Liparis pulchellus") ~ "Liparis_spp",
                             "Engraulis mordax" ~ "Engraulis_mordax",
                             c("Gadid spp.", "Microgadus proximus") ~ "Gadidae",
                             "Gobiidae spp." ~ "Gobiidae",
                             c("Hexagrammidae spp.", "Hexagrammos octogrammus", "Hexagrammos decagrammus", "Ophiodon elongatus", 
                               "Hexagrammos lagocephalus", "Hexagrammos lagocephalus") ~ "Hexagrammidae",
-                            c("Macrourid spp.", "Coryphaenoids acrolepis", "Coryphaenoides acrolepis", "Albatrossia pectoralis", 
-                              "Macrouridae") ~ "Macrouridae",
+                            c("Macrourid spp.", "Albatrossia pectoralis", "Macrouridae") ~ "Macrouridae",
                             "Merluccius productus" ~ "Merluccius_productus",
                             "Nansenia candida" ~ "Nansenia_candida",
-                            c("Myctophid spp.", "Nannobrachium regalis", "Protomyctophum crockeri", "Protomyctophum thompsoni", 
-                              "Stenobrachius leucopsarus", "Tarletonbeania crenularis", "Diaphus theta", "Nannobrachium spp.") ~ "Myctophidae",
-                            c("Chilara taylori", "Ophidiidae") ~ "Ophidiidae",
+                            c("Nannobrachium regalis", "Nannobrachium spp.") ~ "Nannobrachium_spp",
+                            c("Protomyctophum crockeri", "Protomyctophum thompsoni") ~ "Protomyctophum_spp",
+                            "Stenobrachius leucopsarus" ~ "Stenobrachius_leucopsarus",
+                            "Tarletonbeania crenularis" ~ "Tarletonbeania_crenularis",
+                            "Diaphus theta" ~ "Diaphus_theta",
+                            c("Myctophid spp.", "Myctophidae") ~ "Myctophidae_unidentified",
                             c("Osmerid spp", "Osmerid spp.") ~ "Osmeridae",
-                            c("Lestidiops ringens", "Paralepididae") ~ "Paralepididae",
-                            c("Citharichthys spp.", "Citharichthys sordidus", "Citharichthys stigmaeus") ~ "Paralichthyidae",
+                            "Lestidiops ringens" ~ "Lestidiops_ringens",
+                            c("Citharichthys spp.", "Citharichthys sordidus", "Citharichthys stigmaeus") ~ "Citharichthys_spp",
                             c("Pholidae spp.", "Apodichthus flavidus", "Apodichthys flavidus") ~ "Pholidae",
                             "Parophrys vetulus" ~ "Parophrys_vetulus",
-                            c("Atheresthes stomias", "Atherestes stomias", "Glyptocephalus zachirus", "Psettichthys melanostictus", "Lyopsetta exilis", 
-                              "Isopsetta isolepis", "Microstomus pacificus", "Lepidopsetta bilineata", "Embassichthys bathybius", 
-                              "Eopsetta jordani", "Pleuronichthys decurrens", "Pleuronectidae") ~ "Pleuronectidae_other",
+                            "Glyptocephalus zachirus" ~ "Glyptocephalus_zachirus",
+                            "Psettichthys melanostictus" ~ "Psettichthys_melanostictus",
+                            "Lyopsetta exilis" ~ "Lyopsetta_exilis",
+                            "Isopsetta isolepis" ~ "Isopsetta_isolepis",
+                            c("Atheresthes stomias", "Atherestes stomias") ~ "Atheresthes_stomias", 
+                            "Microstomus pacificus" ~ "Microstomus_pacificus", 
+                            "Lepidopsetta bilineata" ~ "Lepidopsetta_bilineata", 
+                            "Eopsetta jordani" ~ "Eopsetta_jordani", 
+                            "Pleuronichthys decurrens" ~ "Pleuronichthys_decurrens", 
+                            "Pleuronectidae" ~ "Pleuronectidae_unidentified",
                             "Ptilichthys goodei" ~ "Ptilichthys_goodei",
-                            "Sebastolobus spp." ~ "Sebastolobus",
-                            "Sebastes spp." ~ "Sebastes",
-                            c("Chirolophis spp.", "Xiphister atrophurpureus", "Xiphister atrophurpureus", "Plectobranchus evides", 
+                            "Sebastolobus spp." ~ "Sebastolobus_spp",
+                            "Sebastes spp." ~ "Sebastes_spp",
+                            c("Chirolophis spp.", "Xiphister atrophurpureus", "Xiphister atrophurpureus", 
                               "Stichaeidae spp.") ~ "Stichaeidae",
-                            "Chauliodus spp." ~ "Chauliodontidae",
+                            "Plectobranchus evides" ~ "Plectobranchus_evides",
                             "Trachipterus altivelis" ~ "Trachipterus_altivelis",
-                            "Clupeidae" ~ "Clupeidae_other",
+                            "Clupeidae" ~ "Clupeidae_unidentified",
                             "Alepocephalidae" ~ "Alepocephalidae",
                             .default = taxon)) %>%
   group_by(transect_station_rep_year, mocness_side, net, taxon) %>%
@@ -601,6 +610,17 @@ mocness_clean <- mocness_full_geographic_isiis_mixing_fluor %>%
 
 ##change Jan 8 2026: removed lower thresholds for taxa frequency and individuals per station counts. Will reconsider these later on.
 
+# LB; 3/7/26: Exploring taxonomic groupings and sample size thresholds by taxon and net
+sample_sizes_original_taxa <- mocness_full_geographic_isiis_mixing_fluor %>%
+  group_by(taxon) %>%
+  mutate(individuals_in_tow = as.integer(individuals_in_tow)) %>%
+  summarize(n = sum(individuals_in_tow, na.rm = TRUE))
+
+sample_sizes_grouped_taxa <- mocness_clean %>%
+  group_by(taxon) %>%
+  mutate(individuals_in_tow = as.integer(individuals_in_tow)) %>%
+  summarize(n = sum(individuals_in_tow, na.rm = TRUE))
+
 taxa_w_gt_5pct <- mocness_clean %>%
   filter(individuals_in_tow != "") %>%
   mutate(individuals_in_tow = as.numeric(individuals_in_tow)) %>%
@@ -608,21 +628,38 @@ taxa_w_gt_5pct <- mocness_clean %>%
   group_by(taxon) %>%
   summarize(freq = n_distinct(transect_station_rep)) %>%
   ungroup() %>%
-  filter(freq >= 0.0 * n_distinct(mocness_clean$transect_station_rep))
+  filter(freq >= 0.05 * n_distinct(mocness_clean$transect_station_rep))
 
 mocness_major_taxa <- mocness_clean %>%
   filter(taxon %in% taxa_w_gt_5pct$taxon & taxon != "Unknown" & !is.na(taxon) & taxon != "Damaged" & 
            taxon != "" & taxon != "Fish eggs" & taxon != "Unknown spotted" & 
-           taxon != "No fish" & !is.na(taxon) & taxon != "unknown")
+           taxon != "No fish" & !is.na(taxon) & taxon != "unknown" & taxon != "fish egg(s)")
+
+sample_sizes_major_taxa <- mocness_major_taxa %>%
+  group_by(taxon) %>%
+  mutate(individuals_in_tow = as.integer(individuals_in_tow)) %>%
+  summarize(n = sum(individuals_in_tow, na.rm = TRUE))
 
 # Get list of date/station/replicate with > 20 individuals of any "major" taxa
-stations_w_gt_20ind <- mocness_major_taxa %>%
-  group_by(collection_date, transect, station, replicate) %>%
+nets_w_gt_0ind <- mocness_major_taxa %>%
+  group_by(collection_date, transect, station, replicate, net) %>%
   summarize(individuals_per_station = sum(individuals_in_tow), .groups = "drop") %>%
-  filter(individuals_per_station >= 0)
+  filter(individuals_per_station > 0)
+
+sample_sizes_by_station <- mocness_major_taxa %>%
+  group_by(collection_date, transect, replicate, station) %>%
+  mutate(individuals_in_tow = as.integer(individuals_in_tow)) %>%
+  summarize(n = sum(individuals_in_tow, na.rm = TRUE))
+
+sample_sizes_by_net <- mocness_major_taxa %>%
+  group_by(collection_date, transect, replicate, station, net) %>%
+  mutate(individuals_in_tow = as.integer(individuals_in_tow)) %>%
+  summarize(n = sum(individuals_in_tow, na.rm = TRUE))
+
+hist(sample_sizes_by_net$n, breaks = 3790)
 
 # Filter out stations with few fish larvae, which will be excluded from cluster analysis
-mocness_major_taxa_stations <- inner_join(mocness_major_taxa, stations_w_gt_20ind, by = c("collection_date", "transect", "station", "replicate"))
+mocness_major_taxa_nets <- inner_join(mocness_major_taxa, nets_w_gt_0ind, by = c("collection_date", "transect", "station", "replicate", "net"))
 
 ##filter to keep only 2018-2019 data and those with values for mixed layer depth for the time being
 ##no longer necessary to filter out 2022 and 2023 so hiding these
