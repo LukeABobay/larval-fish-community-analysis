@@ -33,19 +33,16 @@ nets_major_taxa_wide <- mocness_major_taxa_nets %>%
   # Removing NAs for now, but there shouldn't be any to begin with
   filter(!is.na(individuals_in_tow)) %>%
   filter(!is.na(individuals_per_m3)) %>%
-  group_by(transect, station, replicate, year, net, taxon) %>%
-  mutate(individuals_in_tow_total = sum(individuals_in_tow)) %>%
   merge(., volume_sampled_by_both_sides, by = c("transect_station_rep_year", "net"), all.x = TRUE) %>%
-  ungroup() %>%
   distinct(transect_station_rep_year_net, taxon, .keep_all = TRUE) %>%
-  mutate(avg_taxa_conc = individuals_in_tow_total/combined_volume_m3_best) %>%
+  mutate(avg_taxa_conc = individuals_in_tow_both_sides/combined_volume_m3_best) %>%
   select(project, cruise, year, collection_date, transect, replicate, station, net, 
          transect_station_rep_year, transect_station_rep_year_net, start_time_pt, 
          start_longitude_dd, start_latitude_dd,
          maximum_depth_m, minimum_depth_m, depth_mean_m, depth_diff_m,
          mean_temperature_c, mean_salinity_psu, mean_density_kgm3, seafloor_depth_m,
          distance_to_shore_km, shelf_position, prey_zooplankton_abundance_ind_m3,
-         dissolved_oxygen_ml_l, mean_chl_0_100_m_mgm3, mlotst, taxon, individuals_in_tow_total,
+         dissolved_oxygen_ml_l, mean_chl_0_100_m_mgm3, mlotst, taxon, individuals_in_tow_both_sides,
          combined_volume_m3_best) %>%
   # For some reason, MOC 1 and MOC 4 have different values of mean_temperature_c, mean_salinity_psu, and mean_density_kgm3 in 6 cases. To eliminate differences, calculate mean
   group_by(transect_station_rep_year_net) %>%
@@ -53,7 +50,7 @@ nets_major_taxa_wide <- mocness_major_taxa_nets %>%
          mean_salinity_psu = mean(mean_salinity_psu),
          mean_density_kgm3 = mean(mean_density_kgm3)) %>%
   ungroup() %>%
-  pivot_wider(names_from = taxon, values_from = individuals_in_tow_total, values_fill = 0)
+  pivot_wider(names_from = taxon, values_from = individuals_in_tow_both_sides, values_fill = 0)
 
 nets_env_wide <- nets_major_taxa_wide %>%
   select(project, cruise, collection_date, year, replicate, transect_station_rep_year_net, start_time_pt,
@@ -75,9 +72,9 @@ nets_env_wide <- nets_major_taxa_wide %>%
 # Perform cluster analysis ------------------------------------------------
 
 nets_AHC_comm_matrix <- nets_major_taxa_wide %>%
-  select(transect_station_rep_year_net, depth_mean_m, 29:65)
+  select(transect_station_rep_year_net, depth_mean_m, 29:64)
 
-nets_transform_taxa_concentrations <- nets_AHC_comm_matrix[, 3:39] %>%
+nets_transform_taxa_concentrations <- nets_AHC_comm_matrix[, 3:38] %>%
   sqrt()
 
 # Add rownames
@@ -94,18 +91,18 @@ nets_AHC_result <- hclust(nets_dissim_matrix, method = "average")
 
 # Plot the dendrograms
 plot(nets_AHC_result, labels = nets_AHC_comm_matrix_transformed$transect_station_rep_year_net, main = "average linkage AHC of net tows by LFC")
-rect.hclust(nets_AHC_result, k = 10, border = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
+rect.hclust(nets_AHC_result, k = 17, border = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17))
 
 # Extract list of sampling events belonging to each cluster
-approx_sample_size_df <- mocness_major_taxa_stations %>%
+sample_size_df <- mocness_major_taxa_nets %>%
   group_by(transect_station_rep_year_net) %>%
-  summarise(approx_sample_size = sum(individuals_in_tow), .groups = "drop")
+  summarise(sample_size = sum(individuals_in_tow_both_sides), .groups = "drop")
 
 nets_clusters <- data.frame(
-  transect_station_rep_year_net = names(cutree(nets_AHC_result, k = 10)),
-  cluster = cutree(nets_AHC_result, k = 10)
+  transect_station_rep_year_net = names(cutree(nets_AHC_result, k = 17)),
+  cluster = cutree(nets_AHC_result, k = 17)
 ) %>%
-  left_join(approx_sample_size_df, by = "transect_station_rep_year_net")
+  left_join(sample_size_df, by = "transect_station_rep_year_net")
 
 # Plot abundance of each taxon, grouped by cluster ------------------------
   
