@@ -659,7 +659,11 @@ sample_sizes_by_net <- mocness_major_taxa %>%
 hist(sample_sizes_by_net$n, breaks = 3790)
 
 # Filter out stations with few fish larvae, which will be excluded from cluster analysis
-mocness_major_taxa_nets <- inner_join(mocness_major_taxa, nets_w_gt_0ind, by = c("collection_date", "transect", "station", "replicate", "net"))
+mocness_major_taxa_nets <- inner_join(mocness_major_taxa, nets_w_gt_0ind, by = c("collection_date", "transect", "station", "replicate", "net")) %>%
+  # Calculate total number of fish belonging to each taxon collected in either side during each tow
+  group_by(collection_date, transect, replicate, station, net, taxon) %>%
+  mutate(individuals_in_tow_both_sides = sum(individuals_in_tow, na.rm = TRUE)) %>%
+  distinct(collection_date, transect, replicate, station, net, taxon, .keep_all = TRUE)
 
 ##filter to keep only 2018-2019 data and those with values for mixed layer depth for the time being
 ##no longer necessary to filter out 2022 and 2023 so hiding these
