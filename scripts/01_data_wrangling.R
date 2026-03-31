@@ -533,9 +533,7 @@ mocness_clean <- mocness_full_geographic_isiis_mixing_fluor %>%
   unite(col = "depth_range", minimum_depth_m, maximum_depth_m, sep="-", remove = FALSE) %>%
   # Eliminate spaces to avoid inconvenient behavior later when each taxon is made into its own column
   mutate(taxon = case_match(taxon, 
-                            c("Xeneretmus spp.", "Xeneretmus latifrons", "Agonidae spp.", 
-                              "Hemilepidotus spinosus", "Hemilepodotus spinosus", "Hemilepidotus spp.", "Hemilepodotus spp.", 
-                              "Nautichthys spp.", "Nautichthys spp. ") ~ "Agonidae",
+                            c("Xeneretmus spp.", "Xeneretmus latifrons", "Agonidae spp.", "Agonidae") ~ "Agonidae",
                             c("Ammodytes spp.", "Ammodytidae") ~ "Ammodytidae",
                             "Anarrhichthys ocellatus" ~ "Anarrhichthys_ocellatus",
                             c("Anoplopomatidae spp.", "Anoploploma fimbria", "Anaploploma fimbria", "Anoplopoma fimbria") ~ "Anoplopomatidae",
@@ -543,17 +541,16 @@ mocness_clean <- mocness_full_geographic_isiis_mixing_fluor %>%
                             c("Ronquilus jordani", "Bathymasterid spp.") ~ "Bathymasteridae",
                             c("Chauliodus macouni", "stomiidae") ~ "Stomiidae",
                             c("Sardinops sagax", "Sardinops sargax") ~ "Sardinops_sagax",
-                            c("Artedius spp.", "Artedius fenestralis", "Cottidae spp.", "Cottid spp.", "Cottidae", "Scorpaenichthys marmoratus",
-                              "Cottid spp. ", "Leptocottus armatus", 
-                              "Radulinus spp.", "Radulinus asprellus", "Radulina asprellus",
-                              "Enophrys bison") ~ "Cottidae",
+                            c("Artedius spp.", "Artedius fenestralis", "Cottidae spp.", "Cottid spp.", "Cottid spp.", "Cottidae", "Scorpaenichthys marmoratus",
+                              "Leptocottus armatus", "Radulinus spp.", "Radulinus asprellus", "Radulina asprellus", "Enophrys bison", "Hemilepodotus spp.",
+                              "Hemilepodotus spinosus", "Hemilepidotus spinosus", "Hemilepidotus spp.", "Nautichthys spp. ") ~ "Cottidae",
                             c("Lyconectes aleutensis") ~ "Cryptacanthodes_aleutensis",
                             c("Liparis spp.", "Liparis fucensis", "Liparis pulchellus") ~ "Liparis_spp",
                             "Engraulis mordax" ~ "Engraulis_mordax",
                             c("Gadid spp.", "Microgadus proximus") ~ "Gadidae",
                             "Gobiidae spp." ~ "Gobiidae",
                             c("Hexagrammidae spp.", "Hexagrammos octogrammus", "Hexagrammos decagrammus", "Ophiodon elongatus", 
-                              "Hexagrammos lagocephalus", "Hexagrammos lagocephalus") ~ "Hexagrammidae",
+                              "Hexagrammos lagocephalus") ~ "Hexagrammidae",
                             c("Macrourid spp.", "Albatrossia pectoralis", "Macrouridae") ~ "Macrouridae",
                             "Merluccius productus" ~ "Merluccius_productus",
                             "Nansenia candida" ~ "Nansenia_candida",
@@ -563,10 +560,10 @@ mocness_clean <- mocness_full_geographic_isiis_mixing_fluor %>%
                             "Tarletonbeania crenularis" ~ "Tarletonbeania_crenularis",
                             "Diaphus theta" ~ "Diaphus_theta",
                             c("Myctophid spp.", "Myctophidae") ~ "Myctophidae_unidentified",
-                            c("Osmerid spp", "Osmerid spp.") ~ "Osmeridae",
+                            c("Osmerid spp.", "Osmeridae") ~ "Osmeridae",
                             "Lestidiops ringens" ~ "Lestidiops_ringens",
                             c("Citharichthys spp.", "Citharichthys sordidus", "Citharichthys stigmaeus") ~ "Citharichthys_spp",
-                            c("Pholidae spp.", "Apodichthus flavidus", "Apodichthys flavidus") ~ "Pholidae",
+                            c("Pholidae spp.", "Apodichthus flavidus") ~ "Pholidae",
                             "Parophrys vetulus" ~ "Parophrys_vetulus",
                             "Glyptocephalus zachirus" ~ "Glyptocephalus_zachirus",
                             "Psettichthys melanostictus" ~ "Psettichthys_melanostictus",
@@ -581,9 +578,7 @@ mocness_clean <- mocness_full_geographic_isiis_mixing_fluor %>%
                             "Ptilichthys goodei" ~ "Ptilichthys_goodei",
                             "Sebastolobus spp." ~ "Sebastolobus_spp",
                             "Sebastes spp." ~ "Sebastes_spp",
-                            c("Chirolophis spp.", "Xiphister atrophurpureus", "Xiphister atrophurpureus", 
-                              "Stichaeidae spp.") ~ "Stichaeidae",
-                            "Plectobranchus evides" ~ "Plectobranchus_evides",
+                            c("Chirolophis spp.", "Xiphister atrophurpureus", "Plectobranchus evides", "Stichaeidae", "Stichaeidae spp.") ~ "Stichaeidae",
                             "Trachipterus altivelis" ~ "Trachipterus_altivelis",
                             "Clupeidae" ~ "Clupeidae_unidentified",
                             "Alepocephalidae" ~ "Alepocephalidae",
@@ -621,17 +616,20 @@ sample_sizes_grouped_taxa <- mocness_clean %>%
   mutate(individuals_in_tow = as.integer(individuals_in_tow)) %>%
   summarize(n = sum(individuals_in_tow, na.rm = TRUE))
 
-taxa_w_gt_5pct <- mocness_clean %>%
+taxa_w_gt_15pct <- mocness_clean %>%
   filter(individuals_in_tow != "") %>%
   mutate(individuals_in_tow = as.numeric(individuals_in_tow)) %>%
-  filter(individuals_in_tow > 0) %>%
+  filter(individuals_in_tow > 15) %>%
   group_by(taxon) %>%
-  summarize(freq = n_distinct(transect_station_rep)) %>%
+  summarize(freq = n_distinct(transect_station_rep_year_net)) %>%
   ungroup() %>%
-  filter(freq >= 0.05 * n_distinct(mocness_clean$transect_station_rep))
+  filter(freq >= 0.05 * n_distinct(mocness_clean$transect_station_rep_year_net))
+# RM; I decided to filter the taxa with a mix of strategies like Rodriguez did. I first thresholded by overall taxa count >15 
+ # individuals, a value between those used by Huebert and Richardson (30 and 5, respectively). I then filtered by frequency of
+ # occurrence like Doyle and Roussel with a threshold of those present in >= 5% of samples
 
 mocness_major_taxa <- mocness_clean %>%
-  filter(taxon %in% taxa_w_gt_5pct$taxon & taxon != "Unknown" & !is.na(taxon) & taxon != "Damaged" & 
+  filter(taxon %in% taxa_w_gt_15pct$taxon & taxon != "Unknown" & !is.na(taxon) & taxon != "Damaged" & 
            taxon != "" & taxon != "Fish eggs" & taxon != "Unknown spotted" & 
            taxon != "No fish" & !is.na(taxon) & taxon != "unknown" & taxon != "fish egg(s)")
 
@@ -640,7 +638,7 @@ sample_sizes_major_taxa <- mocness_major_taxa %>%
   mutate(individuals_in_tow = as.integer(individuals_in_tow)) %>%
   summarize(n = sum(individuals_in_tow, na.rm = TRUE))
 
-# Get list of date/station/replicate with > 20 individuals of any "major" taxa
+# Get list of date/station/replicate with > 0 individuals of any "major" taxa
 nets_w_gt_0ind <- mocness_major_taxa %>%
   group_by(collection_date, transect, station, replicate, net) %>%
   summarize(individuals_per_station = sum(individuals_in_tow), .groups = "drop") %>%
@@ -655,8 +653,11 @@ sample_sizes_by_net <- mocness_major_taxa %>%
   group_by(collection_date, transect, replicate, station, net) %>%
   mutate(individuals_in_tow = as.integer(individuals_in_tow)) %>%
   summarize(n = sum(individuals_in_tow, na.rm = TRUE))
+# RM; I was just thinking, do we want to use the net 0s since these aren't depth-stratified? If not, when should we remove them? Before 
+ # or after filtering?
 
 hist(sample_sizes_by_net$n, breaks = 3790)
+# RM ; what is this histogram for? how did you decide on the break level?
 
 # Filter out stations with few fish larvae, which will be excluded from cluster analysis
 mocness_major_taxa_nets <- inner_join(mocness_major_taxa, nets_w_gt_0ind, by = c("collection_date", "transect", "station", "replicate", "net")) %>%
