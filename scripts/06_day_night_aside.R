@@ -11,6 +11,7 @@ library(tidyverse)
 library(ggplot2)
 library(RColorBrewer)
 library(dplyr)
+library(visreg)
 
 
 # Source code -------------------------------------------------------------
@@ -29,16 +30,19 @@ mocness_major_taxa_19 <- filter(mocness_major_taxa, collection_date > "2019-01-0
 
 # Classify taxa by habitat affinity and create color vectors ---------------
 #Categories of species with >15 individuals from MEZCAL
-coastal_species <- c("Agonidae", "Ammodytidae", "Anarrhichthys_ocellatus", "Artedius", "Cottidae", "Cryptacanthodes",
-                     "Gadidae", "Hexagrammidae", "Liparis", "Paralichthyidae", "Parophrys_vetulus", "Alepocephalidae",
-                     "Pholidae", "Pleuronectidae_other", "Sebastes", "Stichaeidae", "Bathymasteridae")
+coastal_species <- c("Agonidae", "Ammodytidae", "Anarrhichthys_ocellatus", "Cottidae", "Gobiidae", "Osmeridae", "Citharichthys_spp",
+                     "Gadidae", "Hexagrammidae", "Liparis_spp", "Paralichthyidae", "Parophrys_vetulus", "Alepocephalidae", 
+                     "Pleuronectidae_unidentified", "Pholidae", "Pleuronectidae_other", "Sebastes_spp", "Stichaeidae", "Bathymasteridae", 
+                     "Glyptocephalus_zachirus", "Psettichthys_melanostictus", "Lyopsetta_exilis", "Isopsetta_isolepis", 
+                     "Lepidopsetta_bilineata", "Pleuronichthys_decurrens", "Sebastolobus_spp")
 coastal_colors <- colorRampPalette(brewer.pal(9, "Greens")[2:9])(length(coastal_species))
 
-coastal_oceanic_species <- c("Anoplopomatidae", "Engraulis_mordax", "Clupeidae_other") 
+coastal_oceanic_species <- c("Anoplopomatidae", "Engraulis_mordax", "Clupeidae_unidentified", "Sardinops_sagax") 
 coastal_oceanic_colors <- colorRampPalette(brewer.pal(9, "Blues")[2:9])(length(coastal_oceanic_species))
 
-oceanic_species <- c("Chauliodus_macouni", "Lipolagus_ochotensis", "Macrouridae", "Paraleptidae",
-                     "Merluccius_productus", "Myctophidae", "Nansenia_candida", "Bathylagidae")
+oceanic_species <- c("Stomiidae", "Lipolagus_ochotensis", "Macrouridae", "Paraleptidae", "Microstomus_pacificus", "Atheresthes_stomias",
+                     "Merluccius_productus", "Nansenia_candida", "Bathylagidae", "Stenobrachius_leucopsarus", "Cryptacanthodes_aleutensis", 
+                     "Nannobrachium_spp", "Protomyctophum_spp", "Tarletonbeania_crenularis", "Diaphus_theta", "Myctophidae_unidentified")
 oceanic_colors <- colorRampPalette(brewer.pal(9, "Purples")[2:9])(length(oceanic_species))
 
 #Named species color vector
@@ -96,3 +100,31 @@ summary(day_night_depth_model)
 
 day_night_mean_depth_model <- lm(avg_taxa_concentration ~ taxon*time_of_day + taxon*depth_mean_m, data = avgd_mocness_major_taxa_19)
 summary(day_night_mean_depth_model)
+
+
+# Linear regression on specific taxa --------------------------------------
+# RM ; we discussed doing this for Sebastes, P. vetulus, and a Myctophid. I chose S. leucopsarus because it has the highest count. Also,
+## according to Wikipedia, S. leucopsarus display DVM.
+
+#Sebastes
+
+seb_df <- mocness_major_taxa_19 %>%
+  filter(taxon == "Sebastes_spp")
+seb_lm <- lm(log(individuals_per_m3) ~ depth_mean_m + time_of_day + depth_mean_m:time_of_day, 
+             data = seb_df)
+visreg(seb_lm, "depth_mean_m", by = "time_of_day", ylab = "log(Sebastes individuals per m3)", xlab = "mean depth (m)")
+
+# P. vetulus
+p_vetulus_df <- mocness_major_taxa_19 %>%
+  filter(taxon == "Parophrys_vetulus")
+p_vetulus_lm <- lm(log(individuals_per_m3) ~ depth_mean_m + time_of_day + depth_mean_m:time_of_day, 
+             data = p_vetulus_df)
+visreg(p_vetulus_lm, "depth_mean_m", by = "time_of_day", ylab = "log(P. vetulus individuals per m3)", xlab = "mean depth (m)")
+
+# S. leucopsarus 
+s_leucopsarus_df <- mocness_major_taxa_19 %>%
+  filter(taxon == "Stenobrachius_leucopsarus")
+s_leucopsarus_lm <- lm(log(individuals_per_m3) ~ depth_mean_m + time_of_day + depth_mean_m:time_of_day, 
+                   data = s_leucopsarus_df)
+visreg(s_leucopsarus_lm, "depth_mean_m", by = "time_of_day", ylab = "log(S. leucopsarus individuals per m3)", xlab = "mean depth (m)")
+
