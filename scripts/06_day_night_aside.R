@@ -112,6 +112,7 @@ seb_df <- mocness_major_taxa_19 %>%
   filter(taxon == "Sebastes_spp")
 seb_lm <- lm(log(individuals_per_m3) ~ depth_mean_m + time_of_day + depth_mean_m:time_of_day, 
              data = seb_df)
+summary(seb_lm)
 visreg(seb_lm, "depth_mean_m", by = "time_of_day", ylab = "log(Sebastes individuals per m3)", xlab = "mean depth (m)")
 
 # P. vetulus
@@ -119,6 +120,7 @@ p_vetulus_df <- mocness_major_taxa_19 %>%
   filter(taxon == "Parophrys_vetulus")
 p_vetulus_lm <- lm(log(individuals_per_m3) ~ depth_mean_m + time_of_day + depth_mean_m:time_of_day, 
              data = p_vetulus_df)
+summary(p_vetulus_lm)
 visreg(p_vetulus_lm, "depth_mean_m", by = "time_of_day", ylab = "log(P. vetulus individuals per m3)", xlab = "mean depth (m)")
 
 # S. leucopsarus 
@@ -126,5 +128,6 @@ s_leucopsarus_df <- mocness_major_taxa_19 %>%
   filter(taxon == "Stenobrachius_leucopsarus")
 s_leucopsarus_lm <- lm(log(individuals_per_m3) ~ depth_mean_m + time_of_day + depth_mean_m:time_of_day, 
                    data = s_leucopsarus_df)
+summary(s_leucopsarus_lm)
 visreg(s_leucopsarus_lm, "depth_mean_m", by = "time_of_day", ylab = "log(S. leucopsarus individuals per m3)", xlab = "mean depth (m)")
 
