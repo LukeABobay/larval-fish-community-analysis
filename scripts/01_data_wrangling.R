@@ -533,55 +533,63 @@ mocness_clean <- mocness_full_geographic_isiis_mixing_fluor %>%
   unite(col = "depth_range", minimum_depth_m, maximum_depth_m, sep="-", remove = FALSE) %>%
   # Eliminate spaces to avoid inconvenient behavior later when each taxon is made into its own column
   mutate(taxon = case_match(taxon, 
-                            c("Xeneretmus spp.", "Xeneretmus latifrons", "Agonidae spp.", "Agonidae") ~ "Agonidae",
+                            c("Xeneretmus spp.", "Xeneretmus latifrons", "Agonidae spp.") ~ "Agonidae",
+                            "Alepocephalidae" ~ "Alepocephalidae",
                             c("Ammodytes spp.", "Ammodytidae") ~ "Ammodytidae",
-                            "Anarrhichthys ocellatus" ~ "Anarrhichthys_ocellatus",
+                            "Anarrhichthys ocellatus" ~ "Anarrhichthys_ocellatus", # Our only species in Anarhichadidae
                             c("Anoplopomatidae spp.", "Anoploploma fimbria", "Anaploploma fimbria", "Anoplopoma fimbria") ~ "Anoplopomatidae",
-                            c("Lipolagus ochotensis", "Bathylagus pacificus", "Bathylagidae") ~ "Bathylagidae",
+                            c("Atheresthes stomias", "Atherestes stomias") ~ "Atheresthes_stomias", # Listed in Eschmeyer's Catalog of Fishes as Platysomatichthys stomia
+                            "Bathylagidae" ~ "Bathylagidae_unidentified",
+                            "Lipolagus ochotensis" ~ "Bathylagus_ochotensis", # Listed in Eschmeyer's Catalog of Fishes as Bathylagus ochotensis
+                            "Bathylagus pacificus" ~ "Bathylagus_pacificus", # Keeping Bathylagus pacificus and Bathylagus ochotensis separate because of differences in adult habitat affinity
                             c("Ronquilus jordani", "Bathymasterid spp.") ~ "Bathymasteridae",
-                            c("Chauliodus macouni", "stomiidae") ~ "Stomiidae",
-                            c("Sardinops sagax", "Sardinops sargax") ~ "Sardinops_sagax",
-                            c("Artedius spp.", "Artedius fenestralis", "Cottidae spp.", "Cottid spp.", "Cottid spp.", "Cottidae", "Scorpaenichthys marmoratus",
-                              "Leptocottus armatus", "Radulinus spp.", "Radulinus asprellus", "Radulina asprellus", "Enophrys bison", "Hemilepodotus spp.",
-                              "Hemilepodotus spinosus", "Hemilepidotus spinosus", "Hemilepidotus spp.", "Nautichthys spp. ") ~ "Cottidae",
-                            c("Lyconectes aleutensis") ~ "Cryptacanthodes_aleutensis",
-                            c("Liparis spp.", "Liparis fucensis", "Liparis pulchellus") ~ "Liparis_spp",
+                            "Clupeidae" ~ "Clupeidae_unidentified",
+                            c("Cottidae spp.", "Cottid spp.", "Cottidae",
+                              "Cottid spp. ", "Leptocottus armatus") ~ "Cottidae",
+                            c("Citharichthys spp.", "Citharichthys sordidus", "Citharichthys stigmaeus") ~ "Cyclopsettidae", # Citharichthys has now been separated into multiple genera, according to Eschmeyer's Catalog of Fishes, and Ross originally had these grouped at the family level
+                            "Diaphus theta" ~ "Diaphus_theta",
                             "Engraulis mordax" ~ "Engraulis_mordax",
+                            "Eopsetta jordani" ~ "Eopsetta_jordani", # Listed in Eschmeyer's Catalog of Fishes as Hippoglossoides jordani
                             c("Gadid spp.", "Microgadus proximus") ~ "Gadidae",
+                            "Glyptocephalus zachirus" ~ "Glyptocephalus_zachirus",
                             "Gobiidae spp." ~ "Gobiidae",
+                            c("Hemilepidotus spinosus", "Hemilepodotus spinosus", "Hemilepidotus spp.", "Hemilepodotus spp.") ~ "Hemilepidotus_spp",
                             c("Hexagrammidae spp.", "Hexagrammos octogrammus", "Hexagrammos decagrammus", "Ophiodon elongatus", 
                               "Hexagrammos lagocephalus") ~ "Hexagrammidae",
+                            "Isopsetta isolepis" ~ "Isopsetta_isolepis", # Listed in Eschmeyer's Catalog of Fishes as Lepidopsetta isolepis
+                            "Lepidopsetta bilineata" ~ "Lepidopsetta_bilineata", # Listed in Eschmeyer's Catalog of Fishes as Platessa bilineata
+                            "Lestidiops ringens" ~ "Lestidiops_ringens", # Listed in Eschmeyer's Catalog of Fishes as Lestidium elongatum
+                            c("Liparis spp.", "Liparis fucensis", "Liparis pulchellus") ~ "Liparis_spp",
+                            c("Lyconectes aleutensis") ~ "Lyconectes_aleutensis", # Our only species in Cryptacanthodidae
+                            "Lyopsetta exilis" ~ "Lyopsetta_exilis", # Listed in Eschmeyer's Catalog of Fishes as Hippoglossoides exilis
                             c("Macrourid spp.", "Albatrossia pectoralis", "Macrouridae") ~ "Macrouridae",
-                            "Merluccius productus" ~ "Merluccius_productus",
-                            "Nansenia candida" ~ "Nansenia_candida",
-                            c("Nannobrachium regalis", "Nannobrachium spp.") ~ "Nannobrachium_spp",
-                            c("Protomyctophum crockeri", "Protomyctophum thompsoni") ~ "Protomyctophum_spp",
-                            "Stenobrachius leucopsarus" ~ "Stenobrachius_leucopsarus",
-                            "Tarletonbeania crenularis" ~ "Tarletonbeania_crenularis",
-                            "Diaphus theta" ~ "Diaphus_theta",
+                            "Merluccius productus" ~ "Merluccius_productus", # Listed in Eschmeyer's Catalog of Fishes as Merlangus productus
+                            "Nansenia candida" ~ "Nansenia_candida", # Our only species in Microstomatidae
+                            c("Nautichthys spp.", "Nautichthys spp. ") ~ "Nautichthys_spp" # Our only genus in Nautichthyidae
+                            c("Nannobrachium regalis", "Nannobrachium spp.") ~ "Nannobrachium_spp", # Nannobrachium regale is listed as a synonym of Lampanyctus micropunctatus in Eschmeyer's Catalog of Fishes, but was probably recently separated from Myctophum regale
+                            "Microstomus pacificus" ~ "Microstomus_pacificus", # Listed in Eschmeyer's Catalog of Fishes as Glyptocephalus pacificus
                             c("Myctophid spp.", "Myctophidae") ~ "Myctophidae_unidentified",
                             c("Osmerid spp.", "Osmeridae") ~ "Osmeridae",
-                            "Lestidiops ringens" ~ "Lestidiops_ringens",
-                            c("Citharichthys spp.", "Citharichthys sordidus", "Citharichthys stigmaeus") ~ "Citharichthys_spp",
-                            c("Pholidae spp.", "Apodichthus flavidus") ~ "Pholidae",
                             "Parophrys vetulus" ~ "Parophrys_vetulus",
-                            "Glyptocephalus zachirus" ~ "Glyptocephalus_zachirus",
-                            "Psettichthys melanostictus" ~ "Psettichthys_melanostictus",
-                            "Lyopsetta exilis" ~ "Lyopsetta_exilis",
-                            "Isopsetta isolepis" ~ "Isopsetta_isolepis",
-                            c("Atheresthes stomias", "Atherestes stomias") ~ "Atheresthes_stomias", 
-                            "Microstomus pacificus" ~ "Microstomus_pacificus", 
-                            "Lepidopsetta bilineata" ~ "Lepidopsetta_bilineata", 
-                            "Eopsetta jordani" ~ "Eopsetta_jordani", 
+                            c("Pholidae spp.", "Apodichthus flavidus", "Apodichthys flavidus") ~ "Pholidae",
+                            "Plectobranchus evides" ~ "Plectobranchus_evides", # Our only species in Opisthocentridae
                             "Pleuronichthys decurrens" ~ "Pleuronichthys_decurrens", 
+                            c("Protomyctophum crockeri", "Protomyctophum thompsoni") ~ "Protomyctophum_spp", # Listed in Eschmeyer's Catalog of Fishes as Electrona
+                            "Psettichthys melanostictus" ~ "Psettichthys_melanostictus",
                             "Pleuronectidae" ~ "Pleuronectidae_unidentified",
-                            "Ptilichthys goodei" ~ "Ptilichthys_goodei",
+                            c("Artedius spp.", "Artedius fenestralis", 
+                              "Radulinus spp.", "Radulinus asprellus", "Radulina asprellus", 
+                              "Enophrys bison") ~ "Psychrolutidae", # According to Eschmeyer's Catalog of Fishes, not within Cottidae
+                            "Ptilichthys goodei" ~ "Ptilichthys_goodei", # Our only species in Ptilichthyidae
+                            c("Sardinops sagax", "Sardinops sargax") ~ "Sardinops_sagax",
+                            "Scorpaenichthys marmoratus" ~ "Scorpaenichthys_marmoratus"
+                            "Sebastes spp." ~ "Sebastes_spp", # It is possible that Sebastes has been broken up recently into multiple genera
                             "Sebastolobus spp." ~ "Sebastolobus_spp",
-                            "Sebastes spp." ~ "Sebastes_spp",
-                            c("Chirolophis spp.", "Xiphister atrophurpureus", "Plectobranchus evides", "Stichaeidae", "Stichaeidae spp.") ~ "Stichaeidae",
-                            "Trachipterus altivelis" ~ "Trachipterus_altivelis",
-                            "Clupeidae" ~ "Clupeidae_unidentified",
-                            "Alepocephalidae" ~ "Alepocephalidae",
+                            c("Chirolophis spp.", "Xiphister atrophurpureus", "Stichaeidae spp.") ~ "Stichaeidae",
+                            "Stenobrachius leucopsarus" ~ "Stenobrachius_leucopsarus", # Listed in Eschmeyer's Catalog of Fishes as Myctophum Leucopsarum
+                            c("Chauliodus macouni", "stomiidae") ~ "Stomiidae",
+                            "Tarletonbeania crenularis" ~ "Tarletonbeania_crenularis", # Listed in Eschmeyer's Catalog of Fishes as Myctophum crenulare
+                            "Trachipterus altivelis" ~ "Trachipterus_altivelis", # Our only species in Trachipteridae
                             .default = taxon)) %>%
   group_by(transect_station_rep_year, mocness_side, net, taxon) %>%
   mutate(individuals_in_tow = as.numeric(individuals_in_tow),
