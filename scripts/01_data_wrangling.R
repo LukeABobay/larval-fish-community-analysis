@@ -108,7 +108,6 @@ mocness_winter_2022_2023_fish_abundance <- smartbind(mocness_2022_03_fish_abunda
 
 mocness_winter_fish_abundance <- smartbind(mocness_winter_2018_2019_fish_abundance,
                                            mocness_winter_2022_2023_fish_abundance) %>%
-  mutate(source_row_id = row_number()) %>% # Delete later
   # Keep rows where at least one of the non-excluded columns is not NA and not an empty string
   filter(if_any(-c(collection_date, individuals_in_tow),
                 ~ !is.na(.) & . != "")) %>%
@@ -142,8 +141,7 @@ mocness_winter_fish_abundance <- smartbind(mocness_winter_2018_2019_fish_abundan
   mutate(collection_date = as.Date(collection_date, format = "%Y/%m/%d")) %>%
   select(project, collection_date, haul_number, replicate, transect, 
          station, maximum_depth_m, minimum_depth_m, 
-         volume_filtered_m3, taxon, individuals_in_tow,
-         source_row_id) # Delete later
+         volume_filtered_m3, taxon, individuals_in_tow)
 
 # Change date and start time in 'mocness_2018_2019_metadata' to PT
 mocness_2018_2019_metadata_reformat_date <- mocness_2018_2019_metadata %>%
@@ -197,7 +195,7 @@ mocness_full_old_metadata <- merge(mocness_winter_fish_abundance,
   mutate(longitude_dd = ifelse(!is.na(longitude_dd.x), longitude_dd.x, longitude_dd.y)) %>%
   select(-latitude_dd.x, -latitude_dd.y, -longitude_dd.x, -longitude_dd.y) %>%
   # Add in sampling time for SPECTRA MOCNESS deployments
-  merge(., spectra_sampling_times, by.x = c("transect", "station", "collection_date"), by.y = c("transect", "station", "date_pt")) %>%
+  merge(., spectra_sampling_times, by.x = c("transect", "station", "collection_date"), by.y = c("transect", "station", "date_pt"), all.x = TRUE) %>%
   # Make time column with values of time.x if available, or values of time.y if not
   mutate(time = ifelse(!is.na(time.x), time.x, time.y)) %>%
   select(-time.x, -time.y) %>%
@@ -211,12 +209,16 @@ mocness_full_old_metadata <- merge(mocness_winter_fish_abundance,
 # Add convenient "collection_date" to mocness_metadata
 mocness_metadata_collection_date <- mocness_metadata %>%
   mutate(start_time_pt = as.POSIXct(start_time_pt, tz = "America/Los_Angeles")) %>%
-  mutate(collection_date = as.Date(start_time_pt, tz = "America/Los_Angeles"))
+  mutate(collection_date = as.Date(start_time_pt, tz = "America/Los_Angeles")) %>%
+  # Calculate volume of water sampled by both MOCNESS sides during each tow
+  group_by(cruise, transect, station, replicate, net) %>%
+  mutate(volume_best_m3_both_sides = sum(volume_m3_best)) %>%
+  ungroup()
 
 # Swap new metadata in for old
 mocness_full <- mocness_full_old_metadata %>%
   select(project, transect, station, replicate, collection_date, mocness_side,
-         net, taxon, individuals_in_tow) %>%
+         net, taxon, individuals_in_tow) %>% 
   # Add in new metadata
   merge(., mocness_metadata_collection_date, by = c("transect", "station", "replicate", "collection_date", "mocness_side", "net"), all.x = TRUE)
 
@@ -591,17 +593,17 @@ mocness_clean <- mocness_full_geographic_isiis_mixing_fluor %>%
   # Not grouping by mocness_side here because both sides will be aggregated for the entire analysis
   group_by(transect_station_rep_year_net, taxon) %>%
   mutate(individuals_in_tow = as.numeric(individuals_in_tow),
-         # Sum number of individuals within each net and return one row per net
-         individuals_in_tow = sum(individuals_in_tow),
-         volume_best_m3_both_sides = sum(volume_m3_best)) %>%
+         # Sum number of individuals within each net/taxon and return one row per net/taxon
+         individuals_in_tow = sum(individuals_in_tow)) %>%
   ungroup() %>%
-  distinct(transect_station_rep_year, mocness_side, net, taxon, .keep_all = TRUE) %>%
-  mutate(individuals_per_m3 = individuals_in_tow/volume_m3_best) %>%
+  # Not grouping by mocness_side here because both sides will be aggregated for the entire analysis
+  distinct(transect_station_rep_year, net, taxon, .keep_all = TRUE) %>%
+  mutate(individuals_per_m3 = individuals_in_tow/volume_best_m3_both_sides) %>%
   mutate(depth_mean_m = (maximum_depth_m + minimum_depth_m)/2) %>%
   mutate(depth_diff_m = maximum_depth_m - minimum_depth_m) %>%
   select(project, year, cruise, collection_date, start_time_pt, start_latitude_dd, start_longitude_dd, 
          transect_station_rep_year_net, transect_station_rep_year, transect_station_rep,
-         transect_station, transect, station, replicate, mocness_side, net, volume_m3_best,
+         transect_station, transect, station, replicate, mocness_side, net, volume_best_m3_both_sides,
          depth_range, maximum_depth_m, minimum_depth_m, depth_mean_m, depth_diff_m, taxon, individuals_in_tow,
          individuals_per_m3, mean_temperature_c, mean_salinity_psu, mean_density_kgm3,
          seafloor_depth_m, distance_to_shore_km, shelf_position, prey_zooplankton_abundance_ind_m3,
