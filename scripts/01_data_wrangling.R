@@ -138,7 +138,7 @@ mocness_winter_fish_abundance <- smartbind(mocness_winter_2018_2019_fish_abundan
   # Make a new column for lowest taxonomic identity available
   mutate(taxon = ifelse(species %in% c("Unknown", ""), family, species)) %>%
   # Format collection_date (only has values for SPECTRA) as date
-  mutate(collection_date = as.Date(collection_date, format = "%Y/%m/%d")) %>%
+  mutate(collection_date = as.Date(collection_date, format = "%m/%d/%Y")) %>%
   select(project, collection_date, haul_number, replicate, transect, 
          station, maximum_depth_m, minimum_depth_m, 
          volume_filtered_m3, taxon, individuals_in_tow)
@@ -628,7 +628,10 @@ mocness_clean <- mocness_full_geographic_isiis_mixing_fluor %>%
 taxa_w_gt_15pct <- mocness_clean %>%
   filter(individuals_in_tow != "") %>%
   mutate(individuals_in_tow = as.numeric(individuals_in_tow)) %>%
-  filter(individuals_in_tow > 15) %>%
+  # LB; Here, individuals_in_tow is by taxon, so filtering like this only keeps observations with > 15 individuals
+  # per taxon per tow, which seems very high. I think we want to filter by the total number of individuals per tow,
+  # not individuals per tow per taxon, right?
+  # filter(individuals_in_tow > 15) %>%
   group_by(taxon) %>%
   summarize(freq = n_distinct(transect_station_rep_year_net)) %>%
   ungroup() %>%
@@ -640,7 +643,7 @@ taxa_w_gt_15pct <- mocness_clean %>%
 mocness_major_taxa <- mocness_clean %>%
   filter(taxon %in% taxa_w_gt_15pct$taxon & taxon != "Unknown" & !is.na(taxon) & taxon != "Damaged" & 
            taxon != "" & taxon != "Fish eggs" & taxon != "Unknown spotted" & 
-           taxon != "No fish" & !is.na(taxon) & taxon != "unknown" & taxon != "fish egg(s)")
+           taxon != "No fish" & taxon != "no fish" & !is.na(taxon) & taxon != "unknown" & taxon != "fish egg(s)")
 
 # sample_sizes_major_taxa <- mocness_major_taxa %>%
 #   group_by(taxon) %>%
@@ -648,42 +651,14 @@ mocness_major_taxa <- mocness_clean %>%
 #   summarize(n = sum(individuals_in_tow, na.rm = TRUE))
 
 # Get list of date/station/replicate with > 0 individuals of any "major" taxa
-nets_w_gt_0ind <- mocness_major_taxa %>%
+mocness_major_taxa_nets <- mocness_major_taxa %>%
   group_by(collection_date, transect, station, replicate, net) %>%
-  summarize(individuals_per_station = sum(individuals_in_tow), .groups = "drop") %>%
-  filter(individuals_per_station > 0)
+  mutate(n = sum(individuals_in_tow, na.rm = TRUE)) %>%
+  # The value to filter by here can be adjusted to threshold on the total number of individuals per tow 
+  filter(n > 0)
+# RM; I was just thinking, do we want to use the net 0s since these aren't depth-stratified? If not, when should we remove them? Before
+ # or after filtering?
 
-# sample_sizes_by_station <- mocness_major_taxa %>%
-#   group_by(collection_date, transect, replicate, station) %>%
-#   mutate(individuals_in_tow = as.integer(individuals_in_tow)) %>%
-#   summarize(n = sum(individuals_in_tow, na.rm = TRUE))
-# 
-# sample_sizes_by_net <- mocness_major_taxa %>%
-#   group_by(collection_date, transect, replicate, station, net) %>%
-#   mutate(individuals_in_tow = as.integer(individuals_in_tow)) %>%
-#   summarize(n = sum(individuals_in_tow, na.rm = TRUE))
-# # RM; I was just thinking, do we want to use the net 0s since these aren't depth-stratified? If not, when should we remove them? Before 
-#  # or after filtering?
-# 
-# hist(sample_sizes_by_net$n, breaks = 3790)
-# # RM ; what is this histogram for? how did you decide on the break level?
-
-# Filter out stations with few fish larvae, which will be excluded from cluster analysis
-mocness_major_taxa_nets <- inner_join(mocness_major_taxa, nets_w_gt_0ind, by = c("collection_date", "transect", "station", "replicate", "net")) %>%
-  # Calculate total number of fish belonging to each taxon collected in either side during each tow
-  group_by(collection_date, transect, replicate, station, net, taxon) %>%
-  mutate(individuals_in_tow_both_sides = sum(individuals_in_tow, na.rm = TRUE)) %>%
-  distinct(collection_date, transect, replicate, station, net, taxon, .keep_all = TRUE) %>%
-  ungroup()
-
-# mocness_major_taxa_stations <- mocness_major_taxa_nets %>%
-#   group_by(collection_date, transect, replicate, station, taxon) %>%
-#   mutate(total_individuals_in_tow_both_sides = sum(individuals_in_tow_both_sides, na.rm = TRUE)) %>%
-#   distinct(collection_date, transect, replicate, station, taxon, .keep_all = TRUE) %>%
-#   ungroup()
- 
-##filter to keep only 2018-2019 data and those with values for mixed layer depth for the time being
-##no longer necessary to filter out 2022 and 2023 so hiding these
-####mocness_major_taxa_2018_2019 <- filter(mocness_major_taxa_stations, collection_date < "2020-01-01")
-####mocness_major_taxa_2018_2019_MLD <- filter(mocness_major_taxa_2018_2019, !is.na(mlotst))
+hist(mocness_major_taxa_nets$n, breaks = 506)
+# RM ; what is this histogram for? how did you decide on the break level?
 
