@@ -108,6 +108,7 @@ mocness_winter_2022_2023_fish_abundance <- smartbind(mocness_2022_03_fish_abunda
 
 mocness_winter_fish_abundance <- smartbind(mocness_winter_2018_2019_fish_abundance,
                                            mocness_winter_2022_2023_fish_abundance) %>%
+  mutate(source_row_id = row_number()) %>% # Delete later
   # Keep rows where at least one of the non-excluded columns is not NA and not an empty string
   filter(if_any(-c(collection_date, individuals_in_tow),
                 ~ !is.na(.) & . != "")) %>%
@@ -141,7 +142,8 @@ mocness_winter_fish_abundance <- smartbind(mocness_winter_2018_2019_fish_abundan
   mutate(collection_date = as.Date(collection_date, format = "%Y/%m/%d")) %>%
   select(project, collection_date, haul_number, replicate, transect, 
          station, maximum_depth_m, minimum_depth_m, 
-         volume_filtered_m3, taxon, individuals_in_tow)
+         volume_filtered_m3, taxon, individuals_in_tow,
+         source_row_id) # Delete later
 
 # Change date and start time in 'mocness_2018_2019_metadata' to PT
 mocness_2018_2019_metadata_reformat_date <- mocness_2018_2019_metadata %>%
@@ -169,18 +171,23 @@ spectra_sampling_stations_clean <- spectra_sampling_stations %>%
 # Get separate column for time of SPECTRA MOCNESS sampling events
 spectra_sampling_times <- mocness_2018_2019_environmental %>%
   mutate(time = substr(cast_start_date_time_pt, 12, 19)) %>%
-  distinct(transect, station, date_pt, time)
+  distinct(transect, station, date_pt, time) %>%
+  filter(date_pt > "2022-01-01")
 
 # Merge fish abundance data with metadata by haul_number
 mocness_full_old_metadata <- merge(mocness_winter_fish_abundance, 
                            mocness_2018_2019_metadata_reformat_date, by = c("project", "haul_number"),
                       all.x = TRUE) %>%
   # Take 'collection_date' from 'date' column when NA
-  mutate(collection_date = as.Date(ifelse(is.na(collection_date), date, collection_date))) %>%
+  mutate(collection_date = as.Date(ifelse(is.na(collection_date), date, collection_date)),
+         mocness_side = str_split(haul_number, "-", simplify = TRUE)[, 2],
+         net = str_split(haul_number, "-", simplify = TRUE)[, 3],
+         net = case_when(collection_date == "2023-02-17" & transect == "GH" & station == 6 & mocness_side == 4 ~ "0",
+                         .default = net)) %>%
   # Keep only date, time_gmt, haul_number, maximum_depth_m, minimum_depth_m, latitude_dd,
   # longitude_dd, family, species, and concentration_ind_1000m3
   select(project, collection_date, time, haul_number, replicate, maximum_depth_m, minimum_depth_m, 
-         transect, station, latitude_dd = Station.lat, longitude_dd = Station.lon, taxon, 
+         transect, station, mocness_side, net, latitude_dd = Station.lat, longitude_dd = Station.lon, taxon, 
          volume_filtered_m3 = Volume.filtered, individuals_in_tow) %>%
   # Add in lat/lon for SPECTRA sampling stations
   merge(., spectra_sampling_stations_clean, by = c("project", "transect", "station"), all.x = TRUE) %>%
@@ -196,10 +203,10 @@ mocness_full_old_metadata <- merge(mocness_winter_fish_abundance,
   select(-time.x, -time.y) %>%
   # add temp and salinity from environmental df
   merge(., mocness_2018_2019_environmental, 
-        by.x = c("transect", "station", "replicate", "collection_date"), 
-        by.y = c("transect", "station", "replicate", "date_pt")) %>%
+        by.x = c("transect", "station", "replicate", "collection_date", "net"), 
+        by.y = c("transect", "station", "replicate", "date_pt", "net")) %>%
   select(-cast_start_date_time_utc, -cast_start_date_time_pt, -date_time_closed_utc, 
-         -date_time_closed_pt, -depth_closed_m, -volume_filtered_m3.x, -net)
+         -date_time_closed_pt, -depth_closed_m, -volume_filtered_m3.x)
 
 # Add convenient "collection_date" to mocness_metadata
 mocness_metadata_collection_date <- mocness_metadata %>%
@@ -208,16 +215,11 @@ mocness_metadata_collection_date <- mocness_metadata %>%
 
 # Swap new metadata in for old
 mocness_full <- mocness_full_old_metadata %>%
-  mutate(
-    mocness_side = str_split(haul_number, "-", simplify = TRUE)[, 2],
-    net = str_split(haul_number, "-", simplify = TRUE)[, 3]) %>%
-  mutate(net = case_when(collection_date == "2023-02-17" & transect == "GH" & station == 6 & mocness_side == 4 ~ "0",
-                                .default = net)) %>%
   select(project, transect, station, replicate, collection_date, mocness_side,
          net, taxon, individuals_in_tow) %>%
   # Add in new metadata
   merge(., mocness_metadata_collection_date, by = c("transect", "station", "replicate", "collection_date", "mocness_side", "net"), all.x = TRUE)
-  
+
 
 # Geographic data ---------------------------------------------------------
 
@@ -539,13 +541,11 @@ mocness_clean <- mocness_full_geographic_isiis_mixing_fluor %>%
                             "Anarrhichthys ocellatus" ~ "Anarrhichthys_ocellatus", # Our only species in Anarhichadidae
                             c("Anoplopomatidae spp.", "Anoploploma fimbria", "Anaploploma fimbria", "Anoplopoma fimbria") ~ "Anoplopomatidae",
                             c("Atheresthes stomias", "Atherestes stomias") ~ "Atheresthes_stomias", # Listed in Eschmeyer's Catalog of Fishes as Platysomatichthys stomia
-                            "Bathylagidae" ~ "Bathylagidae_unidentified",
                             "Lipolagus ochotensis" ~ "Bathylagus_ochotensis", # Listed in Eschmeyer's Catalog of Fishes as Bathylagus ochotensis
                             "Bathylagus pacificus" ~ "Bathylagus_pacificus", # Keeping Bathylagus pacificus and Bathylagus ochotensis separate because of differences in adult habitat affinity
                             c("Ronquilus jordani", "Bathymasterid spp.") ~ "Bathymasteridae",
                             "Clupeidae" ~ "Clupeidae_unidentified",
-                            c("Cottidae spp.", "Cottid spp.", "Cottidae",
-                              "Cottid spp. ", "Leptocottus armatus") ~ "Cottidae",
+                            c("Cottidae spp.", "Cottid spp.", "Cottidae", "Cottid spp. ", "Leptocottus armatus") ~ "Cottidae",
                             c("Citharichthys spp.", "Citharichthys sordidus", "Citharichthys stigmaeus") ~ "Cyclopsettidae", # Citharichthys has now been separated into multiple genera, according to Eschmeyer's Catalog of Fishes, and Ross originally had these grouped at the family level
                             "Diaphus theta" ~ "Diaphus_theta",
                             "Engraulis mordax" ~ "Engraulis_mordax",
@@ -554,8 +554,7 @@ mocness_clean <- mocness_full_geographic_isiis_mixing_fluor %>%
                             "Glyptocephalus zachirus" ~ "Glyptocephalus_zachirus",
                             "Gobiidae spp." ~ "Gobiidae",
                             c("Hemilepidotus spinosus", "Hemilepodotus spinosus", "Hemilepidotus spp.", "Hemilepodotus spp.") ~ "Hemilepidotus_spp",
-                            c("Hexagrammidae spp.", "Hexagrammos octogrammus", "Hexagrammos decagrammus", "Ophiodon elongatus", 
-                              "Hexagrammos lagocephalus") ~ "Hexagrammidae",
+                            c("Hexagrammidae spp.", "Hexagrammos octogrammus", "Hexagrammos decagrammus", "Ophiodon elongatus", "Hexagrammos lagocephalus") ~ "Hexagrammidae",
                             "Isopsetta isolepis" ~ "Isopsetta_isolepis", # Listed in Eschmeyer's Catalog of Fishes as Lepidopsetta isolepis
                             "Lepidopsetta bilineata" ~ "Lepidopsetta_bilineata", # Listed in Eschmeyer's Catalog of Fishes as Platessa bilineata
                             "Lestidiops ringens" ~ "Lestidiops_ringens", # Listed in Eschmeyer's Catalog of Fishes as Lestidium elongatum
@@ -564,37 +563,37 @@ mocness_clean <- mocness_full_geographic_isiis_mixing_fluor %>%
                             "Lyopsetta exilis" ~ "Lyopsetta_exilis", # Listed in Eschmeyer's Catalog of Fishes as Hippoglossoides exilis
                             c("Macrourid spp.", "Albatrossia pectoralis", "Macrouridae") ~ "Macrouridae",
                             "Merluccius productus" ~ "Merluccius_productus", # Listed in Eschmeyer's Catalog of Fishes as Merlangus productus
-                            "Nansenia candida" ~ "Nansenia_candida", # Our only species in Microstomatidae
-                            c("Nautichthys spp.", "Nautichthys spp. ") ~ "Nautichthys_spp" # Our only genus in Nautichthyidae
-                            c("Nannobrachium regalis", "Nannobrachium spp.") ~ "Nannobrachium_spp", # Nannobrachium regale is listed as a synonym of Lampanyctus micropunctatus in Eschmeyer's Catalog of Fishes, but was probably recently separated from Myctophum regale
                             "Microstomus pacificus" ~ "Microstomus_pacificus", # Listed in Eschmeyer's Catalog of Fishes as Glyptocephalus pacificus
                             c("Myctophid spp.", "Myctophidae") ~ "Myctophidae_unidentified",
+                            c("Nannobrachium regalis", "Nannobrachium spp.") ~ "Nannobrachium_spp", # Nannobrachium regale is listed as a synonym of Lampanyctus micropunctatus in Eschmeyer's Catalog of Fishes, but was probably recently separated from Myctophum regale
+                            "Nansenia candida" ~ "Nansenia_candida", # Our only species in Microstomatidae
+                            c("Nautichthys spp.", "Nautichthys spp. ") ~ "Nautichthys_spp", # Our only genus in Nautichthyidae
                             c("Osmerid spp.", "Osmeridae") ~ "Osmeridae",
                             "Parophrys vetulus" ~ "Parophrys_vetulus",
                             c("Pholidae spp.", "Apodichthus flavidus", "Apodichthys flavidus") ~ "Pholidae",
                             "Plectobranchus evides" ~ "Plectobranchus_evides", # Our only species in Opisthocentridae
+                            "Pleuronectidae" ~ "Pleuronectidae_unidentified",
                             "Pleuronichthys decurrens" ~ "Pleuronichthys_decurrens", 
                             c("Protomyctophum crockeri", "Protomyctophum thompsoni") ~ "Protomyctophum_spp", # Listed in Eschmeyer's Catalog of Fishes as Electrona
                             "Psettichthys melanostictus" ~ "Psettichthys_melanostictus",
-                            "Pleuronectidae" ~ "Pleuronectidae_unidentified",
-                            c("Artedius spp.", "Artedius fenestralis", 
-                              "Radulinus spp.", "Radulinus asprellus", "Radulina asprellus", 
-                              "Enophrys bison") ~ "Psychrolutidae", # According to Eschmeyer's Catalog of Fishes, not within Cottidae
+                            c("Artedius spp.", "Artedius fenestralis", "Radulinus spp.", "Radulinus asprellus", "Radulina asprellus", "Enophrys bison") ~ "Psychrolutidae", # According to Eschmeyer's Catalog of Fishes, not within Cottidae
                             "Ptilichthys goodei" ~ "Ptilichthys_goodei", # Our only species in Ptilichthyidae
                             c("Sardinops sagax", "Sardinops sargax") ~ "Sardinops_sagax",
-                            "Scorpaenichthys marmoratus" ~ "Scorpaenichthys_marmoratus"
+                            "Scorpaenichthys marmoratus" ~ "Scorpaenichthys_marmoratus",
                             "Sebastes spp." ~ "Sebastes_spp", # It is possible that Sebastes has been broken up recently into multiple genera
                             "Sebastolobus spp." ~ "Sebastolobus_spp",
-                            c("Chirolophis spp.", "Xiphister atrophurpureus", "Stichaeidae spp.") ~ "Stichaeidae",
                             "Stenobrachius leucopsarus" ~ "Stenobrachius_leucopsarus", # Listed in Eschmeyer's Catalog of Fishes as Myctophum Leucopsarum
+                            c("Chirolophis spp.", "Xiphister atrophurpureus", "Stichaeidae spp.") ~ "Stichaeidae",
                             c("Chauliodus macouni", "stomiidae") ~ "Stomiidae",
                             "Tarletonbeania crenularis" ~ "Tarletonbeania_crenularis", # Listed in Eschmeyer's Catalog of Fishes as Myctophum crenulare
                             "Trachipterus altivelis" ~ "Trachipterus_altivelis", # Our only species in Trachipteridae
                             .default = taxon)) %>%
-  group_by(transect_station_rep_year, mocness_side, net, taxon) %>%
+  # Not grouping by mocness_side here because both sides will be aggregated for the entire analysis
+  group_by(transect_station_rep_year_net, taxon) %>%
   mutate(individuals_in_tow = as.numeric(individuals_in_tow),
          # Sum number of individuals within each net and return one row per net
-         individuals_in_tow = sum(individuals_in_tow)) %>%
+         individuals_in_tow = sum(individuals_in_tow),
+         volume_best_m3_both_sides = sum(volume_m3_best)) %>%
   ungroup() %>%
   distinct(transect_station_rep_year, mocness_side, net, taxon, .keep_all = TRUE) %>%
   mutate(individuals_per_m3 = individuals_in_tow/volume_m3_best) %>%
@@ -613,16 +612,16 @@ mocness_clean <- mocness_full_geographic_isiis_mixing_fluor %>%
 
 ##change Jan 8 2026: removed lower thresholds for taxa frequency and individuals per station counts. Will reconsider these later on.
 
-# LB; 3/7/26: Exploring taxonomic groupings and sample size thresholds by taxon and net
-sample_sizes_original_taxa <- mocness_full_geographic_isiis_mixing_fluor %>%
-  group_by(taxon) %>%
-  mutate(individuals_in_tow = as.integer(individuals_in_tow)) %>%
-  summarize(n = sum(individuals_in_tow, na.rm = TRUE))
-
-sample_sizes_grouped_taxa <- mocness_clean %>%
-  group_by(taxon) %>%
-  mutate(individuals_in_tow = as.integer(individuals_in_tow)) %>%
-  summarize(n = sum(individuals_in_tow, na.rm = TRUE))
+# # LB; 3/7/26: Exploring taxonomic groupings and sample size thresholds by taxon and net
+# sample_sizes_original_taxa <- mocness_full_geographic_isiis_mixing_fluor %>%
+#   group_by(taxon) %>%
+#   mutate(individuals_in_tow = as.integer(individuals_in_tow)) %>%
+#   summarize(n = sum(individuals_in_tow, na.rm = TRUE))
+# 
+# sample_sizes_grouped_taxa <- mocness_clean %>%
+#   group_by(taxon) %>%
+#   mutate(individuals_in_tow = as.integer(individuals_in_tow)) %>%
+#   summarize(n = sum(individuals_in_tow, na.rm = TRUE))
 
 taxa_w_gt_15pct <- mocness_clean %>%
   filter(individuals_in_tow != "") %>%
@@ -641,10 +640,10 @@ mocness_major_taxa <- mocness_clean %>%
            taxon != "" & taxon != "Fish eggs" & taxon != "Unknown spotted" & 
            taxon != "No fish" & !is.na(taxon) & taxon != "unknown" & taxon != "fish egg(s)")
 
-sample_sizes_major_taxa <- mocness_major_taxa %>%
-  group_by(taxon) %>%
-  mutate(individuals_in_tow = as.integer(individuals_in_tow)) %>%
-  summarize(n = sum(individuals_in_tow, na.rm = TRUE))
+# sample_sizes_major_taxa <- mocness_major_taxa %>%
+#   group_by(taxon) %>%
+#   mutate(individuals_in_tow = as.integer(individuals_in_tow)) %>%
+#   summarize(n = sum(individuals_in_tow, na.rm = TRUE))
 
 # Get list of date/station/replicate with > 0 individuals of any "major" taxa
 nets_w_gt_0ind <- mocness_major_taxa %>%
@@ -652,20 +651,20 @@ nets_w_gt_0ind <- mocness_major_taxa %>%
   summarize(individuals_per_station = sum(individuals_in_tow), .groups = "drop") %>%
   filter(individuals_per_station > 0)
 
-sample_sizes_by_station <- mocness_major_taxa %>%
-  group_by(collection_date, transect, replicate, station) %>%
-  mutate(individuals_in_tow = as.integer(individuals_in_tow)) %>%
-  summarize(n = sum(individuals_in_tow, na.rm = TRUE))
-
-sample_sizes_by_net <- mocness_major_taxa %>%
-  group_by(collection_date, transect, replicate, station, net) %>%
-  mutate(individuals_in_tow = as.integer(individuals_in_tow)) %>%
-  summarize(n = sum(individuals_in_tow, na.rm = TRUE))
-# RM; I was just thinking, do we want to use the net 0s since these aren't depth-stratified? If not, when should we remove them? Before 
- # or after filtering?
-
-hist(sample_sizes_by_net$n, breaks = 3790)
-# RM ; what is this histogram for? how did you decide on the break level?
+# sample_sizes_by_station <- mocness_major_taxa %>%
+#   group_by(collection_date, transect, replicate, station) %>%
+#   mutate(individuals_in_tow = as.integer(individuals_in_tow)) %>%
+#   summarize(n = sum(individuals_in_tow, na.rm = TRUE))
+# 
+# sample_sizes_by_net <- mocness_major_taxa %>%
+#   group_by(collection_date, transect, replicate, station, net) %>%
+#   mutate(individuals_in_tow = as.integer(individuals_in_tow)) %>%
+#   summarize(n = sum(individuals_in_tow, na.rm = TRUE))
+# # RM; I was just thinking, do we want to use the net 0s since these aren't depth-stratified? If not, when should we remove them? Before 
+#  # or after filtering?
+# 
+# hist(sample_sizes_by_net$n, breaks = 3790)
+# # RM ; what is this histogram for? how did you decide on the break level?
 
 # Filter out stations with few fish larvae, which will be excluded from cluster analysis
 mocness_major_taxa_nets <- inner_join(mocness_major_taxa, nets_w_gt_0ind, by = c("collection_date", "transect", "station", "replicate", "net")) %>%
@@ -675,12 +674,12 @@ mocness_major_taxa_nets <- inner_join(mocness_major_taxa, nets_w_gt_0ind, by = c
   distinct(collection_date, transect, replicate, station, net, taxon, .keep_all = TRUE) %>%
   ungroup()
 
-mocness_major_taxa_stations <- mocness_major_taxa_nets %>%
-  group_by(collection_date, transect, replicate, station, taxon) %>%
-  mutate(total_individuals_in_tow_both_sides = sum(individuals_in_tow_both_sides, na.rm = TRUE)) %>%
-  distinct(collection_date, transect, replicate, station, taxon, .keep_all = TRUE) %>%
-  ungroup()
-
+# mocness_major_taxa_stations <- mocness_major_taxa_nets %>%
+#   group_by(collection_date, transect, replicate, station, taxon) %>%
+#   mutate(total_individuals_in_tow_both_sides = sum(individuals_in_tow_both_sides, na.rm = TRUE)) %>%
+#   distinct(collection_date, transect, replicate, station, taxon, .keep_all = TRUE) %>%
+#   ungroup()
+ 
 ##filter to keep only 2018-2019 data and those with values for mixed layer depth for the time being
 ##no longer necessary to filter out 2022 and 2023 so hiding these
 ####mocness_major_taxa_2018_2019 <- filter(mocness_major_taxa_stations, collection_date < "2020-01-01")
