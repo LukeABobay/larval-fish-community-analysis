@@ -655,7 +655,7 @@ mocness_major_taxa_nets <- mocness_major_taxa %>%
   group_by(collection_date, transect, station, replicate, net) %>%
   mutate(n = sum(individuals_in_tow, na.rm = TRUE)) %>%
   # The value to filter by here can be adjusted to threshold on the total number of individuals per tow 
-  filter(n > 0)
+  filter(n > 15)
 # RM; I was just thinking, do we want to use the net 0s since these aren't depth-stratified? If not, when should we remove them? Before
  # or after filtering?
 
