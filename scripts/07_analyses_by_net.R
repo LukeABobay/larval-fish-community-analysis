@@ -57,15 +57,10 @@ nets_env_wide <- nets_major_taxa_wide %>%
 
 # Perform cluster analysis ------------------------------------------------
 
-# Apply Hellinger transformation
 nets_AHC_comm_matrix <- nets_major_taxa_wide %>%
-  select(transect_station_rep_year_net, depth_mean_m) %>%
-  bind_cols(nets_major_taxa_wide %>%
-      select(29:50) %>%
-      decostand(method = "hellinger") %>%
-      as.data.frame())
+  select(transect_station_rep_year_net, depth_mean_m, 29:50)
 
-nets_transform_taxa_concentrations <- nets_AHC_comm_matrix[, 3:38] %>%
+nets_transform_taxa_concentrations <- nets_AHC_comm_matrix[, 3:24] %>%
   sqrt()
 
 # Add rownames
@@ -82,49 +77,27 @@ nets_AHC_result <- hclust(nets_dissim_matrix, method = "average")
 
 # Plot the dendrograms
 plot(nets_AHC_result, labels = nets_AHC_comm_matrix_transformed$transect_station_rep_year_net, main = "average linkage AHC of net tows by LFC")
-rect.hclust(nets_AHC_result, k = 17, border = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17))
+rect.hclust(nets_AHC_result, k = 10, border = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
 
 # Extract list of sampling events belonging to each cluster
 sample_size_df <- mocness_major_taxa_nets %>%
   group_by(transect_station_rep_year_net) %>%
-  summarise(sample_size = sum(individuals_in_tow_both_sides), .groups = "drop")
+  summarise(sample_size = sum(individuals_in_tow), .groups = "drop")
 
 nets_clusters <- data.frame(
-  transect_station_rep_year_net = names(cutree(nets_AHC_result, k = 17)),
-  cluster = cutree(nets_AHC_result, k = 17)
-) %>%
+  transect_station_rep_year_net = names(cutree(nets_AHC_result, k = 10)),
+  cluster = cutree(nets_AHC_result, k = 7)) %>%
   left_join(sample_size_df, by = "transect_station_rep_year_net")
 
 # Plot abundance of each taxon, grouped by cluster ------------------------
   
 # Add cluster identities to long version of AHC_comm_matrix_transformed
 nets_AHC_comm_matrix_transformed_long <- nets_AHC_comm_matrix_transformed %>%
-  pivot_longer(cols = 3:33, names_to = "taxon", values_to = "sqrt_concentration") %>%
+  pivot_longer(cols = 3:24, names_to = "taxon", values_to = "concentration_transformed") %>%
   merge(., nets_clusters, by = "transect_station_rep_year_net")
 
-# Categorize taxa by habitat affinity
-coastal_species <- c("Agonidae", "Artedius", "Cottidae", "Hexagrammidae", "Liparis", "Paralichthyidae", "Parophrys_vetulus", "Pholidae", "Sebastes", 
-                     "Stichaeidae", "Ammodytidae", "Gadidae", "Osmeridae", "Pleuronectidae_other", "Anoplopomatidae", "Anarrhichthys_ocellatus", "Sebastolobus",
-                     "Ptilichthys_goodei", "Gobiidae")
-coastal_colors <- colorRampPalette(brewer.pal(9, "Greens")[2:9])(length(coastal_species))
-
-coastal_oceanic_species <- c("Engraulis_mordax", "Sardinops_sagax", "Nansenia_candida")
-coastal_oceanic_colors <- colorRampPalette(brewer.pal(3, "Blues")[2:3])(length(coastal_oceanic_species))
-
-oceanic_species <- c("Bathylagidae", "Chauliodus_macouni", "Lipolagus_ochotensis", "Macrouridae", "Myctophidae", "Paralepididae",
-                     "Trachipterus_altivelis", "Merluccius_productus", "Ophidiidae")
-oceanic_colors <- colorRampPalette(brewer.pal(9, "Purples")[2:9])(length(oceanic_species))
-
-# Named species color vector
-species_colors <- c(setNames(coastal_colors, coastal_species),
-                    setNames(coastal_oceanic_colors, coastal_oceanic_species),
-                    setNames(oceanic_colors, oceanic_species))
-
-# Vector of taxa ordered alphabetically within categories to order bars and figure legends
-ordered_taxa <- c(coastal_species, coastal_oceanic_species, oceanic_species)
-
 # Plot by transect_station_rep_year, sorted by cluster
-ggplot(nets_AHC_comm_matrix_transformed_long, aes(x = transect_station_rep_year_net, y = sqrt_concentration, fill = factor(taxon, levels = ordered_taxa))) +
+ggplot(nets_AHC_comm_matrix_transformed_long, aes(x = transect_station_rep_year_net, y = concentration_transformed, fill = factor(taxon, levels = ordered_taxa))) +
   geom_bar(stat = "identity", position = "stack") +
   scale_fill_manual(values = species_colors, breaks = ordered_taxa) +
   facet_grid(rows = vars(cluster)) +
