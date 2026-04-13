@@ -654,11 +654,33 @@ mocness_major_taxa <- mocness_clean %>%
 mocness_major_taxa_nets <- mocness_major_taxa %>%
   group_by(collection_date, transect, station, replicate, net) %>%
   mutate(n = sum(individuals_in_tow, na.rm = TRUE)) %>%
+  ungroup() %>%
   # The value to filter by here can be adjusted to threshold on the total number of individuals per tow 
-  filter(n > 15)
+  filter(n >= 15)
 # RM; I was just thinking, do we want to use the net 0s since these aren't depth-stratified? If not, when should we remove them? Before
  # or after filtering?
 
 hist(mocness_major_taxa_nets$n, breaks = 506)
 # RM ; what is this histogram for? how did you decide on the break level?
 
+
+# Taxon colors for plots --------------------------------------------------
+
+# Categorize taxa by habitat affinity
+coastal_species <- c("Agonidae", "Ammodytidae", "Cottidae", "Cyclopsettidae", "Gadidae", 
+                     "Glyptocephalus_zachirus", "Hemilepidotus_spp", "Hexagrammidae", 
+                     "Isopsetta_isolepis", "Liparis_spp", "Lyopsetta_exilis", "Osmeridae", 
+                     "Parophrys_vetulus", "Psettichthys_melanostictus", "Psychrolutidae",
+                     "Scorpaenichthys_marmoratus", "Sebastes_spp")
+coastal_colors <- colorRampPalette(brewer.pal(17, "Greens")[2:18])(length(coastal_species))
+
+oceanic_species <- c("Bathylagus_ochotensis", "Lestidiops_ringens", "Protomyctophum_spp",
+                     "Stenobrachius_leucopsarus", "Tarletonbeania_crenularis")
+oceanic_colors <- colorRampPalette(brewer.pal(5, "Purples")[2:6])(length(oceanic_species))
+
+# Named species color vector
+species_colors <- c(setNames(coastal_colors, coastal_species),
+                    setNames(oceanic_colors, oceanic_species))
+
+# Vector of taxa ordered alphabetically within categories to order bars and figure legends
+ordered_taxa <- c(coastal_species, oceanic_species)
