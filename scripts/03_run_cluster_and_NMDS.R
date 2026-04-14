@@ -15,6 +15,10 @@ library(RColorBrewer)
 library(dplyr)
 library(purrr)
 library(suncalc)
+library(dplyr)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
 
 
 # Source code -------------------------------------------------------------
@@ -24,7 +28,7 @@ source(here("scripts/01_data_wrangling.R"))
 
 # Create wide environmental dataframe ---------------------------------------------------
 
-wide_major_taxa_stations <- mocness_major_taxa_stations %>%
+wide_major_taxa_nets <- mocness_major_taxa_nets %>%
   # Removing NAs for now, but there shouldn't be any to begin with
   filter(!is.na(individuals_in_tow)) %>%
   filter(!is.na(individuals_per_m3)) %>%
@@ -34,17 +38,17 @@ wide_major_taxa_stations <- mocness_major_taxa_stations %>%
   distinct(collection_date, replicate, transect, station, taxon, .keep_all = TRUE) %>%
   pivot_wider(names_from = taxon, values_from = individuals_per_m3, values_fill = 0)
 
-env_wide <- wide_major_taxa_stations %>%
-  select(project, collection_date, transect_station_rep_year, replicate, start_time_pt,
+env_wide <- wide_major_taxa_nets %>%
+  select(project, collection_date, transect_station_rep_year_net, replicate, net, start_time_pt,
          start_latitude_dd, start_longitude_dd, depth_range, shelf_position,
          seafloor_depth_m, prey_zooplankton_abundance_ind_m3, dissolved_oxygen_ml_l,
          mean_temperature_c, mean_salinity_psu, depth_mean_m, depth_diff_m,
-         mean_density_kgm3, mean_chl_0_100_m_mgm3) %>%
+         mean_density_kgm3, mlotst, mean_chl_0_100_m_mgm3) %>%
   mutate(
     time_of_day = substr(replicate, 3, 3),
     time_of_day = recode(time_of_day, "D" = "Day", "N" = "Night", .default = NA_character_)
   ) %>%
-  group_by(transect_station_rep_year) %>%   # or collection_date, or station, etc.
+  group_by(transect_station_rep_year_net) %>%   # or collection_date, or station, etc.
   mutate(
     # compute sunrise/sunset at that station/date
     sunrise = getSunlightTimes(
@@ -71,13 +75,14 @@ env_wide <- wide_major_taxa_stations %>%
   select(-sunrise, -sunset)
 #removed mlotst for right now because all are NAs at the moment and I don't want this to cause errors down the line
 #also excluded redundant information like transect, transect_station, transect_station_rep, and so on
+## 04/13 RM : added mlotst back in now. kept redundant information out 
 
 # Create community matrix -------------------------------------------------
 
-AHC_comm_matrix <- mocness_major_taxa_stations %>%
+AHC_comm_matrix <- mocness_major_taxa_nets %>%
   filter(!is.na(individuals_in_tow)) %>%
   filter(!is.na(individuals_per_m3)) %>%
-  group_by(transect_station_rep_year, taxon) %>%
+  group_by(transect_station_rep_year_net, taxon) %>%
   summarize(individuals_per_m3 = sum(individuals_per_m3, na.rm = TRUE)) %>%
   ungroup() %>%
   pivot_wider(names_from = taxon, values_from = individuals_per_m3, values_fill = 0)
@@ -86,7 +91,7 @@ transform_taxa_concentrations <- AHC_comm_matrix[, 2:23] %>%
   sqrt()
 
 # Add rownames
-row.names(transform_taxa_concentrations) <- AHC_comm_matrix$transect_station_rep_year
+row.names(transform_taxa_concentrations) <- AHC_comm_matrix$transect_station_rep_year_net
 
 AHC_comm_matrix_transformed <- AHC_comm_matrix[,1] %>%
   bind_cols(.,transform_taxa_concentrations)
@@ -105,18 +110,38 @@ AHC_result <- hclust(dissim_matrix, method = "average")
 # Plot the dendrograms -----------------------------------------------------
 
 ## plot 2 clusters/rectangles
-plot(AHC_result, labels = AHC_comm_matrix_transformed$transect_station_rep_year, main = "average linkage AHC of sampling events by LFC")
+plot(AHC_result, labels = AHC_comm_matrix_transformed$transect_station_rep_year_net, main = "average linkage AHC of sampling events by LFC")
 rect.hclust(AHC_result, k = 2, border = c(2, 4))
 
 ##plot 3 clusters/rectangles
 windows()
-plot(AHC_result, labels = AHC_comm_matrix_transformed$transect_station_rep_year, main = "average linkage AHC of sampling events by LFC")
+plot(AHC_result, labels = AHC_comm_matrix_transformed$transect_station_rep_year_net, main = "average linkage AHC of sampling events by LFC")
 rect.hclust(AHC_result, k = 5, border = c(2, 3, 4, 5, 6))
 
 # Extract list of sampling events belonging to each cluster
-clusters <- data.frame(transect_station_rep_year = names(cutree(AHC_result, k = 5)),
+clusters <- data.frame(transect_station_rep_year_net = names(cutree(AHC_result, k = 5)),
                        cluster = cutree(AHC_result, k = 5))
 
+
+# Map points in space by cluster and net ----------------------------------
+
+mapping_df <- wide_major_taxa_nets %>%
+  left_join(clusters, by = "transect_station_rep_year_net") %>%
+  select(transect_station_rep_year_net, start_longitude_dd, start_latitude_dd, cluster, net)
+mapping_df$cluster <- factor(mapping_df$cluster)
+
+space <- ne_countries(scale = "medium", returnclass = "sf")
+
+windows()
+ggplot() +
+  geom_sf(data = space, fill = "grey90", color = "grey40") +
+  geom_point(
+    data = mapping_df,
+    aes(x = start_longitude_dd, y = start_latitude_dd, 
+        color = cluster, shape = factor(net)),
+    size = 2, alpha = 0.95, position = position_jitter(width = 0.15, height = 0.15)) +
+  coord_sf(xlim = c(-127, -123), ylim = c(40, 48), expand = FALSE) +
+  scale_color_brewer(palette = "Dark2")
 
 # Plot abundance of each taxon, grouped by cluster ------------------------
 
