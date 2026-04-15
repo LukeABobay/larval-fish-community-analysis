@@ -119,15 +119,16 @@ plot(AHC_result, labels = AHC_comm_matrix_transformed$transect_station_rep_year_
 rect.hclust(AHC_result, k = 5, border = c(2, 3, 4, 5, 6))
 
 # Extract list of sampling events belonging to each cluster
-clusters <- data.frame(transect_station_rep_year_net = names(cutree(AHC_result, k = 5)),
-                       cluster = cutree(AHC_result, k = 5))
+clusters <- data.frame(transect_station_rep_year_net = names(cutree(AHC_result, k = 10)),
+                       cluster = cutree(AHC_result, k = 10))
 
 
 # Map points in space by cluster and net ----------------------------------
 
 mapping_df <- wide_major_taxa_nets %>%
   left_join(clusters, by = "transect_station_rep_year_net") %>%
-  select(transect_station_rep_year_net, start_longitude_dd, start_latitude_dd, cluster, net)
+  select(transect_station_rep_year_net, start_longitude_dd, start_latitude_dd, cluster, net, cruise) %>%
+distinct(transect_station_rep_year_net, start_longitude_dd, start_latitude_dd, cluster, net, cruise, .keep_all = TRUE)
 mapping_df$cluster <- factor(mapping_df$cluster)
 
 space <- ne_countries(scale = "medium", returnclass = "sf")
@@ -139,9 +140,10 @@ ggplot() +
     data = mapping_df,
     aes(x = start_longitude_dd, y = start_latitude_dd, 
         color = cluster, shape = factor(net)),
-    size = 2, alpha = 0.95, position = position_jitter(width = 0.15, height = 0.15)) +
+    size = 2, alpha = 0.95, position = position_jitter(width = 0.1, height = 0.1)) +
   coord_sf(xlim = c(-127, -123), ylim = c(40, 48), expand = FALSE) +
-  scale_color_brewer(palette = "Dark2")
+  scale_color_brewer(palette = "Dark2") +
+  facet_grid(cols = vars(cruise))
 
 # Plot abundance of each taxon, grouped by cluster ------------------------
 
