@@ -30,20 +30,26 @@ source(here("scripts/01_data_wrangling.R"))
 
 wide_major_taxa_nets <- mocness_major_taxa_nets %>%
   # Removing NAs for now, but there shouldn't be any to begin with
+  # Removing NAs for now, but there shouldn't be any to begin with
   filter(!is.na(individuals_in_tow)) %>%
   filter(!is.na(individuals_per_m3)) %>%
-  group_by(collection_date, replicate, transect, station, taxon) %>%
-  mutate(individuals_per_m3 = sum(individuals_per_m3)) %>%
+  select(project, year, cruise, collection_date, transect, replicate, station, net,
+         transect_station_rep_year_net, transect_station_rep_year, start_time_pt,
+         start_longitude_dd, start_latitude_dd, maximum_depth_m, minimum_depth_m, 
+         depth_mean_m, depth_diff_m, volume_best_m3_both_sides,
+         mean_temperature_c, mean_salinity_psu, mean_density_kgm3, seafloor_depth_m,
+         distance_to_shore_km, shelf_position, prey_zooplankton_abundance_ind_m3,
+         dissolved_oxygen_ml_l, mean_chl_0_100_m_mgm3, mlotst, 
+         taxon, individuals_per_m3) %>%
+  # For some reason, MOC 1 and MOC 4 have different values of mean_temperature_c, mean_salinity_psu, and mean_density_kgm3 in 6 cases. To eliminate differences, calculate mean
+  group_by(transect_station_rep_year_net) %>%
+  mutate(mean_temperature_c = mean(mean_temperature_c),
+         mean_salinity_psu = mean(mean_salinity_psu),
+         mean_density_kgm3 = mean(mean_density_kgm3)) %>%
   ungroup() %>%
-  distinct(collection_date, replicate, transect, station, taxon, .keep_all = TRUE) %>%
   pivot_wider(names_from = taxon, values_from = individuals_per_m3, values_fill = 0)
 
 env_wide <- wide_major_taxa_nets %>%
-  select(project, collection_date, transect_station_rep_year_net, replicate, net, start_time_pt,
-         start_latitude_dd, start_longitude_dd, depth_range, shelf_position,
-         seafloor_depth_m, prey_zooplankton_abundance_ind_m3, dissolved_oxygen_ml_l,
-         mean_temperature_c, mean_salinity_psu, depth_mean_m, depth_diff_m,
-         mean_density_kgm3, mlotst, mean_chl_0_100_m_mgm3) %>%
   mutate(
     time_of_day = substr(replicate, 3, 3),
     time_of_day = recode(time_of_day, "D" = "Day", "N" = "Night", .default = NA_character_)
@@ -72,20 +78,17 @@ env_wide <- wide_major_taxa_nets %>%
     time_of_day = factor(time_of_day, levels = c("Day", "Night"))
   ) %>%
   ungroup() %>%
-  select(-sunrise, -sunset)
+  select(project, collection_date, year, transect_station_rep_year_net, time_of_day, start_time_pt,
+         start_latitude_dd, shelf_position, seafloor_depth_m, dissolved_oxygen_ml_l, 
+         mean_temperature_c, mean_salinity_psu, mean_chl_0_100_m_mgm3, depth_mean_m, volume_best_m3_both_sides)
 #removed mlotst for right now because all are NAs at the moment and I don't want this to cause errors down the line
 #also excluded redundant information like transect, transect_station, transect_station_rep, and so on
 ## 04/13 RM : added mlotst back in now. kept redundant information out 
 
 # Create community matrix -------------------------------------------------
 
-AHC_comm_matrix <- mocness_major_taxa_nets %>%
-  filter(!is.na(individuals_in_tow)) %>%
-  filter(!is.na(individuals_per_m3)) %>%
-  group_by(transect_station_rep_year_net, taxon) %>%
-  summarize(individuals_per_m3 = sum(individuals_per_m3, na.rm = TRUE)) %>%
-  ungroup() %>%
-  pivot_wider(names_from = taxon, values_from = individuals_per_m3, values_fill = 0)
+AHC_comm_matrix <- wide_major_taxa_nets %>%
+  select(transect_station_rep_year_net, depth_mean_m, 29:50)
 
 transform_taxa_concentrations <- AHC_comm_matrix[, 2:23] %>%
   sqrt()
