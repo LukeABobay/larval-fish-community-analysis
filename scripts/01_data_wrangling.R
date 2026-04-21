@@ -667,20 +667,25 @@ hist(mocness_major_taxa_nets$n, breaks = 506)
 # Taxon colors for plots --------------------------------------------------
 
 # Categorize taxa by habitat affinity
-coastal_species <- c("Agonidae", "Ammodytidae", "Cottidae", "Cyclopsettidae", "Gadidae", 
-                     "Glyptocephalus_zachirus", "Hemilepidotus_spp", "Hexagrammidae", 
+nearshore_species <- c("Ammodytidae", "Cottidae", "Gadidae", 
+                       "Glyptocephalus_zachirus", "Hemilepidotus_spp", "Hexagrammidae", 
+                       "Psychrolutidae",
+                       "Scorpaenichthys_marmoratus")
+nearshore_colors <- colorRampPalette(brewer.pal(9, "Greens")[2:9])(length(nearshore_species))
+
+coastal_species <- c("Agonidae", "Cyclopsettidae", 
                      "Isopsetta_isolepis", "Liparis_spp", "Lyopsetta_exilis", "Osmeridae", 
-                     "Parophrys_vetulus", "Psettichthys_melanostictus", "Psychrolutidae",
-                     "Scorpaenichthys_marmoratus", "Sebastes_spp")
-coastal_colors <- colorRampPalette(brewer.pal(17, "Greens")[2:18])(length(coastal_species))
+                     "Parophrys_vetulus", "Psettichthys_melanostictus", "Sebastes_spp")
+coastal_colors <- colorRampPalette(brewer.pal(10, "Blues")[1:9])(length(coastal_species))
 
 oceanic_species <- c("Bathylagus_ochotensis", "Lestidiops_ringens", "Protomyctophum_spp",
                      "Stenobrachius_leucopsarus", "Tarletonbeania_crenularis")
 oceanic_colors <- colorRampPalette(brewer.pal(5, "Purples")[2:6])(length(oceanic_species))
 
 # Named species color vector
-species_colors <- c(setNames(coastal_colors, coastal_species),
+species_colors <- c(setNames(nearshore_colors, nearshore_species),
+                    setNames(coastal_colors, coastal_species),
                     setNames(oceanic_colors, oceanic_species))
 
 # Vector of taxa ordered alphabetically within categories to order bars and figure legends
-ordered_taxa <- c(coastal_species, oceanic_species)
+ordered_taxa <- c(nearshore_species, coastal_species, oceanic_species)
