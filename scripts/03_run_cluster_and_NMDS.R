@@ -1,8 +1,10 @@
 
 # Description -------------------------------------------------------------
 
-# Conduct a cluster analysis of sampling events by LFC, plot clusters of 
-#sampling events in dendrograms, run an NMDS, and plot the NMDS ordination
+# Conduct a cluster analysis of sampling events by LFC, plot dendrograms to decide number
+#  of clusters. Plot sampling events by cluster on a map of the coast, jittering by depth. 
+#  Run an NMDS, and plot the NMDS ordination with overlays for covariates.
+#  Perform an indicator taxa analysis on the clustered community matrix.
 
 
 # Load packages -----------------------------------------------------------
@@ -19,6 +21,7 @@ library(dplyr)
 library(sf)
 library(rnaturalearth)
 library(rnaturalearthdata)
+library(indicspecies)
 
 
 # Source code -------------------------------------------------------------
@@ -73,8 +76,8 @@ env_wide <- wide_major_taxa_nets %>%
   ) %>%
   ungroup() %>%
   select(-sunrise, -sunset)
-#removed mlotst for right now because all are NAs at the moment and I don't want this to cause errors down the line
-#also excluded redundant information like transect, transect_station, transect_station_rep, and so on
+# removed mlotst for right now because all are NAs at the moment and I don't want this to cause errors down the line
+# also excluded redundant information like transect, transect_station, transect_station_rep, and so on
 ## 04/13 RM : added mlotst back in now. kept redundant information out 
 
 # Create community matrix -------------------------------------------------
@@ -109,14 +112,15 @@ AHC_result <- hclust(dissim_matrix, method = "average")
 
 # Plot the dendrograms -----------------------------------------------------
 
-## plot 2 clusters/rectangles
-plot(AHC_result, labels = AHC_comm_matrix_transformed$transect_station_rep_year_net, main = "average linkage AHC of sampling events by LFC")
-rect.hclust(AHC_result, k = 2, border = c(2, 4))
+# plot 2 clusters/rectangles
+#plot(AHC_result, labels = AHC_comm_matrix_transformed$transect_station_rep_year_net, main = "average linkage AHC of sampling events by LFC")
+#rect.hclust(AHC_result, k = 2, border = c(2, 4))
+## 04/21 RM : I don't think rhis plot is needed anymore 
 
-##plot 3 clusters/rectangles
+##plot k clusters/rectangles
 windows()
 plot(AHC_result, labels = AHC_comm_matrix_transformed$transect_station_rep_year_net, main = "average linkage AHC of sampling events by LFC")
-rect.hclust(AHC_result, k = 5, border = c(2, 3, 4, 5, 6))
+rect.hclust(AHC_result, k = 10, border = c(2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
 
 # Extract list of sampling events belonging to each cluster
 clusters <- data.frame(transect_station_rep_year_net = names(cutree(AHC_result, k = 10)),
@@ -304,3 +308,15 @@ ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
   theme_classic() +
   labs(title = "NMDS Ordination with Clustered Points and Time of Day Ellipses",
        x = "NMDS1", y = "NMDS2")
+
+
+# Indicator Species Analysis ----------------------------------------------
+
+comm_for_isa <- AHC_comm_matrix_transformed %>%
+  select(where(is.numeric)) %>%
+  as.data.frame()
+
+clusters_for_isa <- as.factor(clusters$cluster)
+
+isa_result <- multipatt(comm_for_isa, clusters_for_isa, func = "IndVal.g", max.order = 1)
+summary(isa_result)
