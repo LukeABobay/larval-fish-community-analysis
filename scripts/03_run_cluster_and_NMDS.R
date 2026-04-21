@@ -112,14 +112,9 @@ AHC_result <- hclust(dissim_matrix, method = "average")
 
 # Plot the dendrograms -----------------------------------------------------
 
-## plot 2 clusters/rectangles
-plot(AHC_result, labels = AHC_comm_matrix_transformed$transect_station_rep_year_net, main = "average linkage AHC of sampling events by LFC")
-rect.hclust(AHC_result, k = 2, border = c(2, 4))
-
-##plot 3 clusters/rectangles
 windows()
 plot(AHC_result, labels = AHC_comm_matrix_transformed$transect_station_rep_year_net, main = "average linkage AHC of sampling events by LFC")
-rect.hclust(AHC_result, k = 5, border = c(2, 3, 4, 5, 6))
+rect.hclust(AHC_result, k = 10, border = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
 
 # Extract list of sampling events belonging to each cluster
 clusters <- data.frame(transect_station_rep_year_net = names(cutree(AHC_result, k = 10)),
@@ -152,30 +147,12 @@ ggplot() +
 
 # Add cluster identities to long version of AHC_comm_matrix_transformed
 AHC_comm_matrix_transformed_long <- AHC_comm_matrix_transformed %>%
-  pivot_longer(cols = 2:23, names_to = "taxon", values_to = "sqrt_concentration") %>%
-  merge(., clusters, by = "transect_station_rep_year")
-
-# Categories of taxa in AHC_comm_matrix_transformed
-coastal_species <- c("Agonidae", "Artedius", "Cottidae", "Hexagrammidae", "Liparis", "Paralichthyidae", "Parophrys_vetulus", "Pholidae", "Pleuronectidae", "Sebastes", "Stichaeidae", "Ammodytidae", "Gadidae", "Osmeridae", "Pleuronectidae_other")
-coastal_colors <- colorRampPalette(brewer.pal(9, "Greens")[2:9])(length(coastal_species))
-
-coastal_oceanic_species <- c("Engraulis_mordax", "Sardinops_sagax")
-coastal_oceanic_colors <- colorRampPalette(brewer.pal(3, "Blues")[2:3])(length(coastal_oceanic_species))
-
-oceanic_species <- c("Bathylagidae", "Chauliodus_macouni", "Lestidiops_ringens", "Lipolagus_ochotensis", "Macrouridae", "Myctophidae", "Paralepididae")
-oceanic_colors <- colorRampPalette(brewer.pal(9, "Purples")[2:9])(length(oceanic_species))
-
-# Named species color vector
-species_colors <- c(setNames(coastal_colors, coastal_species),
-                    setNames(coastal_oceanic_colors, coastal_oceanic_species),
-                    setNames(oceanic_colors, oceanic_species))
-
-# Vector of taxa ordered alphabetically within categories to order bars and figure legends
-ordered_taxa <- c(coastal_species, coastal_oceanic_species, oceanic_species)
+  pivot_longer(cols = 3:23, names_to = "taxon", values_to = "sqrt_concentration") %>%
+  merge(., clusters, by = "transect_station_rep_year_net")
 
 # Plot by transect_station_rep_year, sorted by cluster
 windows()
-ggplot(AHC_comm_matrix_transformed_long, aes(x = transect_station_rep_year, y = sqrt_concentration, fill = factor(taxon, levels = ordered_taxa))) +
+ggplot(AHC_comm_matrix_transformed_long, aes(x = transect_station_rep_year_net, y = sqrt_concentration, fill = factor(taxon, levels = ordered_taxa))) +
   geom_bar(stat = "identity", position = "stack") +
   scale_fill_manual(values = species_colors, breaks = ordered_taxa) +
   facet_grid(rows = vars(cluster)) +
