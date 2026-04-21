@@ -95,15 +95,15 @@ ggplot(mocness_major_taxa, aes(x = depth_range, y = 0, fill = taxon)) +
 ```
 
 ```{r Stacked barplots of major taxa, fig.height=8, fig.width=6}
-ggplot(mocness_major_taxa, aes(x = depth_range, y = individuals_in_tow, fill = taxon)) +
+windows()
+p <- ggplot(mocness_major_taxa_nets, aes(x = net, y = individuals_per_m3, fill = taxon)) +
   geom_bar(stat = "identity", position = "stack") +
-  scale_fill_manual(values = species_colors) +
+  scale_fill_manual(values = species_colors, breaks = ordered_taxa) +
   facet_grid(transect ~ station) +
-  labs(title = "Larval Fish Counts by Station and Transect",
-       x = "Depth sampled (m)", y = "Count") +
   theme_light() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "none")
+p
 # ggsave("plot_mocness_18_19_stacked_station_depth.tif", plot = last_plot(), device = "tiff", path=here("output"), width = 10, height = 6, units = "in", dpi = 300)
 
 ggplot(mocness_major_taxa, aes(x = depth_range, y = log(individuals_in_tow), fill = taxon)) +

@@ -49,7 +49,7 @@ nets_env_wide <- nets_major_taxa_wide %>%
   mutate(time_of_day = factor(time_of_day, levels = c("Day", "Night"))) %>%
   select(project, collection_date, year, transect_station_rep_year_net, time_of_day, start_time_pt,
          start_latitude_dd, shelf_position, seafloor_depth_m, dissolved_oxygen_ml_l, 
-         mean_temperature_c, mean_salinity_psu, depth_mean_m, volume_best_m3_both_sides)
+         mean_temperature_c, mean_salinity_psu, mean_chl_0_100_m_mgm3, depth_mean_m, volume_best_m3_both_sides)
 #removed mlotst and prey abundance for right now because both have NAs at the moment and I don't want this to cause errors down the line
 #also excluded redundant information like transect, transect_station, transect_station_rep, and so on. Included only variables of interest
 # removed chlorophyll until we have values for fluorescence
@@ -228,3 +228,8 @@ ggplot(nets_stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
   theme_classic() +
   labs(title = "NMDS Ordination with Clustered Points and Time of Day Ellipses",
        x = "NMDS1", y = "NMDS2")
+
+
+# Fit db-RDA models and evaluate support for env vars ---------------------
+
+
