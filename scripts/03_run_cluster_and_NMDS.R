@@ -90,7 +90,7 @@ env_wide <- wide_major_taxa_nets %>%
 AHC_comm_matrix <- wide_major_taxa_nets %>%
   select(transect_station_rep_year_net, depth_mean_m, 29:50)
 
-transform_taxa_concentrations <- AHC_comm_matrix[, 2:23] %>%
+transform_taxa_concentrations <- AHC_comm_matrix[, 3:24] %>%
   sqrt()
 
 # Add rownames
@@ -147,7 +147,7 @@ ggplot() +
 
 # Add cluster identities to long version of AHC_comm_matrix_transformed
 AHC_comm_matrix_transformed_long <- AHC_comm_matrix_transformed %>%
-  pivot_longer(cols = 3:23, names_to = "taxon", values_to = "sqrt_concentration") %>%
+  pivot_longer(cols = 2:23, names_to = "taxon", values_to = "sqrt_concentration") %>%
   merge(., clusters, by = "transect_station_rep_year_net")
 
 # Plot by transect_station_rep_year, sorted by cluster
@@ -171,7 +171,7 @@ stressplot(NMDS_result)   ##Shepard diagram
 
 site_scores <- as.data.frame(scores(NMDS_result, display = "sites"))
 cluster_groups <- cutree(AHC_result, k = 5)
-station_scores <- mutate(site_scores, transect_station_rep_year = AHC_comm_matrix_transformed$transect_station_rep_year)
+station_scores <- mutate(site_scores, transect_station_rep_year_net = AHC_comm_matrix_transformed$transect_station_rep_year_net)
 stations_clustered <- mutate(station_scores, cluster = cluster_groups)
 stations_clustered$cluster <- as.numeric(as.character(stations_clustered$cluster))
 stations_clustered$cluster <- factor(stations_clustered$cluster, levels = c(1,2,3,4,5), labels = c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster 4", "Cluster 5"))
@@ -179,7 +179,7 @@ stations_clustered$cluster <- factor(stations_clustered$cluster, levels = c(1,2,
 ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
   scale_color_manual(values = c("red", "blue", "black", "green", "orange")) +
   geom_point(size = 3) +
-  geom_text_repel(aes(label = transect_station_rep_year), size = 3, max.overlaps = 10) +
+  geom_text_repel(aes(label = transect_station_rep_year_net), size = 3, max.overlaps = 10) +
   theme_classic() +
   labs(title = "NMDS Ordination of sampling events by LFC", x = "NMDS1", y = "NMDS2")   ##NMDS plot
 
@@ -188,7 +188,7 @@ ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
 
 #Vectors for environmental variables
 env_wide_aligned <- env_wide[match(rownames(scores(NMDS_result, display = "sites")),
-                                   env_wide$transect_station_rep_year), ]
+                                   env_wide$transect_station_rep_year_net), ]
 env_numeric <- env_wide_aligned[, sapply(env_wide_aligned, is.numeric)]
 fit_vectors<- envfit(NMDS_result, env_numeric, permutations = 1000, na.rm = TRUE)
 
