@@ -143,6 +143,10 @@ ggplot() +
   scale_color_brewer(palette = "Dark2") +
   facet_grid(cols = vars(cruise))
 
+# # Adjust the values of width and height to change the size of the saved figure
+# ggsave("cluster_map.tif", plot = get_last_plot(), path = here("output"),
+#   width = 6.5, height = 4, units = "in", dpi = 300)
+
 # Plot abundance of each taxon, grouped by cluster ------------------------
 
 # Add cluster identities to long version of AHC_comm_matrix_transformed
