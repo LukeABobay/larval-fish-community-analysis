@@ -33,20 +33,26 @@ source(here("scripts/01_data_wrangling.R"))
 
 wide_major_taxa_nets <- mocness_major_taxa_nets %>%
   # Removing NAs for now, but there shouldn't be any to begin with
+  # Removing NAs for now, but there shouldn't be any to begin with
   filter(!is.na(individuals_in_tow)) %>%
   filter(!is.na(individuals_per_m3)) %>%
-  group_by(collection_date, replicate, transect, station, taxon) %>%
-  mutate(individuals_per_m3 = sum(individuals_per_m3)) %>%
+  select(project, year, cruise, collection_date, transect, replicate, station, net,
+         transect_station_rep_year_net, transect_station_rep_year, start_time_pt,
+         start_longitude_dd, start_latitude_dd, maximum_depth_m, minimum_depth_m, 
+         depth_mean_m, depth_diff_m, volume_best_m3_both_sides,
+         mean_temperature_c, mean_salinity_psu, mean_density_kgm3, seafloor_depth_m,
+         distance_to_shore_km, shelf_position, prey_zooplankton_abundance_ind_m3,
+         dissolved_oxygen_ml_l, mean_chl_0_100_m_mgm3, mlotst, 
+         taxon, individuals_per_m3) %>%
+  # For some reason, MOC 1 and MOC 4 have different values of mean_temperature_c, mean_salinity_psu, and mean_density_kgm3 in 6 cases. To eliminate differences, calculate mean
+  group_by(transect_station_rep_year_net) %>%
+  mutate(mean_temperature_c = mean(mean_temperature_c),
+         mean_salinity_psu = mean(mean_salinity_psu),
+         mean_density_kgm3 = mean(mean_density_kgm3)) %>%
   ungroup() %>%
-  distinct(collection_date, replicate, transect, station, taxon, .keep_all = TRUE) %>%
   pivot_wider(names_from = taxon, values_from = individuals_per_m3, values_fill = 0)
 
 env_wide <- wide_major_taxa_nets %>%
-  select(project, collection_date, transect_station_rep_year_net, replicate, net, start_time_pt,
-         start_latitude_dd, start_longitude_dd, depth_range, shelf_position,
-         seafloor_depth_m, prey_zooplankton_abundance_ind_m3, dissolved_oxygen_ml_l,
-         mean_temperature_c, mean_salinity_psu, depth_mean_m, depth_diff_m,
-         mean_density_kgm3, mlotst, mean_chl_0_100_m_mgm3) %>%
   mutate(
     time_of_day = substr(replicate, 3, 3),
     time_of_day = recode(time_of_day, "D" = "Day", "N" = "Night", .default = NA_character_)
@@ -75,22 +81,25 @@ env_wide <- wide_major_taxa_nets %>%
     time_of_day = factor(time_of_day, levels = c("Day", "Night"))
   ) %>%
   ungroup() %>%
+<<<<<<< HEAD
   select(-sunrise, -sunset)
 # removed mlotst for right now because all are NAs at the moment and I don't want this to cause errors down the line
 # also excluded redundant information like transect, transect_station, transect_station_rep, and so on
+=======
+  select(project, collection_date, year, transect_station_rep_year_net, time_of_day, start_time_pt,
+         start_latitude_dd, shelf_position, seafloor_depth_m, dissolved_oxygen_ml_l, 
+         mean_temperature_c, mean_salinity_psu, mean_chl_0_100_m_mgm3, depth_mean_m, volume_best_m3_both_sides)
+#removed mlotst for right now because all are NAs at the moment and I don't want this to cause errors down the line
+#also excluded redundant information like transect, transect_station, transect_station_rep, and so on
+>>>>>>> 109f1620a303a07d550797758921d014e47c04ea
 ## 04/13 RM : added mlotst back in now. kept redundant information out 
 
 # Create community matrix -------------------------------------------------
 
-AHC_comm_matrix <- mocness_major_taxa_nets %>%
-  filter(!is.na(individuals_in_tow)) %>%
-  filter(!is.na(individuals_per_m3)) %>%
-  group_by(transect_station_rep_year_net, taxon) %>%
-  summarize(individuals_per_m3 = sum(individuals_per_m3, na.rm = TRUE)) %>%
-  ungroup() %>%
-  pivot_wider(names_from = taxon, values_from = individuals_per_m3, values_fill = 0)
+AHC_comm_matrix <- wide_major_taxa_nets %>%
+  select(transect_station_rep_year_net, depth_mean_m, 29:50)
 
-transform_taxa_concentrations <- AHC_comm_matrix[, 2:23] %>%
+transform_taxa_concentrations <- AHC_comm_matrix[, 3:24] %>%
   sqrt()
 
 # Add rownames
@@ -112,6 +121,7 @@ AHC_result <- hclust(dissim_matrix, method = "average")
 
 # Plot the dendrograms -----------------------------------------------------
 
+<<<<<<< HEAD
 # plot 2 clusters/rectangles
 #plot(AHC_result, labels = AHC_comm_matrix_transformed$transect_station_rep_year_net, main = "average linkage AHC of sampling events by LFC")
 #rect.hclust(AHC_result, k = 2, border = c(2, 4))
@@ -121,6 +131,11 @@ AHC_result <- hclust(dissim_matrix, method = "average")
 windows()
 plot(AHC_result, labels = AHC_comm_matrix_transformed$transect_station_rep_year_net, main = "average linkage AHC of sampling events by LFC")
 rect.hclust(AHC_result, k = 10, border = c(2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
+=======
+windows()
+plot(AHC_result, labels = AHC_comm_matrix_transformed$transect_station_rep_year_net, main = "average linkage AHC of sampling events by LFC")
+rect.hclust(AHC_result, k = 10, border = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
+>>>>>>> 109f1620a303a07d550797758921d014e47c04ea
 
 # Extract list of sampling events belonging to each cluster
 clusters <- data.frame(transect_station_rep_year_net = names(cutree(AHC_result, k = 10)),
@@ -154,29 +169,11 @@ ggplot() +
 # Add cluster identities to long version of AHC_comm_matrix_transformed
 AHC_comm_matrix_transformed_long <- AHC_comm_matrix_transformed %>%
   pivot_longer(cols = 2:23, names_to = "taxon", values_to = "sqrt_concentration") %>%
-  merge(., clusters, by = "transect_station_rep_year")
-
-# Categories of taxa in AHC_comm_matrix_transformed
-coastal_species <- c("Agonidae", "Artedius", "Cottidae", "Hexagrammidae", "Liparis", "Paralichthyidae", "Parophrys_vetulus", "Pholidae", "Pleuronectidae", "Sebastes", "Stichaeidae", "Ammodytidae", "Gadidae", "Osmeridae", "Pleuronectidae_other")
-coastal_colors <- colorRampPalette(brewer.pal(9, "Greens")[2:9])(length(coastal_species))
-
-coastal_oceanic_species <- c("Engraulis_mordax", "Sardinops_sagax")
-coastal_oceanic_colors <- colorRampPalette(brewer.pal(3, "Blues")[2:3])(length(coastal_oceanic_species))
-
-oceanic_species <- c("Bathylagidae", "Chauliodus_macouni", "Lestidiops_ringens", "Lipolagus_ochotensis", "Macrouridae", "Myctophidae", "Paralepididae")
-oceanic_colors <- colorRampPalette(brewer.pal(9, "Purples")[2:9])(length(oceanic_species))
-
-# Named species color vector
-species_colors <- c(setNames(coastal_colors, coastal_species),
-                    setNames(coastal_oceanic_colors, coastal_oceanic_species),
-                    setNames(oceanic_colors, oceanic_species))
-
-# Vector of taxa ordered alphabetically within categories to order bars and figure legends
-ordered_taxa <- c(coastal_species, coastal_oceanic_species, oceanic_species)
+  merge(., clusters, by = "transect_station_rep_year_net")
 
 # Plot by transect_station_rep_year, sorted by cluster
 windows()
-ggplot(AHC_comm_matrix_transformed_long, aes(x = transect_station_rep_year, y = sqrt_concentration, fill = factor(taxon, levels = ordered_taxa))) +
+ggplot(AHC_comm_matrix_transformed_long, aes(x = transect_station_rep_year_net, y = sqrt_concentration, fill = factor(taxon, levels = ordered_taxa))) +
   geom_bar(stat = "identity", position = "stack") +
   scale_fill_manual(values = species_colors, breaks = ordered_taxa) +
   facet_grid(rows = vars(cluster)) +
@@ -195,7 +192,7 @@ stressplot(NMDS_result)   ##Shepard diagram
 
 site_scores <- as.data.frame(scores(NMDS_result, display = "sites"))
 cluster_groups <- cutree(AHC_result, k = 5)
-station_scores <- mutate(site_scores, transect_station_rep_year = AHC_comm_matrix_transformed$transect_station_rep_year)
+station_scores <- mutate(site_scores, transect_station_rep_year_net = AHC_comm_matrix_transformed$transect_station_rep_year_net)
 stations_clustered <- mutate(station_scores, cluster = cluster_groups)
 stations_clustered$cluster <- as.numeric(as.character(stations_clustered$cluster))
 stations_clustered$cluster <- factor(stations_clustered$cluster, levels = c(1,2,3,4,5), labels = c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster 4", "Cluster 5"))
@@ -203,7 +200,7 @@ stations_clustered$cluster <- factor(stations_clustered$cluster, levels = c(1,2,
 ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
   scale_color_manual(values = c("red", "blue", "black", "green", "orange")) +
   geom_point(size = 3) +
-  geom_text_repel(aes(label = transect_station_rep_year), size = 3, max.overlaps = 10) +
+  geom_text_repel(aes(label = transect_station_rep_year_net), size = 3, max.overlaps = 10) +
   theme_classic() +
   labs(title = "NMDS Ordination of sampling events by LFC", x = "NMDS1", y = "NMDS2")   ##NMDS plot
 
@@ -212,7 +209,7 @@ ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
 
 #Vectors for environmental variables
 env_wide_aligned <- env_wide[match(rownames(scores(NMDS_result, display = "sites")),
-                                   env_wide$transect_station_rep_year), ]
+                                   env_wide$transect_station_rep_year_net), ]
 env_numeric <- env_wide_aligned[, sapply(env_wide_aligned, is.numeric)]
 fit_vectors<- envfit(NMDS_result, env_numeric, permutations = 1000, na.rm = TRUE)
 

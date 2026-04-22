@@ -660,8 +660,15 @@ mocness_major_taxa_nets <- mocness_major_taxa %>%
 # RM; I was just thinking, do we want to use the net 0s since these aren't depth-stratified? If not, when should we remove them? Before
  # or after filtering?
 
-hist(mocness_major_taxa_nets$n, breaks = 506)
+mocness_major_taxa_nets %>%
+  distinct(collection_date, transect, station, replicate, net, .keep_all = TRUE) %>%
+  pull(n) %>%
+  hist(breaks = 506)
 # RM ; what is this histogram for? how did you decide on the break level?
+# LB; I wanted to be able to see how this histogram changes when different 
+# thresholds for individuals per net are applied. I just chose a relatively
+# arbitrary number of breaks that was high enough to see what's being 
+# excluded when a threshold of 15 is used.
 
 
 # Taxon colors for plots --------------------------------------------------
