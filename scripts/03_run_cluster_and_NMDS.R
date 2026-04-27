@@ -136,19 +136,22 @@ mapping_df <- wide_major_taxa_nets %>%
 distinct(transect_station_rep_year_net, start_longitude_dd, start_latitude_dd, cluster, net, cruise, .keep_all = TRUE)
 mapping_df$cluster <- factor(mapping_df$cluster)
 
+mapping_colors <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#8A2BE2", "#00CED1", "#FF1493")
+
 space <- ne_countries(scale = "medium", returnclass = "sf")
 
-windows()
 ggplot() +
   geom_sf(data = space, fill = "grey90", color = "grey40") +
-  geom_point(
-    data = mapping_df,
+  scale_shape_manual(values = c(21, 22, 23, 24, 25)) + 
+  geom_point(data = mapping_df,
     aes(x = start_longitude_dd, y = start_latitude_dd, 
         color = cluster, shape = factor(net)),
-    size = 2, alpha = 0.95, position = position_jitter(width = 0.1, height = 0.1)) +
+    size = 1, alpha = 0.95, position = position_jitter(width = 0.01, height = 0.05)) +
   coord_sf(xlim = c(-127, -123), ylim = c(40, 48), expand = FALSE) +
-  scale_color_brewer(palette = "Dark2") +
+  scale_color_manual(values = mapping_colors) +
   facet_grid(cols = vars(cruise))
+ggsave("cluster_map.tif", plot = get_last_plot(), path = here("output"), 
+       width = 15, height = 10, units = "in", dpi = 300)
 
 # # Adjust the values of width and height to change the size of the saved figure
 # ggsave("cluster_map.tif", plot = get_last_plot(), path = here("output"),
