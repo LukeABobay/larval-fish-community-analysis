@@ -22,6 +22,7 @@ library(sf)
 library(rnaturalearth)
 library(rnaturalearthdata)
 library(indicspecies)
+library(ggnewscale)
 
 
 # Source code -------------------------------------------------------------
@@ -136,7 +137,7 @@ mapping_df <- wide_major_taxa_nets %>%
 distinct(transect_station_rep_year_net, start_longitude_dd, start_latitude_dd, cluster, net, cruise, .keep_all = TRUE)
 mapping_df$cluster <- factor(mapping_df$cluster)
 
-mapping_colors <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#8A2BE2", "#00CED1", "#FF1493")
+cluster_colors <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#8A2BE2", "#00CED1", "#FF1493")
 
 space <- ne_countries(scale = "medium", returnclass = "sf")
 
@@ -148,7 +149,7 @@ ggplot() +
         color = cluster, shape = factor(net)),
     size = 1, alpha = 0.95, position = position_jitter(width = 0.01, height = 0.05)) +
   coord_sf(xlim = c(-127, -123), ylim = c(40, 48), expand = FALSE) +
-  scale_color_manual(values = mapping_colors) +
+  scale_color_manual(values = cluster_colors) +
   facet_grid(cols = vars(cruise))
 ggsave("cluster_map.tif", plot = get_last_plot(), path = here("output"), 
        width = 15, height = 10, units = "in", dpi = 300)
@@ -176,22 +177,23 @@ ggplot(AHC_comm_matrix_transformed_long, aes(x = transect_station_rep_year_net, 
 ##not sure if my adjustments here to account for standardizing counts by volume were correct and/or needed
 
 
-# Plot NMDS ordinations ---------------------------------------------------
+# Plot NMDS ordination ---------------------------------------------------
 
-NMDS_result <- metaMDS(dissim_matrix, distance = "bray", k = 2, try = 20, trymax = 20, engine = "monoMDS")
+NMDS_result <- metaMDS(dissim_matrix, distance = "bray", k = 3, try = 20, trymax = 20, engine = "monoMDS")
 NMDS_result$stress  ##check stress
 
 stressplot(NMDS_result)   ##Shepard diagram
 
 site_scores <- as.data.frame(scores(NMDS_result, display = "sites"))
-cluster_groups <- cutree(AHC_result, k = 5)
+cluster_groups <- cutree(AHC_result, k = 10)
 station_scores <- mutate(site_scores, transect_station_rep_year_net = AHC_comm_matrix_transformed$transect_station_rep_year_net)
 stations_clustered <- mutate(station_scores, cluster = cluster_groups)
 stations_clustered$cluster <- as.numeric(as.character(stations_clustered$cluster))
-stations_clustered$cluster <- factor(stations_clustered$cluster, levels = c(1,2,3,4,5), labels = c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster 4", "Cluster 5"))
+stations_clustered$cluster <- factor(stations_clustered$cluster, levels = c(1,2,3,4,5,6,7,8,9,10), 
+                                     labels = c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster 4", "Cluster 5", "Cluster 6", "Cluster 7", "Cluster 8", "Cluster 9", "Cluster 10"))
 
 ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
-  scale_color_manual(values = c("red", "blue", "black", "green", "orange")) +
+  scale_color_manual(values = cluster_colors) +
   geom_point(size = 3) +
   geom_text_repel(aes(label = transect_station_rep_year_net), size = 3, max.overlaps = 10) +
   theme_classic() +
@@ -200,7 +202,7 @@ ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
 
 # overlays for NMDS plots -------------------------------------------------
 
-#Vectors for environmental variables
+#Vectors
 env_wide_aligned <- env_wide[match(rownames(scores(NMDS_result, display = "sites")),
                                    env_wide$transect_station_rep_year_net), ]
 env_numeric <- env_wide_aligned[, sapply(env_wide_aligned, is.numeric)]
@@ -208,96 +210,68 @@ fit_vectors<- envfit(NMDS_result, env_numeric, permutations = 1000, na.rm = TRUE
 
 ##Extract vector scores for plotting
 vector_scores <- scores(fit_vectors, display = "vectors")
-vector_df <- as.data.frame(vector_scores)
-vector_df$variable <- rownames(vector_df)
+vector_df <- as.data.frame(vector_scores) %>% 
+  mutate(variable = rownames(vector_scores)) %>% 
+  filter(variable %in% c("year", "start_longitude_dd", "start_latitude_dd", "depth_mean_m", "seafloor_depth_m", "distance_to_shore_km"))
 
-##Plot NMDS with vector overlays
-windows()
-ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
-  scale_color_manual(values = c("red", "blue", "black", "green", "orange")) +
-  geom_point(size = 3) +
-  #geom_text_repel(aes(label = transect_station_rep_year), size = 3, max.overlaps = 10) +
-  theme_classic() +
-  labs(title = "NMDS Ordination of sampling events by LFC", x = "NMDS1", y = "NMDS2") +
-  geom_segment(data = vector_df,
-             aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2),
-             arrow = arrow(length = unit(0.3, "cm")),
-             color = "darkgreen", linewidth = 1) +
-  geom_text(data = vector_df,
-          aes(x = NMDS1, y = NMDS2, label = variable),
-          color = "darkgreen", size = 3, vjust = -0.5)
-
-#Ellipses for categorical variables
-
-##shelf_position
-###fit ellipses
+#Ellipses
+##fit ellipses
 ell_shelf <- ordiellipse(NMDS_result, env_wide_aligned$shelf_position,
-                        kind = "sd", conf = 0.95, draw = "none") 
+                         kind = "sd", conf = 0.95, draw = "none") 
 
-###convert ellipse output to data frames
+time_groups <- env_wide_aligned$time_of_day
+ell_time <- ordiellipse(NMDS_result, time_groups, kind = "sd", 
+                        conf = 0.95,  draw = "none")
+
+##convert outputs to data frames
 ell_shelf_df <- purrr::map_dfr(names(ell_shelf), ~ {
   e     <- ell_shelf[[.x]]
   theta <- seq(0, 2 * pi, length.out = 200)
   circle <- cbind(cos(theta), sin(theta))
-  
   # one ellipse per group: center + scale * chol(cov) %*% circle
   xy <- circle %*% chol(e$cov)
   xy <- sweep(xy * e$scale, 2, e$center, "+")
-  
   dplyr::tibble(
     NMDS1 = xy[, 1],
     NMDS2 = xy[, 2],
-    group = .x
-  )
-})
+    group = .x)})
 
-###overlay ellipses on NMDS plot
-ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
-  geom_point(size = 3) +
-  geom_path(data = ell_shelf_df, aes(x = NMDS1, y = NMDS2, color = group),
-            size = 1) +
-  scale_color_manual(values = c("red", "blue", "black", "green", "orange", "darkgreen", "darkorange")) +
-  theme_classic() +
-  labs(title = "NMDS Ordination with Clustered Points and Shelf Position Ellipses",
-       x = "NMDS1", y = "NMDS2")
-
-##time_of_day
-###fit ellipses
-time_groups <- env_wide_aligned$time_of_day
-
-ell_time <- ordiellipse(
-  NMDS_result,
-  time_groups,
-  kind = "sd",
-  conf = 0.95, 
-  draw = "none"
-)
-
-### convert ellipse output to data frame
 ell_time_df <- purrr::map_dfr(names(ell_time), ~ {
   e     <- ell_time[[.x]]
   theta <- seq(0, 2 * pi, length.out = 200)
   circle <- cbind(cos(theta), sin(theta))
-  
   xy <- circle %*% chol(e$cov)
   xy <- sweep(xy * e$scale, 2, e$center, "+")
-  
   tibble(
     NMDS1 = xy[, 1],
     NMDS2 = xy[, 2],
-    group = .x
-  )
-})
+    group = .x)})
 
-###overlay ellipses on NMDS plot
+
+#Plot NMDS with overlays
+windows()
 ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
+  #1 Points (cluster colors)
   geom_point(size = 3) +
-  geom_path(data = ell_time_df, aes(x = NMDS1, y = NMDS2, color = group),
-            size = 1, linetype = 2) +
-  scale_color_manual(values = c("red", "blue", "black", "green", "orange", "darkgrey", "darkblue")) +
+  scale_color_manual(values = cluster_colors) +
+  new_scale_color() +
+  #2 Ellipses - Shelf Position
+  geom_path(data = ell_shelf_df, aes(x = NMDS1, y = NMDS2, color = group), 
+            size = 1, inherit.aes = FALSE) +
+  scale_color_manual(name = "Shelf position", values = c("shelf" = "#1f78b4", "offshore" = "#e31a1c")) +
+  new_scale_color() +
+  #3 Ellipses - Day/Night
+  geom_path(data = ell_time_df, aes(x = NMDS1, y = NMDS2, color = group), 
+            size = 1, linetype = 2, inherit.aes = FALSE) +
+  scale_color_manual(name = "Day/Night", values = c("Day" = "#33a02c", "Night" = "#ff7f00")) +
+  #4 Vectors
+  geom_segment(data = vector_df, aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
+               arrow = arrow(length = unit(0.3, "cm")), 
+               color = "black", linewidth = 1, inherit.aes = FALSE) +
+  geom_text(data = vector_df, aes(x = NMDS1, y = NMDS2, label = variable), 
+            color = "black", size = 3, vjust = -0.5,inherit.aes = FALSE) +
   theme_classic() +
-  labs(title = "NMDS Ordination with Clustered Points and Time of Day Ellipses",
-       x = "NMDS1", y = "NMDS2")
+  labs(title = "NMDS ordination with clustered points and covariate overlays", x = "NMDS1", y = "NMDS2")
 
 
 # Indicator Species Analysis ----------------------------------------------
