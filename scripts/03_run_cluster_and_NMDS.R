@@ -179,7 +179,7 @@ ggplot(AHC_comm_matrix_transformed_long, aes(x = transect_station_rep_year_net, 
 
 # Plot NMDS ordination ---------------------------------------------------
 
-NMDS_result <- metaMDS(dissim_matrix, distance = "bray", k = 3, try = 20, trymax = 20, engine = "monoMDS")
+NMDS_result <- metaMDS(dissim_matrix, distance = "bray", k = 2, try = 20, trymax = 20, engine = "monoMDS")
 NMDS_result$stress  ##check stress
 
 stressplot(NMDS_result)   ##Shepard diagram
@@ -282,5 +282,5 @@ comm_for_isa <- AHC_comm_matrix_transformed %>%
 
 clusters_for_isa <- as.factor(clusters$cluster)
 
-isa_result <- multipatt(comm_for_isa, clusters_for_isa, func = "IndVal.g", max.order = 1)
+isa_result <- multipatt(comm_for_isa, clusters_for_isa, func = "IndVal.g", max.order = 2)
 summary(isa_result)
