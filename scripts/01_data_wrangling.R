@@ -14,6 +14,7 @@ library(gtools)
 library(marmap)
 library(lubridate)
 library(sf)
+library(RColorBrewer)
 
 
 # Load data ---------------------------------------------------------------
