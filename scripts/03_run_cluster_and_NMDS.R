@@ -23,6 +23,7 @@ library(rnaturalearth)
 library(rnaturalearthdata)
 library(indicspecies)
 library(ggnewscale)
+library(plotly)
 
 
 # Source code -------------------------------------------------------------
@@ -133,8 +134,8 @@ clusters <- data.frame(transect_station_rep_year_net = names(cutree(AHC_result, 
 
 mapping_df <- wide_major_taxa_nets %>%
   left_join(clusters, by = "transect_station_rep_year_net") %>%
-  select(transect_station_rep_year_net, start_longitude_dd, start_latitude_dd, cluster, net, cruise) %>%
-distinct(transect_station_rep_year_net, start_longitude_dd, start_latitude_dd, cluster, net, cruise, .keep_all = TRUE)
+  select(transect_station_rep_year_net, start_longitude_dd, start_latitude_dd, cluster, net, cruise, depth_mean_m) %>%
+distinct(transect_station_rep_year_net, start_longitude_dd, start_latitude_dd, cluster, net, cruise, depth_mean_m, .keep_all = TRUE)
 mapping_df$cluster <- factor(mapping_df$cluster)
 
 cluster_colors <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#8A2BE2", "#00CED1", "#FF1493")
@@ -157,6 +158,71 @@ ggsave("cluster_map.tif", plot = get_last_plot(), path = here("output"),
 # # Adjust the values of width and height to change the size of the saved figure
 # ggsave("cluster_map.tif", plot = get_last_plot(), path = here("output"),
 #   width = 6.5, height = 4, units = "in", dpi = 300)
+
+
+#try 3D mapping for nets by depth instead of jittering (code from Copilot so may need adjustment)
+#extract coastline
+west_coast_bbox <- st_bbox(c(xmin = -127,
+                             xmax = -123,
+                             ymin = 40,
+                             ymax = 48), crs = st_crs(space))
+
+west_coast <- st_crop(space, west_coast_bbox)
+
+coast_list <- west_coast %>%
+  st_cast("MULTIPOLYGON") %>%
+  st_cast("POLYGON") %>%
+  st_coordinates() %>%
+  as.data.frame() %>%
+  group_split(L1, L2)   # L1 = polygon, L2 = ring
+
+#prepare data
+depth_scale <- 0.05   # compress depth to 5% of original range
+
+mapping_df <- mapping_df %>%
+  mutate(z_depth = depth_mean_m * depth_scale + as.numeric(net) * 0.1)
+
+
+# Map net numbers to shapes
+net_shapes <- c("circle", "square", "diamond", "cross", "x")
+
+p <- plot_ly()
+
+# Coastline (black, no legend)
+for (seg in coast_list) {p <- p %>%
+  add_trace(x = c(seg$X, NA),
+            y = c(seg$Y, NA),
+            z = c(rep(0, nrow(seg)), NA),
+            type = "scatter3d",
+            mode = "lines",
+            line = list(color = "black", width = 3),
+            showlegend = FALSE,
+            hoverinfo = "none")}
+
+# Sampling points (this is the ONLY trace that needs legend info)
+p <- p %>%
+  add_trace(data = mapping_df,
+            x = ~start_longitude_dd,
+            y = ~start_latitude_dd,
+            z = ~z_depth,
+            color = ~cluster,
+            colors = cluster_colors,
+            symbol = ~factor(net),
+            symbols = net_shapes,
+            type = "scatter3d",
+            mode = "markers",
+            marker = list(size = 4, opacity = 0.95),
+            legendgroup = "samples",
+            showlegend = TRUE) %>%
+  layout(scene = list(xaxis = list(title = "Longitude"),
+                      yaxis = list(title = "Latitude"),
+                      zaxis = list(title = "Scaled Depth", autorange = "reversed"),
+                      aspectmode = "data",
+                      camera = list(eye = list(x = -3.0, y = 0.2, z = 0.6))),
+         legend = list(orientation = "v", x = 1.05, y = 1))
+
+p
+
 
 # Plot abundance of each taxon, grouped by cluster ------------------------
 
