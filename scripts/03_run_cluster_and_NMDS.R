@@ -142,13 +142,20 @@ cluster_colors <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55
 
 space <- ne_countries(scale = "medium", returnclass = "sf")
 
+offsets <- tibble(net = factor(0:4),
+                  dx = c(0, 0.06, -0.06, 0, 0),
+                  dy = c(0, 0, 0, 0.07, -0.07))
+
+mapping_df2 <- mapping_df %>%
+  left_join(offsets, by = "net")
+
 ggplot() +
   geom_sf(data = space, fill = "grey90", color = "grey40") +
   scale_shape_manual(values = c(21, 22, 23, 24, 25)) + 
-  geom_point(data = mapping_df,
-    aes(x = start_longitude_dd, y = start_latitude_dd, 
+  geom_point(data = mapping_df2,
+    aes(x = start_longitude_dd+dx, y = start_latitude_dd+dy, 
         color = cluster, shape = factor(net)),
-    size = 1, alpha = 0.95, position = position_jitter(width = 0.01, height = 0.05)) +
+    size = 1, alpha = 0.95) +
   coord_sf(xlim = c(-127, -123), ylim = c(40, 48), expand = FALSE) +
   scale_color_manual(values = cluster_colors) +
   facet_grid(cols = vars(cruise))
