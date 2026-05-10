@@ -159,7 +159,7 @@ ggplot() +
   coord_sf(xlim = c(-127, -123), ylim = c(40, 48), expand = FALSE) +
   scale_color_manual(values = cluster_colors) +
   facet_grid(cols = vars(cruise))
-ggsave("cluster_map.tif", plot = get_last_plot(), path = here("output"), 
+ggsave("cluster_map.png", plot = get_last_plot(), path = here("output"), 
        width = 15, height = 10, units = "in", dpi = 300)
 
 # # Adjust the values of width and height to change the size of the saved figure
@@ -191,7 +191,7 @@ mapping_df <- mapping_df %>%
 
 
 # Map net numbers to shapes
-net_shapes <- c("circle", "square", "diamond", "cross", "x")
+net_shapes <- c("circle", "square", "diamond", "triangle-up", "triangle-down")
 
 p <- plot_ly()
 
@@ -218,7 +218,7 @@ p <- p %>%
             symbols = net_shapes,
             type = "scatter3d",
             mode = "markers",
-            marker = list(size = 4, opacity = 0.95),
+            marker = list(size = 4, opacity = 0.95, color = "rgba(0,0,0,0)", line = list(width = 2, color = cluster_colors)),
             legendgroup = "samples",
             showlegend = TRUE) %>%
   layout(scene = list(xaxis = list(title = "Longitude"),
@@ -249,6 +249,17 @@ ggplot(AHC_comm_matrix_transformed_long, aes(x = transect_station_rep_year_net, 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ##not sure if my adjustments here to account for standardizing counts by volume were correct and/or needed
 
+# Plot same but only for clusters 1, 2, 3, and 5
+windows()
+ggplot(AHC_comm_matrix_transformed_long %>% 
+         dplyr::filter(cluster %in% c(1, 2, 3, 5)),
+       aes(x = transect_station_rep_year_net, y = sqrt_concentration, fill = factor(taxon, levels = ordered_taxa))) +
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(values = species_colors, breaks = ordered_taxa) +
+  facet_grid(rows = vars(cluster)) +
+  labs(x = "Depth sampled (m)", y = "individuals/m3") +
+  theme_light() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
 
 # Plot NMDS ordination ---------------------------------------------------
 
@@ -265,12 +276,17 @@ stations_clustered$cluster <- as.numeric(as.character(stations_clustered$cluster
 stations_clustered$cluster <- factor(stations_clustered$cluster, levels = c(1,2,3,4,5,6,7,8,9,10), 
                                      labels = c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster 4", "Cluster 5", "Cluster 6", "Cluster 7", "Cluster 8", "Cluster 9", "Cluster 10"))
 
-ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
+hulls <- stations_clustered %>%
+  group_by(cluster) %>%
+  slice(chull(NMDS1, NMDS2))
+
+ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2)) +
+  geom_polygon(data = hulls, aes(fill = cluster, group = cluster), alpha = 0.25, color = NA) +
+  geom_point(aes(color = cluster), size = 3) +
+  scale_fill_manual(values = cluster_colors) +
   scale_color_manual(values = cluster_colors) +
-  geom_point(size = 3) +
-  geom_text_repel(aes(label = transect_station_rep_year_net), size = 3, max.overlaps = 10) +
   theme_classic() +
-  labs(title = "NMDS Ordination of sampling events by LFC", x = "NMDS1", y = "NMDS2")   ##NMDS plot
+  labs(title = "NMDS Ordination of sampling events by LFC", x = "NMDS1", y = "NMDS2")
 
 
 # overlays for NMDS plots -------------------------------------------------
@@ -324,20 +340,24 @@ ell_time_df <- purrr::map_dfr(names(ell_time), ~ {
 #Plot NMDS with overlays
 windows()
 ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
-  #1 Points (cluster colors)
+  #1 Polygons (cluster color)
+  geom_polygon(data = hulls, aes(x = NMDS1, y = NMDS2, fill = cluster, group = cluster), 
+               alpha = 0.25, color = NA, inherit.aes = FALSE) +
+  scale_fill_manual(values = cluster_colors) +
+  #2 Points (cluster colors)
   geom_point(size = 3) +
   scale_color_manual(values = cluster_colors) +
   new_scale_color() +
-  #2 Ellipses - Shelf Position
+  #3 Ellipses - Shelf Position
   geom_path(data = ell_shelf_df, aes(x = NMDS1, y = NMDS2, color = group), 
             size = 1, inherit.aes = FALSE) +
   scale_color_manual(name = "Shelf position", values = c("shelf" = "#1f78b4", "offshore" = "#e31a1c")) +
   new_scale_color() +
-  #3 Ellipses - Day/Night
+  #4 Ellipses - Day/Night
   geom_path(data = ell_time_df, aes(x = NMDS1, y = NMDS2, color = group), 
             size = 1, linetype = 2, inherit.aes = FALSE) +
   scale_color_manual(name = "Day/Night", values = c("Day" = "#33a02c", "Night" = "#ff7f00")) +
-  #4 Vectors
+  #5 Vectors
   geom_segment(data = vector_df, aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
                arrow = arrow(length = unit(0.3, "cm")), 
                color = "black", linewidth = 1, inherit.aes = FALSE) +
