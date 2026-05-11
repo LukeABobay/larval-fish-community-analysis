@@ -12,6 +12,8 @@ library(ggplot2)
 library(RColorBrewer)
 library(dplyr)
 library(visreg)
+library(DHARMa)
+library(MASS)
 
 
 # Source code -------------------------------------------------------------
@@ -60,6 +62,13 @@ mocness_major_taxa_19 <- mocness_major_taxa_19 %>%
                                             taxon %in% oceanic_species ~ "Oceanic",
                                             TRUE ~ "Other"))
 
+model_data <- mocness_major_taxa_19 %>%
+  select(collection_date, start_latitude_dd, start_longitude_dd, transect_station_rep_year_net,
+         taxon, depth_mean_m, time_of_day, volume_best_m3_both_sides, individuals_in_tow) %>%
+  complete(nesting(collection_date, start_latitude_dd, start_longitude_dd,
+                   transect_station_rep_year_net, depth_mean_m, time_of_day, volume_best_m3_both_sides),
+           taxon, fill = list(individuals_in_tow = 0))
+
 
 # Avg taxa concentrations across replicates ------------------------------------
 
@@ -96,6 +105,42 @@ summary(day_night_depth_model)
 
 day_night_mean_depth_model <- lm(avg_taxa_concentration ~ taxon*time_of_day + taxon*depth_mean_m, data = avgd_mocness_major_taxa_19)
 summary(day_night_mean_depth_model)
+
+
+# Model without allowing effects of depth and time of day to vary among taxa
+simple_model_pois <- glm(individuals_in_tow ~ taxon + time_of_day + depth_mean_m + offset(log(volume_best_m3_both_sides)),
+                    family = poisson,
+                    data = model_data)
+summary(simple_model_pois)
+visreg(simple_model_pois)
+res_pois <- simulateResiduals(simple_model_pois, n = 1000)
+plot(res_pois)
+testResiduals(res_pois)
+testDispersion(res_pois)
+testZeroInflation(res_pois)
+
+simple_model_nb <- glm.nb(individuals_in_tow ~ taxon + time_of_day + depth_mean_m + offset(log(volume_best_m3_both_sides)),
+                         data = model_data)
+summary(simple_model_nb)
+visreg(simple_model_nb)
+res_nb <- simulateResiduals(simple_model_nb, n = 1000)
+plot(res_nb)
+testResiduals(res_nb)
+testDispersion(res_nb)
+testZeroInflation(res_nb)
+# Negative binomial model fits far better than Poisson model
+
+#Full model
+simple_model_nb_full <- glm.nb(individuals_in_tow ~ taxon*time_of_day*depth_mean_m + offset(log(volume_best_m3_both_sides)),
+                          data = model_data)
+summary(simple_model_nb_full)
+visreg(simple_model_nb_full)
+res_nb_full <- simulateResiduals(simple_model_nb_full, n = 1000)
+plot(res_nb_full)
+testResiduals(res_nb_full)
+testDispersion(res_nb_full)
+testZeroInflation(res_nb_full)
+
 
 #Scatterplot of only 4 species of interest
 ggplot(avgd_mocness_major_taxa_19 %>%
