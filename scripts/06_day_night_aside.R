@@ -219,12 +219,10 @@ full_model_nb_p_label <- function(p) {
 }
 
 full_model_nb_effect_tests <- map_dfr(levels(full_model_nb_effects$taxon), function(current_taxon) {
-  rows <- tibble(
-    taxon = factor(current_taxon, levels = levels(full_model_nb_effects$taxon)),
-    time_of_day = factor(c("Day", "Day", "Night", "Night"),
-                         levels = levels(full_model_nb_effects$time_of_day)),
-    depth_mean_scaled = c(1, 0, 1, 0)
-  )
+  rows <- tibble(taxon = factor(current_taxon, levels = levels(full_model_nb_effects$taxon)),
+                 time_of_day = factor(c("Day", "Day", "Night", "Night"),
+                                      levels = levels(full_model_nb_effects$time_of_day)),
+                 depth_mean_scaled = c(1, 0, 1, 0))
   
   depth_time_p <- full_model_nb_wald_test(rows[c(3, 2), ], rows[c(4, 1), ])
   
@@ -244,9 +242,8 @@ full_model_nb_effect_tests <- map_dfr(levels(full_model_nb_effects$taxon), funct
                         .groups = "drop"),
             by = "taxon")
 
-windows()
-ggplot(full_model_nb_effects,
-       aes(x = fit, y = depth_mean_m, color = time_of_day, fill = time_of_day)) +
+full_model_nb_effect_plot <- ggplot(full_model_nb_effects,
+                                    aes(x = fit, y = depth_mean_m, color = time_of_day, fill = time_of_day)) +
   geom_ribbon(aes(xmin = lwr, xmax = upr), alpha = 0.2, color = NA, orientation = "y") +
   geom_line(linewidth = 1) +
   geom_text(data = full_model_nb_effect_tests,
@@ -260,6 +257,13 @@ ggplot(full_model_nb_effects,
        color = "Time of day",
        fill = "Time of day") +
   theme_classic()
+
+ggsave(here("output/full_model_nb_day_night_depth_effects.png"),
+       plot = full_model_nb_effect_plot,
+       width = 16,
+       height = 9,
+       dpi = 300)
+
 
 
 #Scatterplot of only 4 species of interest
