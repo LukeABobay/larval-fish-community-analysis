@@ -122,8 +122,19 @@ AHC_result <- hclust(dissim_matrix, method = "average")
 
 ##plot k clusters/rectangles
 windows()
-plot(AHC_result, labels = AHC_comm_matrix_transformed$transect_station_rep_year_net, main = "average linkage AHC of sampling events by LFC")
+plot(AHC_result, labels = AHC_comm_matrix_transformed$transect_station_rep_year_net,
+     main = "average linkage AHC of sampling events by LFC", cex = 0.4)
 rect.hclust(AHC_result, k = 10, border = c(2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
+
+png(filename = here("output/AHC_sampling_events_dendrogram.png"),
+    width = 12,
+    height = 6,
+    units = "in",
+    res = 300)
+plot(AHC_result, labels = AHC_comm_matrix_transformed$transect_station_rep_year_net,
+     main = "average linkage AHC of sampling events by LFC", cex = 0.4)
+rect.hclust(AHC_result, k = 10, border = c(2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
+dev.off()
 
 # Extract list of sampling events belonging to each cluster
 clusters <- data.frame(transect_station_rep_year_net = names(cutree(AHC_result, k = 10)),
