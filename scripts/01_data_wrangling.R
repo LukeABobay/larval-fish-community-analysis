@@ -646,11 +646,6 @@ mocness_major_taxa <- mocness_clean %>%
            taxon != "" & taxon != "Fish eggs" & taxon != "Unknown spotted" & 
            taxon != "No fish" & taxon != "no fish" & !is.na(taxon) & taxon != "unknown" & taxon != "fish egg(s)")
 
-# sample_sizes_major_taxa <- mocness_major_taxa %>%
-#   group_by(taxon) %>%
-#   mutate(individuals_in_tow = as.integer(individuals_in_tow)) %>%
-#   summarize(n = sum(individuals_in_tow, na.rm = TRUE))
-
 # Get list of date/station/replicate with > 0 individuals of any "major" taxa
 mocness_major_taxa_nets <- mocness_major_taxa %>%
   group_by(collection_date, transect, station, replicate, net) %>%
@@ -661,10 +656,17 @@ mocness_major_taxa_nets <- mocness_major_taxa %>%
 # RM; I was just thinking, do we want to use the net 0s since these aren't depth-stratified? If not, when should we remove them? Before
  # or after filtering?
 
+sample_sizes_major_taxa_nets <- mocness_major_taxa_nets %>%
+  group_by(taxon) %>%
+  mutate(individuals_in_tow = as.integer(individuals_in_tow)) %>%
+  summarize(n = sum(individuals_in_tow, na.rm = TRUE),
+            proportion_tows_present = n_distinct(transect_station_rep_year_net) /
+              n_distinct(mocness_major_taxa$transect_station_rep_year_net))
+
 mocness_major_taxa_nets %>%
   distinct(collection_date, transect, station, replicate, net, .keep_all = TRUE) %>%
   pull(n) %>%
-  hist(breaks = 506)
+  hist(breaks = 253)
 # RM ; what is this histogram for? how did you decide on the break level?
 # LB; I wanted to be able to see how this histogram changes when different 
 # thresholds for individuals per net are applied. I just chose a relatively
