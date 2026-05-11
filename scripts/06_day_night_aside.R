@@ -62,17 +62,36 @@ mocness_major_taxa_19 <- mocness_major_taxa_19 %>%
                                             taxon %in% oceanic_species ~ "Oceanic",
                                             TRUE ~ "Other"))
 
+taxa_to_keep_2019 <- mocness_major_taxa_19 %>%
+  filter(!str_detect(transect_station_rep_year_net, "0$")) %>%
+  group_by(taxon) %>%
+  summarise(freq = n_distinct(transect_station_rep_year_net), .groups = "drop") %>%
+  filter(freq >= 0.05 * n_distinct(
+    mocness_major_taxa_19 %>%
+      filter(!str_detect(transect_station_rep_year_net, "0$")) %>%
+      pull(transect_station_rep_year_net)
+  )) %>%
+  pull(taxon)
+
 model_data <- mocness_major_taxa_19 %>%
   select(collection_date, start_latitude_dd, start_longitude_dd, transect_station_rep_year_net,
-         taxon, depth_mean_m, time_of_day, volume_best_m3_both_sides, individuals_in_tow) %>%
+         taxon, depth_mean_m, time_of_day, volume_best_m3_both_sides, individuals_in_tow,
+         seafloor_depth_m, mean_temperature_c, mean_salinity_psu, dissolved_oxygen_ml_l, mean_chl_0_100_m_mgm3) %>%
+  # Remove net 0 data for DVM vignette
+  filter(!str_detect(transect_station_rep_year_net, "0$"),
+         taxon %in% taxa_to_keep_2019) %>%
+  mutate(taxon = droplevels(taxon)) %>%
   complete(nesting(collection_date, start_latitude_dd, start_longitude_dd,
                    transect_station_rep_year_net, depth_mean_m, time_of_day, volume_best_m3_both_sides),
            taxon, fill = list(individuals_in_tow = 0)) %>%
   mutate(time_of_day = factor(time_of_day, levels = c("Day", "Night")),
-         depth_mean_scaled = scale(depth_mean_m)[, 1])
-
-depth_mean_center <- mean(model_data$depth_mean_m, na.rm = TRUE)
-depth_mean_scale <- sd(model_data$depth_mean_m, na.rm = TRUE)
+         depth_mean_scaled = scale(depth_mean_m)[, 1],
+         seafloor_depth_scaled = scale(seafloor_depth_m),
+         mean_temperature_scaled = scale(mean_temperature_c),
+         mean_salinity_scaled = scale(mean_salinity_psu),
+         dissolved_oxygen_scaled = scale(dissolved_oxygen_ml_l),
+         mean_chl_0_100_m_scaled = scale(mean_chl_0_100_m_mgm3),
+         individuals_per_m3 = individuals_in_tow / volume_best_m3_both_sides)
 
 
 # Avg taxa concentrations across replicates ------------------------------------
@@ -95,12 +114,12 @@ ggplot(avgd_mocness_major_taxa_19, aes(x = depth_range, y = avg_taxa_concentrati
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 #Scatterplot
-ggplot(avgd_mocness_major_taxa_19, aes(x = depth_mean_m, y = log(avg_taxa_concentration), color = taxon)) +
+ggplot(model_data, aes(x = depth_mean_m, y = log(individuals_per_m3), color = taxon)) +
   geom_point() +
   geom_smooth(method = "lm",se = FALSE) +
   facet_wrap(~ time_of_day, nrow = 2) +
   labs(title = "Day-night comparison of taxa concentrations by mean depths",
-       x = "Mean depth (m)", y = "log(average individuals per m3)") +
+       x = "Mean depth (m)", y = "log(individuals per m3)") +
   theme_classic() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
@@ -124,6 +143,7 @@ testResiduals(res_pois)
 testDispersion(res_pois)
 testZeroInflation(res_pois)
 
+# Full model with Poisson response distribution
 full_model_pois <- glmmTMB(individuals_in_tow ~ taxon * time_of_day * depth_mean_scaled +
                            offset(log(volume_best_m3_both_sides)) +
                            (1 | transect_station_rep_year_net),
@@ -137,6 +157,7 @@ testResiduals(res_pois)
 testDispersion(res_pois)
 testZeroInflation(res_pois)
 
+# Full model with negative binomial response distribution
 full_model_nb <- glmmTMB(individuals_in_tow ~ taxon * time_of_day * depth_mean_scaled +
                            offset(log(volume_best_m3_both_sides)) +
                            (1 | transect_station_rep_year_net),
@@ -152,7 +173,7 @@ testZeroInflation(res_nb_full)
 
 # Plot fixed-effect predictions from the full negative binomial model.
 # Setting volume to 1 makes predictions interpretable as expected individuals per m3.
-full_model_nb_effects <- expand_grid(taxon = factor(ordered_taxa_19, levels = ordered_taxa_19),
+full_model_nb_effects <- expand_grid(taxon = factor(levels(model_data$taxon), levels = levels(model_data$taxon)),
                                      time_of_day = factor(c("Day", "Night"), levels = c("Day", "Night")),
                                      depth_mean_m = seq(min(model_data$depth_mean_m, na.rm = TRUE),
                                                         max(model_data$depth_mean_m, na.rm = TRUE),
@@ -245,7 +266,7 @@ full_model_nb_effect_tests <- map_dfr(levels(full_model_nb_effects$taxon), funct
 full_model_nb_effect_plot <- ggplot(full_model_nb_effects,
                                     aes(x = fit, y = depth_mean_m, color = time_of_day, fill = time_of_day)) +
   geom_ribbon(aes(xmin = lwr, xmax = upr), alpha = 0.2, color = NA, orientation = "y") +
-  geom_line(linewidth = 1) +
+  geom_line(linewidth = .5) +
   geom_text(data = full_model_nb_effect_tests,
             aes(x = label_x, y = label_y, label = label),
             inherit.aes = FALSE, hjust = 1, vjust = 0, size = 2.3,
@@ -260,16 +281,16 @@ full_model_nb_effect_plot <- ggplot(full_model_nb_effects,
 
 ggsave(here("output/full_model_nb_day_night_depth_effects.png"),
        plot = full_model_nb_effect_plot,
-       width = 16,
-       height = 9,
+       width = 10,
+       height = 6,
        dpi = 300)
 
 
 
 #Scatterplot of only 4 species of interest
-ggplot(avgd_mocness_major_taxa_19 %>%
+ggplot(model_data %>%
          filter(taxon %in% c("Sebastes_spp", "Parophrys_vetulus", "Stenobrachius_leucopsarus", "Isopsetta_isolepis")),
-       aes(x = depth_mean_m, y = log(avg_taxa_concentration), color = taxon)) +
+       aes(x = depth_mean_m, y = log(individuals_per_m3), color = taxon)) +
   geom_point() +
   geom_smooth(method = "lm", se = FALSE) +
   facet_wrap(~ time_of_day, nrow = 2) +
@@ -282,33 +303,74 @@ ggplot(avgd_mocness_major_taxa_19 %>%
 # Linear regression on specific taxa --------------------------------------
 
 #Cluster 1: Sebastes
-seb_df <- mocness_major_taxa_19 %>%
+seb_df <- model_data %>%
   filter(taxon == "Sebastes_spp")
-seb_lm <- lm(log(individuals_per_m3) ~ depth_mean_m + time_of_day + depth_mean_m:time_of_day, 
-             data = seb_df)
+seb_lm <- glmmTMB(individuals_in_tow ~ time_of_day * depth_mean_scaled + seafloor_depth_scaled +
+                    mean_temperature_scaled + mean_salinity_scaled + dissolved_oxygen_scaled + mean_chl_0_100_m_scaled +
+                    offset(log(volume_best_m3_both_sides)),
+                  family = nbinom2,
+                  data = seb_df)
 summary(seb_lm)
-visreg(seb_lm, "depth_mean_m", by = "time_of_day", ylab = "log(Sebastes individuals per m3)", xlab = "mean depth (m)")
+visreg(seb_lm)
+visreg(seb_lm, "depth_mean_scaled", by = "time_of_day",
+       ylab = "Sebastes individuals in tow", xlab = "scaled mean depth")
+res_seb <- simulateResiduals(seb_lm, n = 1000)
+plot(res_seb)
+testResiduals(res_seb)
+testDispersion(res_seb)
+testZeroInflation(res_seb)
 
 #Cluster 2: P. vetulus
-p_vetulus_df <- mocness_major_taxa_19 %>%
+p_vetulus_df <- model_data %>%
   filter(taxon == "Parophrys_vetulus")
-p_vetulus_lm <- lm(log(individuals_per_m3) ~ depth_mean_m + time_of_day + depth_mean_m:time_of_day, 
-             data = p_vetulus_df)
+p_vetulus_lm <- glmmTMB(individuals_in_tow ~ time_of_day * depth_mean_scaled + seafloor_depth_scaled +
+                          mean_temperature_scaled + mean_salinity_scaled + dissolved_oxygen_scaled + mean_chl_0_100_m_scaled +
+                          offset(log(volume_best_m3_both_sides)),
+                        family = nbinom2,
+                        data = p_vetulus_df)
 summary(p_vetulus_lm)
-visreg(p_vetulus_lm, "depth_mean_m", by = "time_of_day", ylab = "log(P. vetulus individuals per m3)", xlab = "mean depth (m)")
+visreg(p_vetulus_lm)
+visreg(p_vetulus_lm, "depth_mean_scaled", by = "time_of_day",
+       ylab = "P. vetulus individuals in tow", xlab = "scaled mean depth")
+res_p_vetulus <- simulateResiduals(p_vetulus_lm, n = 1000)
+plot(res_p_vetulus)
+testResiduals(res_p_vetulus)
+testDispersion(res_p_vetulus)
+testZeroInflation(res_p_vetulus)
 
 #Cluster 3: S. leucopsarus 
-s_leucopsarus_df <- mocness_major_taxa_19 %>%
+s_leucopsarus_df <- model_data %>%
   filter(taxon == "Stenobrachius_leucopsarus")
-s_leucopsarus_lm <- lm(log(individuals_per_m3) ~ depth_mean_m + time_of_day + depth_mean_m:time_of_day, 
-                   data = s_leucopsarus_df)
+s_leucopsarus_lm <- glmmTMB(individuals_in_tow ~ time_of_day * depth_mean_scaled + seafloor_depth_scaled +
+                              mean_temperature_scaled + mean_salinity_scaled + dissolved_oxygen_scaled + mean_chl_0_100_m_scaled +
+                              offset(log(volume_best_m3_both_sides)),
+                            family = nbinom2,
+                            data = s_leucopsarus_df)
 summary(s_leucopsarus_lm)
-visreg(s_leucopsarus_lm, "depth_mean_m", by = "time_of_day", ylab = "log(S. leucopsarus individuals per m3)", xlab = "mean depth (m)")
+visreg(s_leucopsarus_lm)
+visreg(s_leucopsarus_lm, "depth_mean_scaled", by = "time_of_day",
+       ylab = "S. leucopsarus individuals in tow", xlab = "scaled mean depth")
+res_s_leucopsarus <- simulateResiduals(s_leucopsarus_lm, n = 1000)
+plot(res_s_leucopsarus)
+testResiduals(res_s_leucopsarus)
+testDispersion(res_s_leucopsarus)
+testZeroInflation(res_s_leucopsarus)
 
 #Cluster 5: I. isolepis
-i_isolepis_df <- mocness_major_taxa_19 %>%
+i_isolepis_df <- model_data %>%
   filter(taxon == "Isopsetta_isolepis")
-i_isolepis_lm <- lm(log(individuals_per_m3) ~ depth_mean_m + time_of_day + depth_mean_m:time_of_day, 
-                       data = i_isolepis_df)
+i_isolepis_lm <- glmmTMB(individuals_in_tow ~ time_of_day * depth_mean_scaled + seafloor_depth_scaled +
+                           mean_temperature_scaled + mean_salinity_scaled + dissolved_oxygen_scaled + mean_chl_0_100_m_scaled +
+                           offset(log(volume_best_m3_both_sides)),
+                         family = nbinom2,
+                         data = i_isolepis_df)
 summary(i_isolepis_lm)
-visreg(i_isolepis_lm, "depth_mean_m", by = "time_of_day", ylab = "log(I. isolepis individuals per m3)", xlab = "mean depth (m)")
+visreg(i_isolepis_lm)
+visreg(i_isolepis_lm, "depth_mean_scaled", by = "time_of_day",
+       ylab = "I. isolepis individuals in tow", xlab = "scaled mean depth")
+res_i_isolepis <- simulateResiduals(i_isolepis_lm, n = 1000)
+plot(res_i_isolepis)
+testResiduals(res_i_isolepis)
+testDispersion(res_i_isolepis)
+testZeroInflation(res_i_isolepis)
+
