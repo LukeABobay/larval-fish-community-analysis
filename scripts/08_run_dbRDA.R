@@ -117,14 +117,38 @@ dbRDA_env_model <- dbRDA_env %>%
 row.names(dbRDA_env_model) <- dbRDA_env_model$transect_station_rep_year_net
 
 
+# Recreate NMDS cluster assignments from script 03 ------------------------
+
+dbRDA_cluster_matrix <- dbRDA_major_taxa_wide %>%
+  select(transect_station_rep_year_net, depth_mean_m, all_of(dbRDA_taxa_cols))
+
+dbRDA_cluster_taxa <- dbRDA_cluster_matrix %>%
+  select(all_of(dbRDA_taxa_cols)) %>%
+  mutate(across(everything(), sqrt))
+
+row.names(dbRDA_cluster_taxa) <- dbRDA_cluster_matrix$transect_station_rep_year_net
+
+dbRDA_cluster_dissimilarity <- vegdist(dbRDA_cluster_taxa, method = "bray")
+dbRDA_cluster_result <- hclust(dbRDA_cluster_dissimilarity, method = "average")
+
+cluster_levels <- paste("Cluster", 1:10)
+cluster_colors <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2",
+                    "#D55E00", "#CC79A7", "#8A2BE2", "#00CED1", "#FF1493")
+names(cluster_colors) <- cluster_levels
+
+dbRDA_clusters <- tibble(
+  transect_station_rep_year_net = names(cutree(dbRDA_cluster_result, k = 10)),
+  cluster = cutree(dbRDA_cluster_result, k = 10)
+) %>%
+  mutate(cluster = factor(cluster, levels = 1:10, labels = cluster_levels))
+
+
 # Fit db-RDA models -------------------------------------------------------
 
 set.seed(123)
 
 # Using Bray-Curtis dissimilarity because these are community
 # composition data with many zeros, matches NMDS/cluster analyses
-#
-# Subjective choice: .
 dbRDA_base_model <- capscale(dbRDA_comm_matrix ~ year + time_of_day +
                                start_latitude_dd + depth_mean_m +
                                seafloor_depth_m,
@@ -186,26 +210,106 @@ dbRDA_full_vif <- vif.cca(dbRDA_full_model)
 dbRDA_site_scores <- scores(dbRDA_full_model, display = "sites", choices = 1:2) %>%
   as.data.frame() %>%
   rownames_to_column("transect_station_rep_year_net") %>%
-  left_join(dbRDA_env_model, by = "transect_station_rep_year_net")
+  left_join(dbRDA_env_model, by = "transect_station_rep_year_net") %>%
+  left_join(dbRDA_clusters, by = "transect_station_rep_year_net")
+
+dbRDA_hulls <- dbRDA_site_scores %>%
+  group_by(cluster) %>%
+  filter(n() >= 3) %>%
+  slice(chull(CAP1, CAP2)) %>%
+  ungroup()
 
 dbRDA_vector_scores <- scores(dbRDA_full_model, display = "bp", choices = 1:2) %>%
   as.data.frame() %>%
-  rownames_to_column("variable")
+  rownames_to_column("variable") %>%
+  mutate(
+    plot_label = recode(
+      variable,
+      "mean_temperature_c" = "Temperature",
+      "mean_salinity_psu" = "Salinity",
+      "dissolved_oxygen_ml_l" = "Oxygen",
+      "mean_chl_0_100_m_mgm3" = "Chl a (0-100 m)",
+      "depth_mean_m" = "Mean depth",
+      "seafloor_depth_m" = "Seafloor depth",
+      "start_latitude_dd" = "Latitude",
+      "time_of_dayNight" = "Night vs day",
+      "year2018" = "Year 2018",
+      "year2019" = "Year 2019",
+      "year2023" = "Year 2023",
+      .default = variable
+    ),
+    base_label_x = CAP1 + if_else(CAP1 >= 0, 0.14, -0.14),
+    base_label_y = CAP2 + if_else(CAP2 >= 0, 0.10, -0.10),
+    label_x = case_when(
+      variable == "year2019" ~ -0.25,
+      variable == "time_of_dayNight" ~ -0.18,
+      variable == "dissolved_oxygen_ml_l" ~ 0.15,
+      variable == "year2018" ~ -0.30,
+      variable == "year2023" ~ 0.32,
+      variable == "mean_chl_0_100_m_mgm3" ~ 0.62,
+      TRUE ~ base_label_x
+    ),
+    label_y = case_when(
+      variable == "year2019" ~ 0.72,
+      variable == "time_of_dayNight" ~ 0.45,
+      variable == "dissolved_oxygen_ml_l" ~ 0.64,
+      variable == "year2018" ~ -0.16,
+      variable == "year2023" ~ 0.16,
+      variable == "mean_chl_0_100_m_mgm3" ~ 0.06,
+      TRUE ~ base_label_y
+    ),
+    label_hjust = case_when(
+      variable %in% c("year2019", "time_of_dayNight", "year2018") ~ 1,
+      variable %in% c("dissolved_oxygen_ml_l", "year2023",
+                      "mean_chl_0_100_m_mgm3") ~ 0,
+      CAP1 >= 0 ~ 0,
+      TRUE ~ 1
+    )
+  )
 
 windows()
-ggplot(dbRDA_site_scores, aes(x = CAP1, y = CAP2, color = year, shape = time_of_day)) +
+dbRDA_plot <- ggplot(dbRDA_site_scores, aes(x = CAP1, y = CAP2, color = cluster)) +
+  geom_polygon(data = dbRDA_hulls,
+               aes(x = CAP1, y = CAP2, fill = cluster, group = cluster),
+               alpha = 0.2,
+               color = NA,
+               inherit.aes = FALSE) +
   geom_point(size = 3, alpha = 0.9) +
-  geom_text_repel(aes(label = transect_station_rep_year_net), size = 3,
-                  max.overlaps = 10) +
+  stat_ellipse(data = dbRDA_site_scores,
+               aes(x = CAP1, y = CAP2, linetype = time_of_day),
+               color = "grey20",
+               linewidth = 0.9,
+               type = "norm",
+               level = 0.68,
+               show.legend = TRUE,
+               inherit.aes = FALSE) +
+  scale_fill_manual(values = cluster_colors, guide = "none") +
+  scale_color_manual(values = cluster_colors) +
+  scale_linetype_manual(values = c("Day" = "solid", "Night" = "dashed")) +
   geom_segment(data = dbRDA_vector_scores,
                aes(x = 0, y = 0, xend = CAP1, yend = CAP2),
                inherit.aes = FALSE,
                arrow = arrow(length = unit(0.3, "cm")),
-               color = "black", linewidth = 1) +
-  geom_text(data = dbRDA_vector_scores,
-            aes(x = CAP1, y = CAP2, label = variable),
-            inherit.aes = FALSE,
-            color = "black", size = 3, vjust = -0.5) +
+               color = "black", linewidth = 0.85) +
+  geom_segment(data = dbRDA_vector_scores,
+               aes(x = CAP1, y = CAP2, xend = label_x, yend = label_y),
+               inherit.aes = FALSE,
+               color = "grey35",
+               linewidth = 0.4) +
+  geom_label(data = dbRDA_vector_scores,
+             aes(x = label_x, y = label_y, label = plot_label,
+                 hjust = label_hjust),
+             inherit.aes = FALSE,
+             color = "black",
+             fill = "white",
+             size = 3,
+             linewidth = 0.2,
+             label.padding = unit(0.12, "lines")) +
   theme_classic() +
   labs(title = "db-RDA of larval fish assemblage composition",
        x = "CAP1", y = "CAP2")
+
+print(dbRDA_plot)
+
+ggsave("dbRDA_cluster_ordination.png", plot = dbRDA_plot, path = here("output"),
+       width = 12, height = 9, units = "in", dpi = 300)
