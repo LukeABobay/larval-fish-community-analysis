@@ -180,6 +180,34 @@ dbRDA_env_partial_model <- capscale(dbRDA_comm_matrix ~ mean_temperature_c +
                                     distance = "bray",
                                     add = "lingoes")
 
+# Partition variation between spatiotemporal and environmental covariates
+dbRDA_bray_dist <- vegdist(dbRDA_comm_matrix, method = "bray")
+
+dbRDA_varpart <- varpart(dbRDA_bray_dist,
+                         ~ year + time_of_day + start_latitude_dd + depth_mean_m + seafloor_depth_m,
+                         ~ mean_temperature_c + mean_salinity_psu + dissolved_oxygen_ml_l +
+                           mean_chl_0_100_m_mgm3,
+                         data = dbRDA_env_model,
+                         add = "lingoes")
+
+# Summary allocates shared fractions equally to each covariate set
+dbRDA_varpart_summary <- summary(dbRDA_varpart)
+
+# Testable unique fractions from the two-set variation partitioning
+dbRDA_spatiotemporal_unique_model <- dbrda(dbRDA_bray_dist ~ year + time_of_day + start_latitude_dd + depth_mean_m +
+                                             seafloor_depth_m +
+                                             Condition(mean_temperature_c + mean_salinity_psu + dissolved_oxygen_ml_l +
+                                                         mean_chl_0_100_m_mgm3),
+                                           data = dbRDA_env_model,
+                                           add = "lingoes")
+
+dbRDA_environmental_unique_model <- dbrda(dbRDA_bray_dist ~ mean_temperature_c + mean_salinity_psu +
+                                            dissolved_oxygen_ml_l + mean_chl_0_100_m_mgm3 +
+                                            Condition(year + time_of_day + start_latitude_dd + depth_mean_m +
+                                                        seafloor_depth_m),
+                                          data = dbRDA_env_model,
+                                          add = "lingoes")
+
 
 # Evaluate model support --------------------------------------------------
 
@@ -191,8 +219,8 @@ dbRDA_full_overall_test <- anova(dbRDA_full_model, permutations = 999)
 # over spatiotemporal variables alone
 dbRDA_base_vs_full_test <- anova(dbRDA_base_model, dbRDA_full_model,
                                  permutations = 999)
-RsquareAdj(dbRDA_base_model)
-RsquareAdj(dbRDA_full_model)
+dbRDA_base_r2 <- RsquareAdj(dbRDA_base_model)
+dbRDA_full_r2 <- RsquareAdj(dbRDA_full_model)
 
 # Tests for individual terms in the full model
 dbRDA_full_term_tests <- anova(dbRDA_full_model, by = "margin",
@@ -205,6 +233,22 @@ dbRDA_env_partial_tests <- anova(dbRDA_env_partial_model, by = "margin",
 
 # Check whether any model terms are strongly collinear
 dbRDA_full_vif <- vif.cca(dbRDA_full_model)
+
+# Permutation tests for the unique fractions in the variation partitioning
+dbRDA_spatiotemporal_unique_test <- anova(dbRDA_spatiotemporal_unique_model,
+                                          permutations = 999)
+dbRDA_environmental_unique_test <- anova(dbRDA_environmental_unique_model,
+                                         permutations = 999)
+
+# Save a simple variation partitioning diagram
+png(filename = here("output/dbRDA_variance_partitioning.png"),
+    width = 8,
+    height = 8,
+    units = "in",
+    res = 300)
+plot(dbRDA_varpart, bg = c("#A6CEE3", "#B2DF8A"), cutoff = 0,
+     Xnames = c("Spatiotemporal", "Environmental"))
+dev.off()
 
 
 # Plot constrained ordination --------------------------------------------
