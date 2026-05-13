@@ -93,7 +93,9 @@ env_wide <- wide_major_taxa_nets %>%
 AHC_comm_matrix <- wide_major_taxa_nets %>%
   select(transect_station_rep_year_net, depth_mean_m, 29:50)
 
-transform_taxa_concentrations <- AHC_comm_matrix[, 3:24] %>%
+taxa_cols <- names(AHC_comm_matrix)[3:ncol(AHC_comm_matrix)]
+
+transform_taxa_concentrations <- AHC_comm_matrix[, taxa_cols] %>%
   sqrt()
 
 # Add rownames
@@ -101,6 +103,47 @@ row.names(transform_taxa_concentrations) <- AHC_comm_matrix$transect_station_rep
 
 AHC_comm_matrix_transformed <- AHC_comm_matrix[,1] %>%
   bind_cols(.,transform_taxa_concentrations)
+
+# Count matrix for Dexter et al. (2018) NMDS stress null model
+# The quasiswap_count null model preserves row totals, taxon totals, and zeros
+wide_major_taxa_counts_nets <- mocness_major_taxa_nets %>%
+  filter(!is.na(individuals_in_tow)) %>%
+  mutate(individuals_in_tow = as.integer(round(individuals_in_tow))) %>%
+  select(transect_station_rep_year_net, taxon, individuals_in_tow) %>%
+  pivot_wider(names_from = taxon,
+              values_from = individuals_in_tow,
+              values_fill = 0,
+              values_fn = sum)
+
+AHC_count_abundances <- wide_major_taxa_counts_nets %>%
+  select(transect_station_rep_year_net, all_of(taxa_cols))
+
+# Reorder count matrix to match original community matrix
+AHC_count_abundances <- AHC_count_abundances[match(AHC_comm_matrix$transect_station_rep_year_net,
+                                                   AHC_count_abundances$transect_station_rep_year_net),]
+
+stopifnot(all(AHC_count_abundances$transect_station_rep_year_net ==
+                AHC_comm_matrix$transect_station_rep_year_net))
+
+AHC_sample_volumes <- wide_major_taxa_nets %>%
+  select(transect_station_rep_year_net, volume_best_m3_both_sides) %>%
+  distinct()
+
+AHC_sample_volumes <- AHC_sample_volumes[match(AHC_comm_matrix$transect_station_rep_year_net,
+                                               AHC_sample_volumes$transect_station_rep_year_net),]
+
+stopifnot(all(AHC_sample_volumes$transect_station_rep_year_net ==
+                AHC_comm_matrix$transect_station_rep_year_net))
+stopifnot(all(!is.na(AHC_sample_volumes$volume_best_m3_both_sides)))
+stopifnot(all(AHC_sample_volumes$volume_best_m3_both_sides > 0))
+
+AHC_sample_volumes <- AHC_sample_volumes$volume_best_m3_both_sides
+
+AHC_count_abundances <- AHC_count_abundances %>%
+  select(all_of(taxa_cols)) %>%
+  as.matrix()
+rownames(AHC_count_abundances) <- AHC_comm_matrix$transect_station_rep_year_net
+storage.mode(AHC_count_abundances) <- "integer"
 
 
 # Calculate dissimilarity matrix ------------------------------------------
@@ -274,10 +317,108 @@ ggplot(AHC_comm_matrix_transformed_long %>%
 
 # Plot NMDS ordination ---------------------------------------------------
 
+set.seed(123)
 NMDS_result <- metaMDS(dissim_matrix, distance = "bray", k = 2, try = 20, trymax = 20, engine = "monoMDS")
 NMDS_result$stress  ##check stress
 
 stressplot(NMDS_result)   ##Shepard diagram
+
+
+# Test NMDS stress against a Dexter et al. (2018) null model --------------
+
+n_stress_permutations <- 1000
+stress_nmds_try <- 20
+stress_nmds_trymax <- 20
+stress_progress_every <- 10
+stress_fit_counter <- 0
+
+nmds_stress_statistic <- function(comm, sample_volumes = AHC_sample_volumes) {
+  stress_fit_counter <<- stress_fit_counter + 1
+
+  if (stress_fit_counter == 1) {
+    message("Fitting observed NMDS stress for the null-model pipeline")
+  } else if ((stress_fit_counter - 1) %% stress_progress_every == 0 ||
+             (stress_fit_counter - 1) == n_stress_permutations) {
+    message("Completed ", stress_fit_counter - 1, " of ",
+            n_stress_permutations, " null NMDS stress fits")
+  }
+
+  comm_concentrations <- sweep(as.matrix(comm), 1, sample_volumes, "/")
+  comm_transformed <- sqrt(comm_concentrations)
+
+  list(statistic = c(stress = metaMDS(
+    comm_transformed,
+    distance = "bray",
+    k = 2,
+    try = stress_nmds_try,
+    trymax = stress_nmds_trymax,
+    engine = "monoMDS",
+    autotransform = FALSE,
+    trace = FALSE)$stress)
+  )
+}
+
+set.seed(123)
+NMDS_stress_null_test <- oecosimu(AHC_count_abundances,
+                                  nmds_stress_statistic,
+                                  method = "quasiswap_count",
+                                  nsimul = n_stress_permutations,
+                                  alternative = "two.sided")
+
+stress_null_values <- as.numeric(NMDS_stress_null_test$oecosimu$simulated)
+stress_observed <- as.numeric(NMDS_stress_null_test$oecosimu$statistic)
+stress_null_z <- (stress_observed - mean(stress_null_values, na.rm = TRUE)) /
+  sd(stress_null_values, na.rm = TRUE)
+stress_null_p <- 2 * pnorm(-abs(stress_null_z))
+
+stress_null_distribution <- tibble(iteration = seq_along(stress_null_values),
+                                   null_stress = stress_null_values)
+
+stress_null_summary <- tibble(observed_stress_null_pipeline = stress_observed,
+                              observed_stress_sqrt_concentration_nmds = NMDS_result$stress,
+                              null_mean_stress = mean(stress_null_values, na.rm = TRUE),
+                              null_sd_stress = sd(stress_null_values, na.rm = TRUE),
+                              null_stress_q025 = quantile(stress_null_values, 0.025, na.rm = TRUE),
+                              null_stress_q975 = quantile(stress_null_values, 0.975, na.rm = TRUE),
+                              z = stress_null_z,
+                              p_value_two_tailed = stress_null_p,
+                              n_permutations = length(stress_null_values),
+                              null_model = "quasiswap_count")
+
+write.csv(stress_null_summary,
+          here("output/NMDS_stress_null_test_summary.csv"),
+          row.names = FALSE)
+
+write.csv(stress_null_distribution,
+          here("output/NMDS_stress_null_distribution.csv"),
+          row.names = FALSE)
+
+ggplot(stress_null_distribution, aes(x = null_stress)) +
+  geom_histogram(bins = 30, fill = "grey70", color = "white") +
+  geom_vline(xintercept = stress_observed, linetype = 2, linewidth = 1,
+             color = "red3") +
+  theme_classic() +
+  labs(
+    title = "NMDS stress compared with constrained null communities",
+    subtitle = paste0(
+      "Dexter et al. null model: z = ",
+      round(stress_null_z, 2),
+      ", p = ",
+      signif(stress_null_p, 3)
+    ),
+    x = "Null stress",
+    y = "Permuted communities"
+  )
+
+ggsave(
+  "NMDS_stress_null_distribution.png",
+  plot = get_last_plot(),
+  path = here("output"),
+  width = 7,
+  height = 5,
+  units = "in",
+  dpi = 300
+)
 
 site_scores <- as.data.frame(scores(NMDS_result, display = "sites"))
 cluster_groups <- cutree(AHC_result, k = 10)
