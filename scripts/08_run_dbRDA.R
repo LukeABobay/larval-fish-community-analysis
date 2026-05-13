@@ -191,6 +191,8 @@ dbRDA_full_overall_test <- anova(dbRDA_full_model, permutations = 999)
 # over spatiotemporal variables alone
 dbRDA_base_vs_full_test <- anova(dbRDA_base_model, dbRDA_full_model,
                                  permutations = 999)
+RsquareAdj(dbRDA_base_model)
+RsquareAdj(dbRDA_full_model)
 
 # Tests for individual terms in the full model
 dbRDA_full_term_tests <- anova(dbRDA_full_model, by = "margin",
