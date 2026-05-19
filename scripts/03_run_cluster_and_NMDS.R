@@ -38,7 +38,7 @@ wide_major_taxa_nets <- mocness_major_taxa_nets %>%
   # Removing NAs for now, but there shouldn't be any to begin with
   filter(!is.na(individuals_in_tow)) %>%
   filter(!is.na(individuals_per_m3)) %>%
-  select(project, year, cruise, collection_date, transect, replicate, station, net,
+  select(project, year, cruise, collection_date, start_time_pt, transect, replicate, station, net,
          transect_station_rep_year_net, transect_station_rep_year, start_time_pt,
          start_longitude_dd, start_latitude_dd, maximum_depth_m, minimum_depth_m, 
          depth_mean_m, depth_diff_m, volume_best_m3_both_sides,
@@ -52,7 +52,10 @@ wide_major_taxa_nets <- mocness_major_taxa_nets %>%
          mean_salinity_psu = mean(mean_salinity_psu),
          mean_density_kgm3 = mean(mean_density_kgm3)) %>%
   ungroup() %>%
-  pivot_wider(names_from = taxon, values_from = individuals_per_m3, values_fill = 0)
+  pivot_wider(names_from = taxon, values_from = individuals_per_m3, values_fill = 0) %>%
+  # Assign net tows unique sample IDs chronologically
+  arrange(start_time_pt) %>%
+  mutate(chrono_sample_ID = row_number())
 
 env_wide <- wide_major_taxa_nets %>%
   mutate(
@@ -91,9 +94,9 @@ env_wide <- wide_major_taxa_nets %>%
 # Create community matrix -------------------------------------------------
 
 AHC_comm_matrix <- wide_major_taxa_nets %>%
-  select(transect_station_rep_year_net, depth_mean_m, 29:50)
+  select(transect_station_rep_year_net, chrono_sample_ID, depth_mean_m, 29:50)
 
-taxa_cols <- names(AHC_comm_matrix)[3:ncol(AHC_comm_matrix)]
+taxa_cols <- names(AHC_comm_matrix)[4:ncol(AHC_comm_matrix)]
 
 transform_taxa_concentrations <- AHC_comm_matrix[, taxa_cols] %>%
   sqrt()
@@ -101,7 +104,7 @@ transform_taxa_concentrations <- AHC_comm_matrix[, taxa_cols] %>%
 # Add rownames
 row.names(transform_taxa_concentrations) <- AHC_comm_matrix$transect_station_rep_year_net
 
-AHC_comm_matrix_transformed <- AHC_comm_matrix[,1] %>%
+AHC_comm_matrix_transformed <- AHC_comm_matrix[1:2] %>%
   bind_cols(.,transform_taxa_concentrations)
 
 # Count matrix for Dexter et al. (2018) NMDS stress null model
@@ -165,7 +168,7 @@ AHC_result <- hclust(dissim_matrix, method = "average")
 
 ##plot k clusters/rectangles
 windows()
-plot(AHC_result, labels = AHC_comm_matrix_transformed$transect_station_rep_year_net,
+plot(AHC_result, labels = AHC_comm_matrix_transformed$chrono_sample_ID,
      main = "average linkage AHC of sampling events by LFC", cex = 0.4)
 rect.hclust(AHC_result, k = 10, border = c(2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
 
@@ -182,7 +185,6 @@ dev.off()
 # Extract list of sampling events belonging to each cluster
 clusters <- data.frame(transect_station_rep_year_net = names(cutree(AHC_result, k = 10)),
                        cluster = cutree(AHC_result, k = 10))
-
 
 # Map points in space by cluster and net ----------------------------------
 
@@ -287,33 +289,92 @@ p
 
 # Plot abundance of each taxon, grouped by cluster ------------------------
 
-# Add cluster identities to long version of AHC_comm_matrix_transformed
+# Add cluster identities and chronological sample IDs
 AHC_comm_matrix_transformed_long <- AHC_comm_matrix_transformed %>%
-  pivot_longer(cols = 2:23, names_to = "taxon", values_to = "sqrt_concentration") %>%
-  merge(., clusters, by = "transect_station_rep_year_net")
+  pivot_longer(cols = 3:24, names_to = "taxon", values_to = "sqrt_concentration") %>%
+  merge(., clusters, by = "transect_station_rep_year_net") %>%
+  arrange(cluster) %>%
+  mutate(chrono_sample_ID = factor(chrono_sample_ID, levels = unique(chrono_sample_ID)))
+
+# Compute cluster bounds to use as vertical separators on barplot
+cluster_bounds <- AHC_comm_matrix_transformed_long %>%
+  distinct(cluster, chrono_sample_ID) %>%
+  mutate(chrono_sample_ID = as.numeric(chrono_sample_ID)) %>%
+  group_by(cluster) %>%
+  summarize(start = min(chrono_sample_ID), end   = max(chrono_sample_ID), .groups = "drop")
+
+bar_heights <- AHC_comm_matrix_transformed_long %>%
+  group_by(chrono_sample_ID) %>%
+  summarize(total_height = sum(sqrt_concentration), .groups = "drop")
+
+max_height <- max(bar_heights$total_height)
 
 # Plot by transect_station_rep_year, sorted by cluster
 windows()
-ggplot(AHC_comm_matrix_transformed_long, aes(x = transect_station_rep_year_net, y = sqrt_concentration, fill = factor(taxon, levels = ordered_taxa))) +
+ggplot(AHC_comm_matrix_transformed_long, aes(x = chrono_sample_ID, y = sqrt_concentration, fill = factor(taxon, levels = ordered_taxa))) +
   geom_bar(stat = "identity", position = "stack") +
   scale_fill_manual(values = species_colors, breaks = ordered_taxa) +
-  facet_grid(rows = vars(cluster)) +
-  labs(x = "Depth sampled (m)", y = "individuals/m3") +
+  geom_vline(data = cluster_bounds[-1,],
+             aes(xintercept = start - 0.5), linetype = "dashed", color = "gray40", linewidth = 0.5, inherit.aes = FALSE) +
+  annotate("text", x = mean(range(as.numeric(AHC_comm_matrix_transformed_long$chrono_sample_ID))), y = Inf,
+           label = "Cluster", vjust = -2, size = 4) +
+  annotate("text", x = (cluster_bounds$start + cluster_bounds$end) / 2, y = Inf,
+           label = paste(cluster_bounds$cluster), vjust = -1, size = 3) +
+  coord_cartesian(clip = "off") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
+  labs(x = "Sample ID", y = "individuals/m3") +
   theme_light() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-##not sure if my adjustments here to account for standardizing counts by volume were correct and/or needed
+  theme(panel.background = element_rect(fill = "white", color = NA),
+        plot.margin = margin(t = 35, r = 30, b = 5, l = 5),
+        axis.text.x = element_text(angle = 60, hjust = 1, size = 5), legend.position = "none")
+
 
 # Plot same but only for clusters 1, 2, 3, and 5
+major_clusters_plot_df <- AHC_comm_matrix_transformed_long %>%
+  filter(cluster %in% c(1, 2, 3, 5)) %>%
+  mutate(chrono_sample_ID = factor(chrono_sample_ID, levels = unique(chrono_sample_ID)))
+
+major_clusters_bounds <- major_clusters_plot_df %>% 
+  distinct(cluster, chrono_sample_ID) %>%
+  mutate(chrono_sample_ID = as.numeric(chrono_sample_ID)) %>%
+  group_by(cluster) %>%
+  summarize(start = min(chrono_sample_ID), end = max(chrono_sample_ID), .groups = "drop")
+
+major_clusters_max_height <- major_clusters_plot_df %>%
+  group_by(chrono_sample_ID) %>%
+  summarize(total_height = sum(sqrt_concentration), .groups = "drop") %>%
+  pull(total_height) %>%
+  max()
+
 windows()
-ggplot(AHC_comm_matrix_transformed_long %>% 
-         dplyr::filter(cluster %in% c(1, 2, 3, 5)),
-       aes(x = transect_station_rep_year_net, y = sqrt_concentration, fill = factor(taxon, levels = ordered_taxa))) +
+ggplot(major_clusters_plot_df, aes(x = chrono_sample_ID, y = sqrt_concentration, fill = factor(taxon, levels = ordered_taxa))) +
   geom_bar(stat = "identity", position = "stack") +
   scale_fill_manual(values = species_colors, breaks = ordered_taxa) +
-  facet_grid(rows = vars(cluster)) +
-  labs(x = "Depth sampled (m)", y = "individuals/m3") +
+  geom_vline(data = major_clusters_bounds[-1,],
+    aes(xintercept = start - 0.5), linetype = "dashed", color = "gray40", linewidth = 0.5, inherit.aes = FALSE) +
+  annotate("text", x = mean(range(as.numeric(major_clusters_plot_df$chrono_sample_ID))), y = Inf, 
+           label = "Cluster", vjust = -2, size = 4) +
+  annotate("text", x = (major_clusters_bounds$start + major_clusters_bounds$end) / 2, y = Inf,
+           label = major_clusters_bounds$cluster, vjust = -1, size = 3) +
+  coord_cartesian(clip = "off") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
+  labs(x = "Sample ID", y = "individuals/m3") +
   theme_light() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+  theme(panel.background = element_rect(fill = "white", color = NA),
+        plot.margin = margin(t = 35, r = 30, b = 0, l = 0),
+        axis.text.x = element_text(angle = 45, hjust = 1, size = 6), legend.position = "none")
+
+
+
+# ggplot(AHC_comm_matrix_transformed_long %>% 
+#          dplyr::filter(cluster %in% c(1, 2, 3, 5)),
+#        aes(x = chrono_sample_ID, y = sqrt_concentration, fill = factor(taxon, levels = ordered_taxa))) +
+  # geom_bar(stat = "identity", position = "stack") +
+  # scale_fill_manual(values = species_colors, breaks = ordered_taxa) +
+  # facet_grid(rows = vars(cluster)) +
+  # labs(x = "Depth sampled (m)", y = "individuals/m3") +
+  # theme_light() +
+  # theme(axis.text.x = element_text(angle = 45, hjust = 0), legend.position = "none")
 
 # Plot NMDS ordination ---------------------------------------------------
 
