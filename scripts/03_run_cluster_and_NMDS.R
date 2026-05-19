@@ -161,15 +161,10 @@ AHC_result <- hclust(dissim_matrix, method = "average")
 
 # Plot the dendrograms -----------------------------------------------------
 
-# plot 2 clusters/rectangles
-#plot(AHC_result, labels = AHC_comm_matrix_transformed$transect_station_rep_year_net, main = "average linkage AHC of sampling events by LFC")
-#rect.hclust(AHC_result, k = 2, border = c(2, 4))
-## 04/21 RM : I don't think rhis plot is needed anymore 
-
 ##plot k clusters/rectangles
 windows()
 plot(AHC_result, labels = AHC_comm_matrix_transformed$chrono_sample_ID,
-     main = "average linkage AHC of sampling events by LFC", cex = 0.4)
+     xlab = "Net tows", main = "Clusters of Net Tows", cex = 0.4)
 rect.hclust(AHC_result, k = 10, border = c(2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
 
 png(filename = here("output/AHC_sampling_events_dendrogram.png"),
@@ -177,8 +172,8 @@ png(filename = here("output/AHC_sampling_events_dendrogram.png"),
     height = 6,
     units = "in",
     res = 300)
-plot(AHC_result, labels = AHC_comm_matrix_transformed$transect_station_rep_year_net,
-     main = "average linkage AHC of sampling events by LFC", cex = 0.4)
+plot(AHC_result, labels = AHC_comm_matrix_transformed$chrono_sample_ID,
+     xlab = "Net tows", main = "Clusters of Net Tows", cex = 0.4)
 rect.hclust(AHC_result, k = 10, border = c(2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
 dev.off()
 
@@ -190,8 +185,8 @@ clusters <- data.frame(transect_station_rep_year_net = names(cutree(AHC_result, 
 
 mapping_df <- wide_major_taxa_nets %>%
   left_join(clusters, by = "transect_station_rep_year_net") %>%
-  select(transect_station_rep_year_net, start_longitude_dd, start_latitude_dd, cluster, net, cruise, depth_mean_m) %>%
-distinct(transect_station_rep_year_net, start_longitude_dd, start_latitude_dd, cluster, net, cruise, depth_mean_m, .keep_all = TRUE)
+  select(transect_station_rep_year_net, chrono_sample_ID, start_longitude_dd, start_latitude_dd, cluster, net, cruise, depth_mean_m) %>%
+distinct(transect_station_rep_year_net, chrono_sample_ID, start_longitude_dd, start_latitude_dd, cluster, net, cruise, depth_mean_m, .keep_all = TRUE)
 mapping_df$cluster <- factor(mapping_df$cluster)
 
 cluster_colors <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#8A2BE2", "#00CED1", "#FF1493")
@@ -199,22 +194,22 @@ cluster_colors <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55
 space <- ne_countries(scale = "medium", returnclass = "sf")
 
 offsets <- tibble(net = factor(0:4),
-                  dx = c(0, 0.06, -0.06, 0, 0),
-                  dy = c(0, 0, 0, 0.07, -0.07))
+                  dx = c(0.08, 0, 0, 0, 0),
+                  dy = c(0, 0.08, 0.04, -0.04, -0.08))
 
 mapping_df2 <- mapping_df %>%
   left_join(offsets, by = "net")
 
 ggplot() +
-  geom_sf(data = space, fill = "grey90", color = "grey40") +
-  scale_shape_manual(values = c(21, 22, 23, 24, 25)) + 
+  geom_sf(data = space, fill = "grey90", color = "grey40") + 
   geom_point(data = mapping_df2,
     aes(x = start_longitude_dd+dx, y = start_latitude_dd+dy, 
         color = cluster, shape = factor(net)),
     size = 1, alpha = 0.95) +
   coord_sf(xlim = c(-127, -123), ylim = c(40, 48), expand = FALSE) +
   scale_color_manual(values = cluster_colors) +
-  facet_grid(cols = vars(cruise))
+  facet_grid(cols = vars(cruise)) +
+  labs(x = "Longitude (dd)", y = "Latitude (dd)") +
 ggsave("cluster_map.png", plot = get_last_plot(), path = here("output"), 
        width = 15, height = 10, units = "in", dpi = 300)
 
@@ -313,7 +308,7 @@ max_height <- max(bar_heights$total_height)
 windows()
 ggplot(AHC_comm_matrix_transformed_long, aes(x = chrono_sample_ID, y = sqrt_concentration, fill = factor(taxon, levels = ordered_taxa))) +
   geom_bar(stat = "identity", position = "stack") +
-  scale_fill_manual(values = species_colors, breaks = ordered_taxa) +
+  scale_fill_manual(values = species_colors, breaks = ordered_taxa, name = "Taxonomic group") +
   geom_vline(data = cluster_bounds[-1,],
              aes(xintercept = start - 0.5), linetype = "dashed", color = "gray40", linewidth = 0.5, inherit.aes = FALSE) +
   annotate("text", x = mean(range(as.numeric(AHC_comm_matrix_transformed_long$chrono_sample_ID))), y = Inf,
@@ -322,11 +317,11 @@ ggplot(AHC_comm_matrix_transformed_long, aes(x = chrono_sample_ID, y = sqrt_conc
            label = paste(cluster_bounds$cluster), vjust = -1, size = 3) +
   coord_cartesian(clip = "off") +
   scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
-  labs(x = "Sample ID", y = "individuals/m3") +
+  labs(x = "Sample ID", y = "Concentration (ind./m^3)") +
   theme_light() +
   theme(panel.background = element_rect(fill = "white", color = NA),
         plot.margin = margin(t = 35, r = 30, b = 5, l = 5),
-        axis.text.x = element_text(angle = 60, hjust = 1, size = 5), legend.position = "none")
+        axis.text.x = element_text(angle = 60, hjust = 1, size = 5))
 
 
 # Plot same but only for clusters 1, 2, 3, and 5
@@ -349,7 +344,7 @@ major_clusters_max_height <- major_clusters_plot_df %>%
 windows()
 ggplot(major_clusters_plot_df, aes(x = chrono_sample_ID, y = sqrt_concentration, fill = factor(taxon, levels = ordered_taxa))) +
   geom_bar(stat = "identity", position = "stack") +
-  scale_fill_manual(values = species_colors, breaks = ordered_taxa) +
+  scale_fill_manual(values = species_colors, breaks = ordered_taxa, name = "Taxonomic group") +
   geom_vline(data = major_clusters_bounds[-1,],
     aes(xintercept = start - 0.5), linetype = "dashed", color = "gray40", linewidth = 0.5, inherit.aes = FALSE) +
   annotate("text", x = mean(range(as.numeric(major_clusters_plot_df$chrono_sample_ID))), y = Inf, 
@@ -358,11 +353,11 @@ ggplot(major_clusters_plot_df, aes(x = chrono_sample_ID, y = sqrt_concentration,
            label = major_clusters_bounds$cluster, vjust = -1, size = 3) +
   coord_cartesian(clip = "off") +
   scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
-  labs(x = "Sample ID", y = "individuals/m3") +
+  labs(x = "Sample ID", y = "Concentration (ind./m^3)") +
   theme_light() +
   theme(panel.background = element_rect(fill = "white", color = NA),
         plot.margin = margin(t = 35, r = 30, b = 0, l = 0),
-        axis.text.x = element_text(angle = 45, hjust = 1, size = 6), legend.position = "none")
+        axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
 
 
 
