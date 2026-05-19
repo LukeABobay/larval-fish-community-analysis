@@ -648,7 +648,7 @@ mocness_major_taxa <- mocness_clean %>%
 
 # Get list of date/station/replicate with > 0 individuals of any "major" taxa
 mocness_major_taxa_nets <- mocness_major_taxa %>%
-  group_by(collection_date, transect, station, replicate, net) %>%
+  group_by(collection_date, start_time_pt, transect, station, replicate, net) %>%
   mutate(n = sum(individuals_in_tow, na.rm = TRUE)) %>%
   ungroup() %>%
   # The value to filter by here can be adjusted to threshold on the total number of individuals per tow 
