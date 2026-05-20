@@ -11,6 +11,7 @@
 
 library(here)
 library(vegan)
+library(tidyverse)
 library(ggplot2)
 library(ggrepel)
 library(RColorBrewer)
@@ -24,12 +25,18 @@ library(rnaturalearthdata)
 library(indicspecies)
 library(ggnewscale)
 library(plotly)
-
+library(marmap)
+install.packages("remotes")
+remotes::install_github("ropensci/rnaturalearthhires")
+library(rnaturalearthhires)
+library(patchwork)
+library(cowplot)
 
 # Source code -------------------------------------------------------------
 
 source(here("scripts/01_data_wrangling.R"))
 
+set.seed(123)
 
 # Create wide environmental dataframe ---------------------------------------------------
 
@@ -183,35 +190,94 @@ clusters <- data.frame(transect_station_rep_year_net = names(cutree(AHC_result, 
 
 # Map points in space by cluster and net ----------------------------------
 
+## Make data frame
 mapping_df <- wide_major_taxa_nets %>%
   left_join(clusters, by = "transect_station_rep_year_net") %>%
-  select(transect_station_rep_year_net, chrono_sample_ID, start_longitude_dd, start_latitude_dd, cluster, net, cruise, depth_mean_m) %>%
-distinct(transect_station_rep_year_net, chrono_sample_ID, start_longitude_dd, start_latitude_dd, cluster, net, cruise, depth_mean_m, .keep_all = TRUE)
+  select(transect_station_rep_year_net, chrono_sample_ID, start_longitude_dd, 
+         start_latitude_dd, cluster, net, cruise, depth_mean_m) %>%
+distinct(transect_station_rep_year_net, chrono_sample_ID, start_longitude_dd, 
+         start_latitude_dd, cluster, net, cruise, depth_mean_m, .keep_all = TRUE)
 mapping_df$cluster <- factor(mapping_df$cluster)
+mapping_df$net <- factor(mapping_df$net)
 
-cluster_colors <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#8A2BE2", "#00CED1", "#FF1493")
+## Assign cluster colors
+cluster_colors <- c("1" = "#1F77B4", "2" = "#FF7F0E", "3" = "#2CA02C", "4" = "#8C564B", "5" = "#9467BD",
+                    "6" = "#D62728", "7" = "#17BECF", "8" = "#BCBD22", "9" = "#7F7F7F", "10"= "#E377C2")
 
-space <- ne_countries(scale = "medium", returnclass = "sf")
+## Find mapping area and create coastline, state boundaries, and isobaths
+space <- ne_states(country = "United States of America", returnclass = "sf")
+bathy <- getNOAA.bathy(-130, -122, 39, 50, resolution = 1)
+bathy_df <- fortify.bathy(bathy) %>% as_tibble()
 
+## Create net layout
 offsets <- tibble(net = factor(0:4),
-                  dx = c(0.08, 0, 0, 0, 0),
-                  dy = c(0, 0.08, 0.04, -0.04, -0.08))
+                  dx = c(0.20, 0, 0, 0, 0),
+                  dy = c(0, 0.06, 0.03, -0.03, -0.06))
+mapping_df2 <- mapping_df %>% 
+  left_join(offsets, by = "net") %>%
+  mutate(year = case_when(cruise == "W18" ~ 2018, cruise == "W19" ~ 2019, cruise == "W22" ~ 2022, cruise == "W23" ~ 2023),
+         rep = str_split(transect_station_rep_year_net, "_", simplify = TRUE)[,3],
+         facet_group = case_when(cruise == "W18" ~ paste0("18", rep), cruise == "W19" ~ paste0("19", rep),
+                                 cruise == "W22" ~ "22", cruise == "W23" ~ "23"))
 
-mapping_df2 <- mapping_df %>%
-  left_join(offsets, by = "net")
+## Assign lightness/color value to nets
+net_lightness <- c("0" = 1.00, "1" = 0.85, "2" = 0.70, "3" = 0.55, "4" = 0.40)
 
-ggplot() +
-  geom_sf(data = space, fill = "grey90", color = "grey40") + 
-  geom_point(data = mapping_df2,
-    aes(x = start_longitude_dd+dx, y = start_latitude_dd+dy, 
-        color = cluster, shape = factor(net)),
-    size = 1, alpha = 0.95) +
-  coord_sf(xlim = c(-127, -123), ylim = c(40, 48), expand = FALSE) +
-  scale_color_manual(values = cluster_colors) +
-  facet_grid(cols = vars(cruise)) +
-  labs(x = "Longitude (dd)", y = "Latitude (dd)") +
+## Create data frame of excluded tows
+#excluded_df <- 
+
+## Create function for plotting each panel
+make_panel <- function(group_name) {
+  df <- mapping_df2 %>% filter(facet_group == group_name)
+  ggplot(df) +
+    #plot basemap
+    geom_contour(data = bathy_df, aes(x = x, y = y, z = z), breaks = c(-50, -100, -200), color = "grey60", size = 0.3) + 
+    geom_sf(data = space, fill = "grey90", color = "grey40") + 
+    #included tow points
+    geom_point(data = df, aes(x = start_longitude_dd+dx, y = start_latitude_dd+dy, 
+                                       color = cluster, alpha = net), size = 1.2) +
+    #excluded tow points
+    #geom_point(data = excluded_df, aes(x = start_longitude_dd + dx, y = start_latitude_dd + dy), shape = 4, color = "black", size = 2, stroke = 0.7) +
+    #design
+    scale_color_manual(values = cluster_colors, name = "Cluster") +
+    scale_alpha_manual(values = net_lightness, name = "Net") +
+    coord_sf(xlim = c(-126.8, -123.2), ylim = c(40.2, 47.8), expand = FALSE) +
+  labs(title = group_name, x = NULL, y = NULL) +
+  theme_classic(base_size = 12) +
+  theme(legend.position = "none",
+        plot.title = element_text(face = "bold", hjust = 0.5))}
+## Plot panels
+p18a <- make_panel("18MaN")
+p18b <- make_panel("18MaD")
+p18c <- make_panel("18MbD")
+p19a <- make_panel("19MaN")
+p19b <- make_panel("19MaD")
+p19c <- make_panel("19MbN")
+p19d <- make_panel("19MbD")
+p22  <- make_panel("22")
+p23  <- make_panel("23")
+## Make shared legend
+legend_plot <- ggplot(mapping_df2) +
+  geom_point(aes(start_longitude_dd, start_latitude_dd, color = cluster, alpha = net)) +
+  scale_color_manual(values = cluster_colors, name = "Cluster") +
+  scale_alpha_manual(values = net_lightness, name = "Net") +
+  theme_minimal(base_size = 12)
+shared_legend <- get_legend(legend_plot)
+## Make layout panels for 2018 and 2019
+p2018 <- (p18a | p18b) / p18c +
+  plot_layout(heights = c(1, 1))
+p2019 <- ((p19a | p19b) /
+          (p19c | p19d))
+## Assemble custom layout with patchwork
+final_cluster_map <- ((p2018| p2019 | p22 | p23)) +
+  plot_layout(guides = "collect") +
+  theme(legend.position = "right")
+final_cluster_map
+  #save
 ggsave("cluster_map.png", plot = get_last_plot(), path = here("output"), 
        width = 15, height = 10, units = "in", dpi = 300)
+
+
 
 # # Adjust the values of width and height to change the size of the saved figure
 # ggsave("cluster_map.tif", plot = get_last_plot(), path = here("output"),
