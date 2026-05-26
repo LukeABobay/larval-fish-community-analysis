@@ -713,3 +713,13 @@ species_colors <- c(setNames(mesopelagic_colors, mesopelagic_species),
 
 ordered_taxa <- c(mesopelagic_species, flatfish_species, sculpin_relatives_species, other_species)
 
+
+
+# Create Data frame of excluded net tows ----------------------------------
+excluded_tows <- mocness_major_taxa %>%
+  group_by(collection_date, start_time_pt, transect, station, replicate, net) %>%
+  mutate(n = sum(individuals_in_tow, na.rm = TRUE)) %>%
+  ungroup() %>%
+  filter(n < 15) %>%
+  distinct(transect_station_rep_year_net, start_longitude_dd, start_latitude_dd, transect, station, replicate, net, collection_date, start_time_pt)
+
