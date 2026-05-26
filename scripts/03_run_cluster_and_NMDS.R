@@ -94,9 +94,6 @@ env_wide <- wide_major_taxa_nets %>%
   ) %>%
   ungroup() %>%
   select(-sunrise, -sunset)
-# removed mlotst for right now because all are NAs at the moment and I don't want this to cause errors down the line
-# also excluded redundant information like transect, transect_station, transect_station_rep, and so on
-## 04/13 RM : added mlotst back in now. kept redundant information out 
 
 # Create community matrix -------------------------------------------------
 
@@ -165,6 +162,9 @@ dissim_matrix <- vegdist(transform_taxa_concentrations, method = "bray")
 
 AHC_result <- hclust(dissim_matrix, method = "average")
 
+## Assign cluster colors
+cluster_colors <- c("1" = "#1F77B4", "2" = "#FF7F0E", "3" = "#2CA02C", "4" = "#8C564B", "5" = "#9467BD",
+                    "6" = "#D62728", "7" = "#17BECF", "8" = "#BCBD22", "9" = "#7F7F7F", "10"= "#E377C2")
 
 # Plot the dendrograms -----------------------------------------------------
 
@@ -172,7 +172,7 @@ AHC_result <- hclust(dissim_matrix, method = "average")
 windows()
 plot(AHC_result, labels = AHC_comm_matrix_transformed$chrono_sample_ID,
      xlab = "Net tows", main = "Clusters of Net Tows", cex = 0.4)
-rect.hclust(AHC_result, k = 10, border = c(2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
+rect.hclust(AHC_result, k = 10, border = cluster_colors)
 
 png(filename = here("output/AHC_sampling_events_dendrogram.png"),
     width = 12,
@@ -181,12 +181,23 @@ png(filename = here("output/AHC_sampling_events_dendrogram.png"),
     res = 300)
 plot(AHC_result, labels = AHC_comm_matrix_transformed$chrono_sample_ID,
      xlab = "Net tows", main = "Clusters of Net Tows", cex = 0.4)
-rect.hclust(AHC_result, k = 10, border = c(2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
+rect.hclust(AHC_result, k = 10, border = cluster_colors)
 dev.off()
 
 # Extract list of sampling events belonging to each cluster
 clusters <- data.frame(transect_station_rep_year_net = names(cutree(AHC_result, k = 10)),
                        cluster = cutree(AHC_result, k = 10))
+
+# Indicator Species Analysis ----------------------------------------------
+
+comm_for_isa <- AHC_comm_matrix_transformed %>%
+  select(where(is.numeric)) %>%
+  as.data.frame()
+
+clusters_for_isa <- as.factor(clusters$cluster)
+
+isa_result <- multipatt(comm_for_isa, clusters_for_isa, func = "IndVal.g", max.order = 2)
+summary(isa_result)
 
 # Map points in space by cluster and net ----------------------------------
 
@@ -195,25 +206,35 @@ mapping_df <- wide_major_taxa_nets %>%
   left_join(clusters, by = "transect_station_rep_year_net") %>%
   select(transect_station_rep_year_net, chrono_sample_ID, start_longitude_dd, 
          start_latitude_dd, cluster, net, cruise, depth_mean_m) %>%
-distinct(transect_station_rep_year_net, chrono_sample_ID, start_longitude_dd, 
+  distinct(transect_station_rep_year_net, chrono_sample_ID, start_longitude_dd, 
          start_latitude_dd, cluster, net, cruise, depth_mean_m, .keep_all = TRUE)
+
 mapping_df$cluster <- factor(mapping_df$cluster)
 mapping_df$net <- factor(mapping_df$net)
 
-## Assign cluster colors
-cluster_colors <- c("1" = "#1F77B4", "2" = "#FF7F0E", "3" = "#2CA02C", "4" = "#8C564B", "5" = "#9467BD",
-                    "6" = "#D62728", "7" = "#17BECF", "8" = "#BCBD22", "9" = "#7F7F7F", "10"= "#E377C2")
+excluded_df <- excluded_tows %>%
+  left_join(mocness_major_taxa %>% 
+              distinct(transect_station_rep_year_net, cruise), by = "transect_station_rep_year_net")
+
 
 ## Find mapping area and create coastline, state boundaries, and isobaths
-space <- ne_states(country = "United States of America", returnclass = "sf")
-bathy <- getNOAA.bathy(-130, -122, 39, 50, resolution = 1)
+space <- ne_download(scale = 50, type = "states", category = "cultural", returnclass = "sf")%>%
+  filter(name %in% c("Oregon", "Washington", "California"))
+bathy <- getNOAA.bathy(-130, -122, 39, 50, resolution = 0.5)
 bathy_df <- fortify.bathy(bathy) %>% as_tibble()
 
 ## Create net layout
 offsets <- tibble(net = factor(0:4),
-                  dx = c(0.20, 0, 0, 0, 0),
+                  dx = c(0.01, 0, 0, 0, 0),
                   dy = c(0, 0.06, 0.03, -0.03, -0.06))
 mapping_df2 <- mapping_df %>% 
+  left_join(offsets, by = "net") %>%
+  mutate(year = case_when(cruise == "W18" ~ 2018, cruise == "W19" ~ 2019, cruise == "W22" ~ 2022, cruise == "W23" ~ 2023),
+         rep = str_split(transect_station_rep_year_net, "_", simplify = TRUE)[,3],
+         facet_group = case_when(cruise == "W18" ~ paste0("18", rep), cruise == "W19" ~ paste0("19", rep),
+                                 cruise == "W22" ~ "22", cruise == "W23" ~ "23"))
+excluded_df <- excluded_df %>%
+  mutate(net = factor(net)) %>%
   left_join(offsets, by = "net") %>%
   mutate(year = case_when(cruise == "W18" ~ 2018, cruise == "W19" ~ 2019, cruise == "W22" ~ 2022, cruise == "W23" ~ 2023),
          rep = str_split(transect_station_rep_year_net, "_", simplify = TRUE)[,3],
@@ -223,21 +244,19 @@ mapping_df2 <- mapping_df %>%
 ## Assign lightness/color value to nets
 net_lightness <- c("0" = 1.00, "1" = 0.85, "2" = 0.70, "3" = 0.55, "4" = 0.40)
 
-## Create data frame of excluded tows
-#excluded_df <- 
-
 ## Create function for plotting each panel
 make_panel <- function(group_name) {
   df <- mapping_df2 %>% filter(facet_group == group_name)
-  ggplot(df) +
+  df_ex <- excluded_df %>% filter(facet_group == group_name)
+  ggplot() +
     #plot basemap
-    geom_contour(data = bathy_df, aes(x = x, y = y, z = z), breaks = c(-50, -100, -200), color = "grey60", size = 0.3) + 
     geom_sf(data = space, fill = "grey90", color = "grey40") + 
+    geom_contour(data = bathy_df, aes(x = x, y = y, z = z), breaks = c(-50, -100, -200), color = "grey60", size = 0.3) +
     #included tow points
     geom_point(data = df, aes(x = start_longitude_dd+dx, y = start_latitude_dd+dy, 
                                        color = cluster, alpha = net), size = 1.2) +
     #excluded tow points
-    #geom_point(data = excluded_df, aes(x = start_longitude_dd + dx, y = start_latitude_dd + dy), shape = 4, color = "black", size = 2, stroke = 0.7) +
+    geom_point(data = df_ex, aes(x = start_longitude_dd+dx, y = start_latitude_dd+dy), shape = 4, color = "black", size = 2, stroke = 0.7) +
     #design
     scale_color_manual(values = cluster_colors, name = "Cluster") +
     scale_alpha_manual(values = net_lightness, name = "Net") +
@@ -246,6 +265,7 @@ make_panel <- function(group_name) {
   theme_classic(base_size = 12) +
   theme(legend.position = "none",
         plot.title = element_text(face = "bold", hjust = 0.5))}
+
 ## Plot panels
 p18a <- make_panel("18MaN")
 p18b <- make_panel("18MaD")
@@ -256,6 +276,7 @@ p19c <- make_panel("19MbN")
 p19d <- make_panel("19MbD")
 p22  <- make_panel("22")
 p23  <- make_panel("23")
+
 ## Make shared legend
 legend_plot <- ggplot(mapping_df2) +
   geom_point(aes(start_longitude_dd, start_latitude_dd, color = cluster, alpha = net)) +
@@ -263,12 +284,14 @@ legend_plot <- ggplot(mapping_df2) +
   scale_alpha_manual(values = net_lightness, name = "Net") +
   theme_minimal(base_size = 12)
 shared_legend <- get_legend(legend_plot)
+
 ## Make layout panels for 2018 and 2019
 p2018 <- (p18a | p18b) / p18c +
   plot_layout(heights = c(1, 1))
 p2019 <- ((p19a | p19b) /
           (p19c | p19d))
-## Assemble custom layout with patchwork
+
+## Assemble custom layout
 final_cluster_map <- ((p2018| p2019 | p22 | p23)) +
   plot_layout(guides = "collect") +
   theme(legend.position = "right")
@@ -276,8 +299,6 @@ final_cluster_map
   #save
 ggsave("cluster_map.png", plot = get_last_plot(), path = here("output"), 
        width = 15, height = 10, units = "in", dpi = 300)
-
-
 
 # # Adjust the values of width and height to change the size of the saved figure
 # ggsave("cluster_map.tif", plot = get_last_plot(), path = here("output"),
@@ -641,13 +662,3 @@ ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
   labs(title = "NMDS ordination with clustered points and covariate overlays", x = "NMDS1", y = "NMDS2")
 
 
-# Indicator Species Analysis ----------------------------------------------
-
-comm_for_isa <- AHC_comm_matrix_transformed %>%
-  select(where(is.numeric)) %>%
-  as.data.frame()
-
-clusters_for_isa <- as.factor(clusters$cluster)
-
-isa_result <- multipatt(comm_for_isa, clusters_for_isa, func = "IndVal.g", max.order = 2)
-summary(isa_result)
