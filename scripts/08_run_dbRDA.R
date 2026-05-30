@@ -132,8 +132,8 @@ dbRDA_cluster_dissimilarity <- vegdist(dbRDA_cluster_taxa, method = "bray")
 dbRDA_cluster_result <- hclust(dbRDA_cluster_dissimilarity, method = "average")
 
 cluster_levels <- paste("Cluster", 1:10)
-cluster_colors <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2",
-                    "#D55E00", "#CC79A7", "#8A2BE2", "#00CED1", "#FF1493")
+cluster_colors <- c("1" = "#1F77B4", "2" = "#FF7F0E", "3" = "#2CA02C", "4" = "#8C564B", "5" = "#9467BD",
+                    "6" = "#D62728", "7" = "#17BECF", "8" = "#BCBD22", "9" = "#7F7F7F", "10"= "#E377C2")
 names(cluster_colors) <- cluster_levels
 
 dbRDA_clusters <- tibble(
@@ -320,11 +320,11 @@ dbRDA_plot <- ggplot(dbRDA_site_scores, aes(x = CAP1, y = CAP2, color = cluster)
                alpha = 0.2,
                color = NA,
                inherit.aes = FALSE) +
-  geom_point(size = 3, alpha = 0.9) +
+  geom_point(size = 1, alpha = 0.9) +
   stat_ellipse(data = dbRDA_site_scores,
                aes(x = CAP1, y = CAP2, linetype = time_of_day),
                color = "grey20",
-               linewidth = 0.9,
+               linewidth = 0.5,
                type = "norm",
                level = 0.68,
                show.legend = TRUE,
@@ -341,21 +341,21 @@ dbRDA_plot <- ggplot(dbRDA_site_scores, aes(x = CAP1, y = CAP2, color = cluster)
                aes(x = CAP1, y = CAP2, xend = label_x, yend = label_y),
                inherit.aes = FALSE,
                color = "grey35",
-               linewidth = 0.4) +
+               linewidth = 0.5) +
   geom_label(data = dbRDA_vector_scores,
              aes(x = label_x, y = label_y, label = plot_label,
                  hjust = label_hjust),
              inherit.aes = FALSE,
              color = "black",
              fill = "white",
-             size = 3,
+             size = 2,
              linewidth = 0.2,
              label.padding = unit(0.12, "lines")) +
   theme_classic() +
   labs(title = "db-RDA of larval fish assemblage composition",
-       x = "CAP1", y = "CAP2")
+       x = "CAP1", y = "CAP2", color = "Cluster", fill = "Cluster", linetype = "Time of Day")
 
 print(dbRDA_plot)
 
 ggsave("dbRDA_cluster_ordination.png", plot = dbRDA_plot, path = here("output"),
-       width = 12, height = 9, units = "in", dpi = 300)
+       width = 7, height = 5, units = "in", dpi = 300)
