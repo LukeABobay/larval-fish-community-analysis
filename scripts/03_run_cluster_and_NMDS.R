@@ -577,48 +577,53 @@ hulls <- stations_clustered %>%
 
 ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2)) +
   geom_polygon(data = hulls, aes(fill = cluster, group = cluster), alpha = 0.25, color = NA) +
-  geom_point(aes(color = cluster), size = 3) +
+  geom_point(aes(color = cluster), size = 1) +
   scale_fill_manual(values = cluster_colors) +
   scale_color_manual(values = cluster_colors) +
   theme_classic() +
   labs(title = "NMDS Ordination of sampling events by LFC", x = "NMDS1", y = "NMDS2")
-
+ggsave("NMDS_all_clusters.png", plot = get_last_plot(), path = here("output"),
+       width = 6, height = 5, units = "in", dpi = 300)
 
 # overlays for NMDS plots -------------------------------------------------
 
 #Vectors
 env_wide_aligned <- env_wide[match(rownames(scores(NMDS_result, display = "sites")),
                                    env_wide$transect_station_rep_year_net), ]
+year_mat <- model.matrix(~ factor(year) - 1, data = env_wide_aligned)
+colnames(year_mat) <- paste0("year_", levels(factor(env_wide_aligned$year)))
 env_numeric <- env_wide_aligned[, sapply(env_wide_aligned, is.numeric)]
-fit_vectors<- envfit(NMDS_result, env_numeric, permutations = 1000, na.rm = TRUE)
+env_numeric2 <- cbind(env_numeric[, !names(env_numeric) %in% "year"], year_mat)
+fit_vectors <- envfit(NMDS_result, env_numeric2, permutations = 1000, na.rm = TRUE)
 
 ##Extract vector scores for plotting
 vector_scores <- scores(fit_vectors, display = "vectors")
 vector_df <- as.data.frame(vector_scores) %>% 
   mutate(variable = rownames(vector_scores)) %>% 
-  filter(variable %in% c("year", "start_longitude_dd", "start_latitude_dd", "depth_mean_m", "seafloor_depth_m", "distance_to_shore_km"))
+  filter(grepl("^year_", variable) | variable %in% c("start_longitude_dd", "depth_mean_m", "seafloor_depth_m")
+  )
 
 #Ellipses
 ##fit ellipses
-ell_shelf <- ordiellipse(NMDS_result, env_wide_aligned$shelf_position,
-                         kind = "sd", conf = 0.95, draw = "none") 
+# ell_shelf <- ordiellipse(NMDS_result, env_wide_aligned$shelf_position,
+#                          kind = "sd", conf = 0.95, draw = "none") 
 
 time_groups <- env_wide_aligned$time_of_day
 ell_time <- ordiellipse(NMDS_result, time_groups, kind = "sd", 
                         conf = 0.95,  draw = "none")
 
 ##convert outputs to data frames
-ell_shelf_df <- purrr::map_dfr(names(ell_shelf), ~ {
-  e     <- ell_shelf[[.x]]
-  theta <- seq(0, 2 * pi, length.out = 200)
-  circle <- cbind(cos(theta), sin(theta))
-  # one ellipse per group: center + scale * chol(cov) %*% circle
-  xy <- circle %*% chol(e$cov)
-  xy <- sweep(xy * e$scale, 2, e$center, "+")
-  dplyr::tibble(
-    NMDS1 = xy[, 1],
-    NMDS2 = xy[, 2],
-    group = .x)})
+# ell_shelf_df <- purrr::map_dfr(names(ell_shelf), ~ {
+#   e     <- ell_shelf[[.x]]
+#   theta <- seq(0, 2 * pi, length.out = 200)
+#   circle <- cbind(cos(theta), sin(theta))
+#   # one ellipse per group: center + scale * chol(cov) %*% circle
+#   xy <- circle %*% chol(e$cov)
+#   xy <- sweep(xy * e$scale, 2, e$center, "+")
+#   dplyr::tibble(
+#     NMDS1 = xy[, 1],
+#     NMDS2 = xy[, 2],
+#     group = .x)})
 
 ell_time_df <- purrr::map_dfr(names(ell_time), ~ {
   e     <- ell_time[[.x]]
@@ -640,25 +645,27 @@ ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
                alpha = 0.25, color = NA, inherit.aes = FALSE) +
   scale_fill_manual(values = cluster_colors) +
   #2 Points (cluster colors)
-  geom_point(size = 3) +
+  geom_point(size = 1) +
   scale_color_manual(values = cluster_colors) +
-  new_scale_color() +
-  #3 Ellipses - Shelf Position
-  geom_path(data = ell_shelf_df, aes(x = NMDS1, y = NMDS2, color = group), 
-            size = 1, inherit.aes = FALSE) +
-  scale_color_manual(name = "Shelf position", values = c("shelf" = "#1f78b4", "offshore" = "#e31a1c")) +
-  new_scale_color() +
+  # #3 Ellipses - Shelf Position
+  # geom_path(data = ell_shelf_df, aes(x = NMDS1, y = NMDS2, color = group), 
+  #           size = 1, inherit.aes = FALSE) +
+  # scale_color_manual(name = "Shelf position", values = c("shelf" = "#1f78b4", "offshore" = "#e31a1c")) +
+  # new_scale_color() +
   #4 Ellipses - Day/Night
-  geom_path(data = ell_time_df, aes(x = NMDS1, y = NMDS2, color = group), 
-            size = 1, linetype = 2, inherit.aes = FALSE) +
-  scale_color_manual(name = "Day/Night", values = c("Day" = "#33a02c", "Night" = "#ff7f00")) +
+  geom_path(data = ell_time_df, aes(x = NMDS1, y = NMDS2, linetype = group), 
+            size = 0.5, color = "black", inherit.aes = FALSE) +
+  scale_linetype_manual(name = "Time of Day", values = c("Day" = "solid", "Night" = "dashed")) +
   #5 Vectors
   geom_segment(data = vector_df, aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
                arrow = arrow(length = unit(0.3, "cm")), 
-               color = "black", linewidth = 1, inherit.aes = FALSE) +
+               color = "black", linewidth = 0.5, inherit.aes = FALSE) +
   geom_text(data = vector_df, aes(x = NMDS1, y = NMDS2, label = variable), 
-            color = "black", size = 3, vjust = -0.5,inherit.aes = FALSE) +
-  theme_classic() +
-  labs(title = "NMDS ordination with clustered points and covariate overlays", x = "NMDS1", y = "NMDS2")
+            color = "black", size = 2, vjust = -0.5,inherit.aes = FALSE) +
+  labs(title = "NMDS ordination with clustered points and covariate overlays", x = "NMDS1", y = "NMDS2",
+       color = "Cluster", fill = "Cluster", linetype = "Time of Day") + 
+theme_classic()
+ggsave("NMDS_overlays_all_clusters.png", plot = get_last_plot(), path = here("output"),
+       width = 7, height = 5, units = "in", dpi = 300)
 
 
