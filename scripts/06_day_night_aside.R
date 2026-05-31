@@ -165,6 +165,8 @@ ggplot(model_data, aes(x = depth_mean_m, y = log(individuals_per_m3), color = ta
   labs(title = "Day-night comparison of taxa concentrations by mean depths",
        x = "Mean tow depth (m)", y = "Concentration (log(ind./m3)", color = "Taxon") +
   theme_classic()
+  ggsave("D_N_scatter_all.png", plot = get_last_plot(), path = here("output"),
+         width = 7, height = 5, units = "in", dpi = 300)
 
 # Fit linear model(s) of taxa concentrations against depth and time of day -----
 day_night_depth_model <- lm(avg_taxa_concentration ~ taxon*time_of_day + taxon*depth_range, data = avgd_mocness_major_taxa_19)
