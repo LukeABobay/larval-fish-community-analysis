@@ -30,36 +30,60 @@ mocness_major_taxa_19 <- filter(mocness_major_taxa, collection_date > "2019-01-0
   mutate(time_of_day = recode(time_of_day, "D" = "Day", "N" = "Night"))
 
 
-# Classify taxa by habitat affinity and create color vectors ---------------
-# Categorize taxa by habitat affinity
-nearshore_species <- c("Ammodytidae", "Cottidae", "Gadidae", "Glyptocephalus_zachirus", "Hemilepidotus_spp", 
-                       "Hexagrammidae", "Psychrolutidae", "Scorpaenichthys_marmoratus")
-nearshore_colors <- colorRampPalette(brewer.pal(9, "Greens")[2:9])(length(nearshore_species))
+# # Classify taxa by habitat affinity and create color vectors ---------------
+# # Categorize taxa by habitat affinity
+# nearshore_species <- c("Ammodytidae", "Cottidae", "Gadidae", "Glyptocephalus_zachirus", "Hemilepidotus_spp", 
+#                        "Hexagrammidae", "Psychrolutidae", "Scorpaenichthys_marmoratus")
+# nearshore_colors <- colorRampPalette(brewer.pal(9, "Greens")[2:9])(length(nearshore_species))
+# 
+# coastal_species <- c("Agonidae", "Cyclopsettidae", "Isopsetta_isolepis", "Liparis_spp", "Lyopsetta_exilis", "Osmeridae", 
+#                      "Parophrys_vetulus", "Psettichthys_melanostictus", "Sebastes_spp")
+# coastal_colors <- colorRampPalette(brewer.pal(10, "Blues")[1:9])(length(coastal_species))
+# 
+# oceanic_species <- c("Bathylagus_ochotensis", "Lestidiops_ringens", "Protomyctophum_spp", "Stenobrachius_leucopsarus", 
+#                      "Tarletonbeania_crenularis")
+# oceanic_colors <- colorRampPalette(brewer.pal(5, "Purples")[2:6])(length(oceanic_species))
+# 
+# # Named species color vector
+# species_colors <- c(setNames(nearshore_colors, nearshore_species),
+#                     setNames(coastal_colors, coastal_species),
+#                     setNames(oceanic_colors, oceanic_species))
+# 
+# # Vector of taxa ordered alphabetically within categories to order bars and figure legends
+# ordered_taxa_19 <- c(nearshore_species, coastal_species, oceanic_species)
 
-coastal_species <- c("Agonidae", "Cyclopsettidae", "Isopsetta_isolepis", "Liparis_spp", "Lyopsetta_exilis", "Osmeridae", 
-                     "Parophrys_vetulus", "Psettichthys_melanostictus", "Sebastes_spp")
-coastal_colors <- colorRampPalette(brewer.pal(10, "Blues")[1:9])(length(coastal_species))
+mesopelagic_species <- c("Bathylagus_ochotensis", "Lestidiops_ringens", "Protomyctophum_spp", 
+                         "Stenobrachius_leucopsarus", "Tarletonbeania_crenularis")
+mesopelagic_colors <- colorRampPalette(brewer.pal(9, "Greens")[2:6])(length(mesopelagic_species))
 
-oceanic_species <- c("Bathylagus_ochotensis", "Lestidiops_ringens", "Protomyctophum_spp", "Stenobrachius_leucopsarus", 
-                     "Tarletonbeania_crenularis")
-oceanic_colors <- colorRampPalette(brewer.pal(5, "Purples")[2:6])(length(oceanic_species))
+flatfish_species <- c("Glyptocephalus_zachirus", "Cyclopsettidae", "Isopsetta_isolepis", 
+                      "Lyopsetta_exilis", "Parophrys_vetulus", "Psettichthys_melanostictus")
+flatfish_colors <- colorRampPalette(brewer.pal(9, "YlOrRd")[1:6])(length(flatfish_species))
 
-# Named species color vector
-species_colors <- c(setNames(nearshore_colors, nearshore_species),
-                    setNames(coastal_colors, coastal_species),
-                    setNames(oceanic_colors, oceanic_species))
+sculpin_relatives_species <- c("Cottidae", "Hemilepidotus_spp", "Psychrolutidae", 
+                               "Scorpaenichthys_marmoratus", "Agonidae", "Liparis_spp",
+                               "Hexagrammidae", "Sebastes_spp")
+sculpin_relatives_colors <- colorRampPalette(brewer.pal(9, "YlGnBu")[1:8])(length(sculpin_relatives_species))
 
-# Vector of taxa ordered alphabetically within categories to order bars and figure legends
-ordered_taxa_19 <- c(nearshore_species, coastal_species, oceanic_species)
+other_species <- c("Ammodytidae", "Gadidae", "Osmeridae")
+other_colors <- colorRampPalette(brewer.pal(9, "Purples")[4:7])(length(other_species))
+
+species_colors <- c(setNames(mesopelagic_colors, mesopelagic_species),
+                    setNames(flatfish_colors, flatfish_species),
+                    setNames(sculpin_relatives_colors, sculpin_relatives_species),
+                    setNames(other_colors, other_species))
+
+ordered_taxa_19 <- c(mesopelagic_species, flatfish_species, sculpin_relatives_species, other_species)
 
 mocness_major_taxa_19 <- mocness_major_taxa_19 %>%
   #Reorder taxa
   mutate(taxon = factor(taxon, levels = ordered_taxa_19)) %>%
   #Reorder stations
   mutate(station = factor(station, levels = rev(sort(unique(station))))) %>%
-  mutate(adult_habitat_affinity = case_when(taxon %in% nearshore_species ~ "Nearshore",
-                                            taxon %in% coastal_species ~ "Coastal",
-                                            taxon %in% oceanic_species ~ "Oceanic",
+  mutate(color_scheme_group = case_when(taxon %in% mesopelagic_species ~ "Mesopelagic",
+                                            taxon %in% flatfish_species ~ "Flatfish",
+                                            taxon %in% sculpin_relatives_species ~ "Sculpins_and_related",
+                                            taxon %in% other_species ~ "Other",
                                             TRUE ~ "Other"))
 
 taxa_to_keep_2019 <- mocness_major_taxa_19 %>%
@@ -114,14 +138,33 @@ ggplot(avgd_mocness_major_taxa_19, aes(x = depth_range, y = avg_taxa_concentrati
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 #Scatterplot
+taxon_labels <- c(
+  "Bathylagus_ochotensis" = "italic('Bathylagus ochotensis')",
+  "Lestidiops_ringens" = "italic('Lestidiops ringens')",
+  "Protomyctophum_spp" = "italic('Protomyctophum')~'spp.'",
+  "Stenobrachius_leucopsarus" = "italic('Stenobrachius leucopsarus')",
+  "Tarletonbeania_crenularis" = "italic('Tarletonbeania crenularis')",
+  "Glyptocephalus_zachirus" = "italic('Glyptocephalus zachirus')",
+  "Cyclopsettidae" = "Cyclopsettidae",
+  "Isopsetta_isolepis" = "italic('Isopsetta isolepis')",
+  "Lyopsetta_exilis" = "italic('Lyopsetta exilis')",
+  "Parophrys_vetulus" = "italic('Parophrys vetulus')",
+  "Psettichthys_melanostictus" = "italic('Psettichthys melanostictus')",
+  "Cottidae" = "Cottidae",
+  "Psychrolutidae" = "Psychrolutidae",
+  "Liparis_spp" =  "italic('Liparis')~'spp.'",
+  "Hexagrammidae" = "Hexagrammidae",
+  "Sebastes_spp" = "italic('Sebastes')~'spp.'",
+  "Ammodytidae" = "Ammodytidae")
+
 ggplot(model_data, aes(x = depth_mean_m, y = log(individuals_per_m3), color = taxon)) +
   geom_point() +
   geom_smooth(method = "lm",se = FALSE) +
   facet_wrap(~ time_of_day, nrow = 2) +
+  scale_color_manual(values = species_colors, labels = parse(text = taxon_labels))
   labs(title = "Day-night comparison of taxa concentrations by mean depths",
-       x = "Mean depth (m)", y = "log(individuals per m3)") +
-  theme_classic() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+       x = "Mean tow depth (m)", y = "Concentration (log(ind./m3)", color = "Taxon") +
+  theme_classic()
 
 # Fit linear model(s) of taxa concentrations against depth and time of day -----
 day_night_depth_model <- lm(avg_taxa_concentration ~ taxon*time_of_day + taxon*depth_range, data = avgd_mocness_major_taxa_19)
@@ -286,19 +329,24 @@ ggsave(here("output/full_model_nb_day_night_depth_effects.png"),
        dpi = 300)
 
 
-
 #Scatterplot of only 4 species of interest
-ggplot(model_data %>%
-         filter(taxon %in% c("Sebastes_spp", "Parophrys_vetulus", "Stenobrachius_leucopsarus", "Isopsetta_isolepis")),
-       aes(x = depth_mean_m, y = log(individuals_per_m3), color = taxon)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = FALSE) +
-  facet_wrap(~ time_of_day, nrow = 2) +
-  labs(title = "Day-night comparison of taxa concentrations by mean depths",
-       x = "Mean depth (m)", y = "log(average individuals per m3)") +
-  theme_classic() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+sp_of_interest <- model_data %>%
+  filter(taxon %in% c("Sebastes_spp", "Parophrys_vetulus", "Stenobrachius_leucopsarus", "Ammodytidae"))
+species_colors_sub <- species_colors[names(species_colors) %in% unique(sp_of_interest$taxon)]
+taxon_labels_sub   <- taxon_labels[names(taxon_labels) %in% unique(sp_of_interest$taxon)]
 
+ggplot(sp_of_interest, aes(x = depth_mean_m, y = log(individuals_per_m3), color = taxon, fill = taxon)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, alpha = 0.25) +
+  facet_wrap(~ time_of_day, nrow = 2) +
+  scale_color_manual(values = species_colors_sub, labels = parse(text = taxon_labels_sub)) +
+  scale_fill_manual(values = species_colors_sub, labels =  parse(text = taxon_labels_sub)) + 
+  guides(fill  = "none", color = guide_legend(override.aes = list(fill = alpha(species_colors_sub, 0.25)))) +
+  labs(title = "Day-night comparison of taxa concentrations by mean depths",
+       x = "Mean tow depth (m)", y = "Concentration (log(ind./m3)", color = "Taxon", fill = "Taxon") +
+  theme_classic()
+ggsave("D_N_scatter_sp_of_interest.png", plot = get_last_plot(), path = here("output"),
+       width = 7, height = 5, units = "in", dpi = 300)
 
 # Linear regression on specific taxa --------------------------------------
 
