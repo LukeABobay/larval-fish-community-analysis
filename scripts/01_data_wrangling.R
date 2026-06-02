@@ -689,22 +689,22 @@ mocness_major_taxa_nets %>%
 # # Vector of taxa ordered alphabetically within categories to order bars and figure legends
 # ordered_taxa <- c(nearshore_species, coastal_species, oceanic_species)
 
-# New taxa color scheme: mesopelagics, flatfises, sculpin relatives, and others/junkdrawer
+# New taxa color scheme: mesopelagics, flatfishes, sculpin relatives, and others/junkdrawer
 mesopelagic_species <- c("Bathylagus_ochotensis", "Lestidiops_ringens", "Protomyctophum_spp", 
                          "Stenobrachius_leucopsarus", "Tarletonbeania_crenularis")
-mesopelagic_colors <- colorRampPalette(brewer.pal(9, "Greens")[2:6])(length(mesopelagic_species))
+mesopelagic_colors <- brewer.pal(length(mesopelagic_species) + 1, "Purples")[-1]
 
 flatfish_species <- c("Glyptocephalus_zachirus", "Cyclopsettidae", "Isopsetta_isolepis", 
                       "Lyopsetta_exilis", "Parophrys_vetulus", "Psettichthys_melanostictus")
-flatfish_colors <- colorRampPalette(brewer.pal(9, "YlOrRd")[1:6])(length(flatfish_species))
+flatfish_colors <- brewer.pal(length(flatfish_species) + 1, "Oranges")[-1]
 
 sculpin_relatives_species <- c("Cottidae", "Hemilepidotus_spp", "Psychrolutidae", 
                                "Scorpaenichthys_marmoratus", "Agonidae", "Liparis_spp",
                                "Hexagrammidae", "Sebastes_spp")
-sculpin_relatives_colors <- colorRampPalette(brewer.pal(9, "YlGnBu")[1:8])(length(sculpin_relatives_species))
+sculpin_relatives_colors <- brewer.pal(length(sculpin_relatives_species) + 1, "Blues")[-1]
 
 other_species <- c("Ammodytidae", "Gadidae", "Osmeridae")
-other_colors <- colorRampPalette(brewer.pal(9, "Purples")[4:7])(length(other_species))
+other_colors <- brewer.pal(length(other_species) + 1, "Greens")[-1]
 
 species_colors <- c(setNames(mesopelagic_colors, mesopelagic_species),
                     setNames(flatfish_colors, flatfish_species),
