@@ -26,8 +26,6 @@ library(indicspecies)
 library(ggnewscale)
 library(plotly)
 library(marmap)
-install.packages("remotes")
-remotes::install_github("ropensci/rnaturalearthhires")
 library(rnaturalearthhires)
 library(patchwork)
 library(cowplot)
@@ -35,8 +33,6 @@ library(cowplot)
 # Source code -------------------------------------------------------------
 
 source(here("scripts/01_data_wrangling.R"))
-
-set.seed(123)
 
 # Create wide environmental dataframe ---------------------------------------------------
 
@@ -165,6 +161,10 @@ AHC_result <- hclust(dissim_matrix, method = "average")
 ## Assign cluster colors
 cluster_colors <- c("1" = "#1F77B4", "2" = "#FF7F0E", "3" = "#2CA02C", "4" = "#8C564B", "5" = "#9467BD",
                     "6" = "#D62728", "7" = "#17BECF", "8" = "#BCBD22", "9" = "#7F7F7F", "10"= "#E377C2")
+cluster_levels <- as.character(seq_len(10))
+dendrogram_clusters <- cutree(AHC_result, k = 10)
+dendrogram_cluster_order <- unique(dendrogram_clusters[AHC_result$order])
+dendrogram_cluster_colors <- cluster_colors[as.character(dendrogram_cluster_order)]
 
 # Plot the dendrograms -----------------------------------------------------
 
@@ -172,7 +172,7 @@ cluster_colors <- c("1" = "#1F77B4", "2" = "#FF7F0E", "3" = "#2CA02C", "4" = "#8
 windows()
 plot(AHC_result, labels = AHC_comm_matrix_transformed$chrono_sample_ID,
      xlab = "Net tows", main = "Clusters of Net Tows", cex = 0.4)
-rect.hclust(AHC_result, k = 10, border = cluster_colors)
+rect.hclust(AHC_result, k = 10, border = dendrogram_cluster_colors)
 
 png(filename = here("output/AHC_sampling_events_dendrogram.png"),
     width = 12,
@@ -181,12 +181,18 @@ png(filename = here("output/AHC_sampling_events_dendrogram.png"),
     res = 300)
 plot(AHC_result, labels = AHC_comm_matrix_transformed$chrono_sample_ID,
      xlab = "Net tows", main = "Clusters of Net Tows", cex = 0.4)
-rect.hclust(AHC_result, k = 10, border = cluster_colors)
+rect.hclust(AHC_result, k = 10, border = dendrogram_cluster_colors)
 dev.off()
 
 # Extract list of sampling events belonging to each cluster
-clusters <- data.frame(transect_station_rep_year_net = names(cutree(AHC_result, k = 10)),
-                       cluster = cutree(AHC_result, k = 10))
+clusters <- data.frame(transect_station_rep_year_net = names(dendrogram_clusters),
+                       cluster = dendrogram_clusters)
+
+main_clusters <- clusters %>%
+  count(cluster, name = "n_net_tows") %>%
+  arrange(desc(n_net_tows), cluster) %>%
+  slice_head(n = 4) %>%
+  pull(cluster)
 
 # Indicator Species Analysis ----------------------------------------------
 
@@ -205,85 +211,223 @@ summary(isa_result)
 mapping_df <- wide_major_taxa_nets %>%
   left_join(clusters, by = "transect_station_rep_year_net") %>%
   select(transect_station_rep_year_net, chrono_sample_ID, start_longitude_dd, 
-         start_latitude_dd, cluster, net, cruise, depth_mean_m) %>%
+         start_latitude_dd, cluster, net, cruise, depth_mean_m,
+         transect_station_rep_year) %>%
   distinct(transect_station_rep_year_net, chrono_sample_ID, start_longitude_dd, 
-         start_latitude_dd, cluster, net, cruise, depth_mean_m, .keep_all = TRUE)
+         start_latitude_dd, cluster, net, cruise, depth_mean_m,
+         transect_station_rep_year, .keep_all = TRUE)
 
-mapping_df$cluster <- factor(mapping_df$cluster)
-mapping_df$net <- factor(mapping_df$net)
+mapping_df$cluster <- factor(mapping_df$cluster, levels = cluster_levels)
+mapping_df$net <- factor(mapping_df$net, levels = 0:4)
+
+net0_coordinates <- mocness_clean %>%
+  filter(net == 0) %>%
+  group_by(transect_station_rep_year) %>%
+  summarize(
+    net0_longitude_dd = first(start_longitude_dd[!is.na(start_longitude_dd)], default = NA_real_),
+    net0_latitude_dd = first(start_latitude_dd[!is.na(start_latitude_dd)], default = NA_real_),
+    .groups = "drop"
+  )
 
 excluded_df <- excluded_tows %>%
+  mutate(transect_station_rep_year = str_replace(transect_station_rep_year_net, "_[^_]+$", "")) %>%
   left_join(mocness_major_taxa %>% 
               distinct(transect_station_rep_year_net, cruise), by = "transect_station_rep_year_net")
 
 
 ## Find mapping area and create coastline, state boundaries, and isobaths
-space <- ne_download(scale = 50, type = "states", category = "cultural", returnclass = "sf")%>%
-  filter(name %in% c("Oregon", "Washington", "California"))
-bathy <- getNOAA.bathy(-130, -122, 39, 50, resolution = 0.5)
+map_xlim <- c(-126.8, -123.2)
+map_ylim <- c(40.2, 47.8)
+map_bbox <- st_bbox(c(xmin = map_xlim[1], xmax = map_xlim[2],
+                      ymin = map_ylim[1], ymax = map_ylim[2]),
+                    crs = st_crs(4326))
+
+land <- tryCatch(
+  ne_download(scale = "large", type = "land", category = "physical", returnclass = "sf"),
+  error = function(e) ne_download(scale = "medium", type = "land", category = "physical", returnclass = "sf")
+) %>%
+  st_crop(map_bbox)
+
+coast <- tryCatch(
+  ne_download(scale = "large", type = "coastline", category = "physical", returnclass = "sf"),
+  error = function(e) ne_download(scale = "medium", type = "coastline", category = "physical", returnclass = "sf")
+) %>%
+  st_crop(map_bbox)
+
+admin1 <- ne_download(scale = "medium",
+                      type = "admin_1_states_provinces_lines",
+                      category = "cultural",
+                      returnclass = "sf") %>%
+  st_crop(map_bbox)
+
+space <- land
+bathy <- getNOAA.bathy(lon1 = map_xlim[1], lon2 = map_xlim[2],
+                       lat1 = map_ylim[1], lat2 = map_ylim[2],
+                       resolution = 2)
 bathy_df <- fortify.bathy(bathy) %>% as_tibble()
+isobath_levels <- -seq(250, 3000, by = 250)
 
 ## Create net layout
 offsets <- tibble(net = factor(0:4),
-                  dx = c(0.01, 0, 0, 0, 0),
-                  dy = c(0, 0.06, 0.03, -0.03, -0.06))
+                  dx = 0,
+                  dy = c(-0.06, -0.03, 0, 0.03, 0.06))
 mapping_df2 <- mapping_df %>% 
+  left_join(net0_coordinates, by = "transect_station_rep_year") %>%
   left_join(offsets, by = "net") %>%
+  mutate(plot_longitude_dd = coalesce(net0_longitude_dd, start_longitude_dd),
+         plot_latitude_dd = coalesce(net0_latitude_dd, start_latitude_dd)) %>%
   mutate(year = case_when(cruise == "W18" ~ 2018, cruise == "W19" ~ 2019, cruise == "W22" ~ 2022, cruise == "W23" ~ 2023),
          rep = str_split(transect_station_rep_year_net, "_", simplify = TRUE)[,3],
          facet_group = case_when(cruise == "W18" ~ paste0("18", rep), cruise == "W19" ~ paste0("19", rep),
-                                 cruise == "W22" ~ "22", cruise == "W23" ~ "23"))
+                                 cruise == "W22" ~ "22", cruise == "W23" ~ "23")) %>%
+  arrange(net)
+stopifnot(all(as.character(mapping_df2$cluster) %in% names(cluster_colors)))
+
 excluded_df <- excluded_df %>%
-  mutate(net = factor(net)) %>%
+  mutate(net = factor(net, levels = 0:4)) %>%
+  left_join(net0_coordinates, by = "transect_station_rep_year") %>%
   left_join(offsets, by = "net") %>%
+  mutate(plot_longitude_dd = coalesce(net0_longitude_dd, start_longitude_dd),
+         plot_latitude_dd = coalesce(net0_latitude_dd, start_latitude_dd)) %>%
   mutate(year = case_when(cruise == "W18" ~ 2018, cruise == "W19" ~ 2019, cruise == "W22" ~ 2022, cruise == "W23" ~ 2023),
          rep = str_split(transect_station_rep_year_net, "_", simplify = TRUE)[,3],
          facet_group = case_when(cruise == "W18" ~ paste0("18", rep), cruise == "W19" ~ paste0("19", rep),
-                                 cruise == "W22" ~ "22", cruise == "W23" ~ "23"))
+                                 cruise == "W22" ~ "22", cruise == "W23" ~ "23")) %>%
+  arrange(net)
 
 ## Assign lightness/color value to nets
 net_lightness <- c("0" = 1.00, "1" = 0.85, "2" = 0.70, "3" = 0.55, "4" = 0.40)
 
-## Create function for plotting each panel
-make_panel <- function(group_name) {
-  df <- mapping_df2 %>% filter(facet_group == group_name)
-  df_ex <- excluded_df %>% filter(facet_group == group_name)
-  ggplot() +
-    #plot basemap
-    geom_sf(data = space, fill = "grey90", color = "grey40") + 
-    geom_contour(data = bathy_df, aes(x = x, y = y, z = z), breaks = c(-50, -100, -200), color = "grey60", size = 0.3) +
-    #included tow points
-    geom_point(data = df, aes(x = start_longitude_dd+dx, y = start_latitude_dd+dy, 
-                                       color = cluster, alpha = net), size = 1.2) +
-    #excluded tow points
-    geom_point(data = df_ex, aes(x = start_longitude_dd+dx, y = start_latitude_dd+dy), shape = 4, color = "black", size = 2, stroke = 0.7) +
-    #design
-    scale_color_manual(values = cluster_colors, name = "Cluster") +
-    scale_alpha_manual(values = net_lightness, name = "Net") +
-    coord_sf(xlim = c(-126.8, -123.2), ylim = c(40.2, 47.8), expand = FALSE) +
-  labs(title = group_name, x = NULL, y = NULL) +
-  theme_classic(base_size = 12) +
+map_layers <- list(
+  geom_sf(data = land, fill = "grey55", color = NA),
+  geom_sf(data = coast, color = "black", linewidth = 0.4),
+  geom_sf(data = admin1, color = "black", linewidth = 0.25),
+  geom_contour(data = bathy_df, aes(x = x, y = y, z = z),
+               breaks = isobath_levels, color = "grey80", linewidth = 0.25),
+  scale_color_manual(values = cluster_colors,
+                     limits = cluster_levels,
+                     breaks = cluster_levels,
+                     drop = FALSE,
+                     guide = "none"),
+  scale_alpha_manual(values = net_lightness,
+                     breaks = rev(names(net_lightness)),
+                     guide = "none"),
+  coord_sf(xlim = map_xlim, ylim = map_ylim, expand = FALSE),
+  theme_classic(base_size = 12),
   theme(legend.position = "none",
-        plot.title = element_text(face = "bold", hjust = 0.5))}
+        plot.title = element_text(face = "bold", hjust = 0.5))
+)
 
-## Plot panels
-p18a <- make_panel("18MaN")
-p18b <- make_panel("18MaD")
-p18c <- make_panel("18MbD")
-p19a <- make_panel("19MaN")
-p19b <- make_panel("19MaD")
-p19c <- make_panel("19MbN")
-p19d <- make_panel("19MbD")
-p22  <- make_panel("22")
-p23  <- make_panel("23")
+cluster_map_legend <- get_legend(
+  ggplot() +
+    geom_point(
+      data = tibble(cluster = factor(cluster_levels, levels = cluster_levels),
+                    x = 1, y = seq_along(cluster_levels)),
+      aes(x, y, color = cluster),
+      size = 2
+    ) +
+    geom_point(
+      data = tibble(net = factor(names(net_lightness), levels = 0:4),
+                    x = 1, y = seq_along(net_lightness)),
+      aes(x, y, alpha = net),
+      color = "black",
+      size = 2
+    ) +
+    scale_color_manual(values = cluster_colors,
+                       limits = cluster_levels,
+                       breaks = cluster_levels,
+                       drop = FALSE,
+                       name = "Cluster",
+                       guide = guide_legend(order = 1,
+                                            override.aes = list(alpha = 1, size = 2))) +
+    scale_alpha_manual(values = net_lightness,
+                       breaks = rev(names(net_lightness)),
+                       name = "Net",
+                       guide = guide_legend(order = 2)) +
+    theme_void() +
+    theme(legend.position = "right")
+)
 
-## Make shared legend
-legend_plot <- ggplot(mapping_df2) +
-  geom_point(aes(start_longitude_dd, start_latitude_dd, color = cluster, alpha = net)) +
-  scale_color_manual(values = cluster_colors, name = "Cluster") +
-  scale_alpha_manual(values = net_lightness, name = "Net") +
-  theme_minimal(base_size = 12)
-shared_legend <- get_legend(legend_plot)
+p18a <- ggplot() + map_layers +
+  geom_point(data = filter(excluded_df, facet_group == "18MaN"),
+             aes(plot_longitude_dd + dx, plot_latitude_dd + dy),
+             shape = 4, color = "black", size = 2, stroke = 0.7) +
+  geom_point(data = filter(mapping_df2, facet_group == "18MaN"),
+             aes(plot_longitude_dd + dx, plot_latitude_dd + dy, color = cluster, alpha = net),
+             size = 1.2) +
+  labs(title = "18MaN", x = NULL, y = NULL)
+
+p18b <- ggplot() + map_layers +
+  geom_point(data = filter(excluded_df, facet_group == "18MaD"),
+             aes(plot_longitude_dd + dx, plot_latitude_dd + dy),
+             shape = 4, color = "black", size = 2, stroke = 0.7) +
+  geom_point(data = filter(mapping_df2, facet_group == "18MaD"),
+             aes(plot_longitude_dd + dx, plot_latitude_dd + dy, color = cluster, alpha = net),
+             size = 1.2) +
+  labs(title = "18MaD", x = NULL, y = NULL)
+
+p18c <- ggplot() + map_layers +
+  geom_point(data = filter(excluded_df, facet_group == "18MbD"),
+             aes(plot_longitude_dd + dx, plot_latitude_dd + dy),
+             shape = 4, color = "black", size = 2, stroke = 0.7) +
+  geom_point(data = filter(mapping_df2, facet_group == "18MbD"),
+             aes(plot_longitude_dd + dx, plot_latitude_dd + dy, color = cluster, alpha = net),
+             size = 1.2) +
+  labs(title = "18MbD", x = NULL, y = NULL)
+
+p19a <- ggplot() + map_layers +
+  geom_point(data = filter(excluded_df, facet_group == "19MaN"),
+             aes(plot_longitude_dd + dx, plot_latitude_dd + dy),
+             shape = 4, color = "black", size = 2, stroke = 0.7) +
+  geom_point(data = filter(mapping_df2, facet_group == "19MaN"),
+             aes(plot_longitude_dd + dx, plot_latitude_dd + dy, color = cluster, alpha = net),
+             size = 1.2) +
+  labs(title = "19MaN", x = NULL, y = NULL)
+
+p19b <- ggplot() + map_layers +
+  geom_point(data = filter(excluded_df, facet_group == "19MaD"),
+             aes(plot_longitude_dd + dx, plot_latitude_dd + dy),
+             shape = 4, color = "black", size = 2, stroke = 0.7) +
+  geom_point(data = filter(mapping_df2, facet_group == "19MaD"),
+             aes(plot_longitude_dd + dx, plot_latitude_dd + dy, color = cluster, alpha = net),
+             size = 1.2) +
+  labs(title = "19MaD", x = NULL, y = NULL)
+
+p19c <- ggplot() + map_layers +
+  geom_point(data = filter(excluded_df, facet_group == "19MbN"),
+             aes(plot_longitude_dd + dx, plot_latitude_dd + dy),
+             shape = 4, color = "black", size = 2, stroke = 0.7) +
+  geom_point(data = filter(mapping_df2, facet_group == "19MbN"),
+             aes(plot_longitude_dd + dx, plot_latitude_dd + dy, color = cluster, alpha = net),
+             size = 1.2) +
+  labs(title = "19MbN", x = NULL, y = NULL)
+
+p19d <- ggplot() + map_layers +
+  geom_point(data = filter(excluded_df, facet_group == "19MbD"),
+             aes(plot_longitude_dd + dx, plot_latitude_dd + dy),
+             shape = 4, color = "black", size = 2, stroke = 0.7) +
+  geom_point(data = filter(mapping_df2, facet_group == "19MbD"),
+             aes(plot_longitude_dd + dx, plot_latitude_dd + dy, color = cluster, alpha = net),
+             size = 1.2) +
+  labs(title = "19MbD", x = NULL, y = NULL)
+
+p22 <- ggplot() + map_layers +
+  geom_point(data = filter(excluded_df, facet_group == "22"),
+             aes(plot_longitude_dd + dx, plot_latitude_dd + dy),
+             shape = 4, color = "black", size = 2, stroke = 0.7) +
+  geom_point(data = filter(mapping_df2, facet_group == "22"),
+             aes(plot_longitude_dd + dx, plot_latitude_dd + dy, color = cluster, alpha = net),
+             size = 1.2) +
+  labs(title = "22", x = NULL, y = NULL)
+
+p23 <- ggplot() + map_layers +
+  geom_point(data = filter(excluded_df, facet_group == "23"),
+             aes(plot_longitude_dd + dx, plot_latitude_dd + dy),
+             shape = 4, color = "black", size = 2, stroke = 0.7) +
+  geom_point(data = filter(mapping_df2, facet_group == "23"),
+             aes(plot_longitude_dd + dx, plot_latitude_dd + dy, color = cluster, alpha = net),
+             size = 1.2) +
+  labs(title = "23", x = NULL, y = NULL)
 
 ## Make layout panels for 2018 and 2019
 p2018 <- (p18a | p18b) / p18c +
@@ -292,9 +436,8 @@ p2019 <- ((p19a | p19b) /
           (p19c | p19d))
 
 ## Assemble custom layout
-final_cluster_map <- ((p2018| p2019 | p22 | p23)) +
-  plot_layout(guides = "collect") +
-  theme(legend.position = "right")
+final_cluster_map <- (p2018 | p2019 | p22 | p23 | wrap_elements(cluster_map_legend)) +
+  plot_layout(widths = c(1, 1, 1.4, 1.4, 0.35))
 final_cluster_map
   #save
 ggsave("cluster_map.png", plot = get_last_plot(), path = here("output"), 
@@ -411,9 +554,9 @@ ggplot(AHC_comm_matrix_transformed_long, aes(x = chrono_sample_ID, y = sqrt_conc
         axis.text.x = element_text(angle = 60, hjust = 1, size = 5))
 
 
-# Plot same but only for clusters 1, 2, 3, and 5
+# Plot same but only for the four clusters with the most net tows
 major_clusters_plot_df <- AHC_comm_matrix_transformed_long %>%
-  filter(cluster %in% c(1, 2, 3, 5)) %>%
+  filter(cluster %in% main_clusters) %>%
   mutate(chrono_sample_ID = factor(chrono_sample_ID, levels = unique(chrono_sample_ID)))
 
 major_clusters_bounds <- major_clusters_plot_df %>% 
@@ -430,7 +573,7 @@ major_clusters_max_height <- major_clusters_plot_df %>%
 
 windows()
 ggplot(major_clusters_plot_df, aes(x = chrono_sample_ID, y = sqrt_concentration, fill = factor(taxon, levels = ordered_taxa))) +
-  geom_bar(stat = "identity", position = "stack") +
+  geom_bar(stat = "identity", position = "fill") +
   scale_fill_manual(values = species_colors, breaks = ordered_taxa, name = "Taxonomic group") +
   geom_vline(data = major_clusters_bounds[-1,],
     aes(xintercept = start - 0.5), linetype = "dashed", color = "gray40", linewidth = 0.5, inherit.aes = FALSE) +
@@ -448,15 +591,15 @@ ggplot(major_clusters_plot_df, aes(x = chrono_sample_ID, y = sqrt_concentration,
 
 
 
-# ggplot(AHC_comm_matrix_transformed_long %>% 
-#          dplyr::filter(cluster %in% c(1, 2, 3, 5)),
+# ggplot(AHC_comm_matrix_transformed_long %>%
+#          dplyr::filter(cluster %in% main_clusters),
 #        aes(x = chrono_sample_ID, y = sqrt_concentration, fill = factor(taxon, levels = ordered_taxa))) +
-  # geom_bar(stat = "identity", position = "stack") +
-  # scale_fill_manual(values = species_colors, breaks = ordered_taxa) +
-  # facet_grid(rows = vars(cluster)) +
-  # labs(x = "Depth sampled (m)", y = "individuals/m3") +
-  # theme_light() +
-  # theme(axis.text.x = element_text(angle = 45, hjust = 0), legend.position = "none")
+# geom_bar(stat = "identity", position = "stack") +
+# scale_fill_manual(values = species_colors, breaks = ordered_taxa) +
+# facet_grid(rows = vars(cluster)) +
+# labs(x = "Depth sampled (m)", y = "individuals/m3") +
+# theme_light() +
+# theme(axis.text.x = element_text(angle = 45, hjust = 0), legend.position = "none")
 
 # Plot NMDS ordination ---------------------------------------------------
 
