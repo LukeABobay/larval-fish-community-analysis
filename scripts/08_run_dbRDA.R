@@ -261,7 +261,6 @@ dbRDA_site_scores <- scores(dbRDA_full_model, display = "sites", choices = 1:2) 
 
 dbRDA_hulls <- dbRDA_site_scores %>%
   group_by(cluster) %>%
-  filter(n() >= 3) %>%
   slice(chull(CAP1, CAP2)) %>%
   ungroup()
 
@@ -317,7 +316,7 @@ windows()
 dbRDA_plot <- ggplot(dbRDA_site_scores, aes(x = CAP1, y = CAP2, color = cluster)) +
   geom_polygon(data = dbRDA_hulls,
                aes(x = CAP1, y = CAP2, fill = cluster, group = cluster),
-               alpha = 0.2,
+               alpha = 0.25,
                color = NA,
                inherit.aes = FALSE) +
   geom_point(size = 1, alpha = 0.9) +
@@ -327,10 +326,16 @@ dbRDA_plot <- ggplot(dbRDA_site_scores, aes(x = CAP1, y = CAP2, color = cluster)
                linewidth = 0.5,
                type = "norm",
                level = 0.68,
-               show.legend = TRUE,
+               show.legend = c(linetype = TRUE, color = FALSE),
                inherit.aes = FALSE) +
-  scale_fill_manual(values = cluster_colors, guide = "none") +
-  scale_color_manual(values = cluster_colors) +
+  scale_fill_manual(values = cluster_colors,
+                    limits = cluster_levels,
+                    breaks = cluster_levels,
+                    drop = FALSE) +
+  scale_color_manual(values = cluster_colors,
+                     limits = cluster_levels,
+                     breaks = cluster_levels,
+                     drop = FALSE) +
   scale_linetype_manual(values = c("Day" = "solid", "Night" = "dashed")) +
   geom_segment(data = dbRDA_vector_scores,
                aes(x = 0, y = 0, xend = CAP1, yend = CAP2),
@@ -342,15 +347,12 @@ dbRDA_plot <- ggplot(dbRDA_site_scores, aes(x = CAP1, y = CAP2, color = cluster)
                inherit.aes = FALSE,
                color = "grey35",
                linewidth = 0.5) +
-  geom_label(data = dbRDA_vector_scores,
-             aes(x = label_x, y = label_y, label = plot_label,
-                 hjust = label_hjust),
-             inherit.aes = FALSE,
-             color = "black",
-             fill = "white",
-             size = 2,
-             linewidth = 0.2,
-             label.padding = unit(0.12, "lines")) +
+  geom_text(data = dbRDA_vector_scores,
+            aes(x = label_x, y = label_y, label = plot_label,
+                hjust = label_hjust),
+            inherit.aes = FALSE,
+            color = "black",
+            size = 2) +
   theme_classic() +
   labs(title = "db-RDA of larval fish assemblage composition",
        x = "CAP1", y = "CAP2", color = "Cluster", fill = "Cluster", linetype = "Time of Day")
