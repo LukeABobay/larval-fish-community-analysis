@@ -713,6 +713,29 @@ species_colors <- c(setNames(mesopelagic_colors, mesopelagic_species),
 
 ordered_taxa <- c(mesopelagic_species, flatfish_species, sculpin_relatives_species, other_species)
 
+taxon_labels <- c(
+  "Ammodytidae" = "Ammodytidae",
+  "Cottidae" = "Cottidae",
+  "Gadidae" = "Gadidae",
+  "Glyptocephalus_zachirus" = "italic('Glyptocephalus zachirus')",
+  "Hemilepidotus" = "italic('Hemilepidotus')~'spp.'",
+  "Hexagrammidae" = "Hexagrammidae",
+  "Psychrolutidae" = "Psychrolutidae",
+  "Scorpaenichthys_marmoratus" = "italic('Scorpaenichthys marmoratus')",
+  "Agonidae" = "Agonidae",
+  "Cyclopsettidae" = "Cyclopsettidae",
+  "Isopsetta_isolepis" = "italic('Isopsetta isolepis')",
+  "Liparis_spp" =  "italic('Liparis')~'spp.'",
+  "Lyopsetta_exilis" = "italic('Lyopsetta exilis')",
+  "Osmeridae" ="Osmeridae",
+  "Parophrys_vetulus" = "italic('Parophrys vetulus')",
+  "Psettichthys_melanostictus" = "italic('Psettichthys melanostictus')",
+  "Sebastes_spp" = "italic('Sebastes')~'spp.'",
+  "Bathylagus_ochotensis" = "italic('Bathylagus ochotensis')",
+  "Lestidiops_ringens" = "italic('Lestidiops ringens')",
+  "Protomyctophum_spp" = "italic('Protomyctophum')~'spp.'",
+  "Stenobrachius_leucopsarus" = "italic('Stenobrachius leucopsarus')",
+  "Tarletonbeania_crenularis" = "italic('Tarletonbeania crenularis')")
 
 
 # Create Data frame of excluded net tows ----------------------------------
