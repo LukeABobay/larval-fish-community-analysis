@@ -117,24 +117,24 @@ ggplot(avgd_mocness_major_taxa_19, aes(x = depth_range, y = avg_taxa_concentrati
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 #Scatterplot
-taxon_labels <- c(
-  "Bathylagus_ochotensis" = "italic('Bathylagus ochotensis')",
-  "Lestidiops_ringens" = "italic('Lestidiops ringens')",
-  "Protomyctophum_spp" = "italic('Protomyctophum')~'spp.'",
-  "Stenobrachius_leucopsarus" = "italic('Stenobrachius leucopsarus')",
-  "Tarletonbeania_crenularis" = "italic('Tarletonbeania crenularis')",
-  "Glyptocephalus_zachirus" = "italic('Glyptocephalus zachirus')",
-  "Cyclopsettidae" = "Cyclopsettidae",
-  "Isopsetta_isolepis" = "italic('Isopsetta isolepis')",
-  "Lyopsetta_exilis" = "italic('Lyopsetta exilis')",
-  "Parophrys_vetulus" = "italic('Parophrys vetulus')",
-  "Psettichthys_melanostictus" = "italic('Psettichthys melanostictus')",
-  "Cottidae" = "Cottidae",
-  "Psychrolutidae" = "Psychrolutidae",
-  "Liparis_spp" =  "italic('Liparis')~'spp.'",
-  "Hexagrammidae" = "Hexagrammidae",
-  "Sebastes_spp" = "italic('Sebastes')~'spp.'",
-  "Ammodytidae" = "Ammodytidae")
+# taxon_labels <- c(
+#   "Bathylagus_ochotensis" = "italic('Bathylagus ochotensis')",
+#   "Lestidiops_ringens" = "italic('Lestidiops ringens')",
+#   "Protomyctophum_spp" = "italic('Protomyctophum')~'spp.'",
+#   "Stenobrachius_leucopsarus" = "italic('Stenobrachius leucopsarus')",
+#   "Tarletonbeania_crenularis" = "italic('Tarletonbeania crenularis')",
+#   "Glyptocephalus_zachirus" = "italic('Glyptocephalus zachirus')",
+#   "Cyclopsettidae" = "Cyclopsettidae",
+#   "Isopsetta_isolepis" = "italic('Isopsetta isolepis')",
+#   "Lyopsetta_exilis" = "italic('Lyopsetta exilis')",
+#   "Parophrys_vetulus" = "italic('Parophrys vetulus')",
+#   "Psettichthys_melanostictus" = "italic('Psettichthys melanostictus')",
+#   "Cottidae" = "Cottidae",
+#   "Psychrolutidae" = "Psychrolutidae",
+#   "Liparis_spp" =  "italic('Liparis')~'spp.'",
+#   "Hexagrammidae" = "Hexagrammidae",
+#   "Sebastes_spp" = "italic('Sebastes')~'spp.'",
+#   "Ammodytidae" = "Ammodytidae") ##RM: moved this to script 01 so might not need here anymore
 
 d_n_scatter_all <- ggplot(model_data, aes(x = depth_mean_m, y = log(individuals_per_m3), color = taxon)) +
   geom_point() +
