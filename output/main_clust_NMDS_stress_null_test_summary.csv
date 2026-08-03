@@ -1,0 +1,2 @@
+"main_clust_observed_stress_null_pipeline","main_clust_observed_stress_sqrt_concentration_nmds","main_clust_null_mean_stress","main_clust_null_sd_stress","main_clust_null_stress_q025","main_clust_null_stress_q975","main_clust_z","main_clust_p_value_two_tailed","main_clust_n_permutations","main_clust_null_model"
+0.185243233396593,0.185243233396593,0.284184850072424,0.0047600457891129,0.274689035889088,0.292962043624793,-20.7858539726927,5.81209408970581e-96,1000,"quasiswap_count"
