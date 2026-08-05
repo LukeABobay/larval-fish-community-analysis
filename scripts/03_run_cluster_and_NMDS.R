@@ -552,6 +552,8 @@ ggplot(AHC_comm_matrix_transformed_long, aes(x = chrono_sample_ID, y = sqrt_conc
   theme(panel.background = element_rect(fill = "white", color = NA),
         plot.margin = margin(t = 35, r = 30, b = 5, l = 5),
         axis.text.x = element_text(angle = 60, hjust = 1, size = 5))
+ggsave("clusters_abundance_bar_plot.png", plot = get_last_plot(), path = here("output"),
+       width = 6, height = 5, units = "in", dpi = 300)
 
 
 # Plot same but only for the four clusters with the most net tows
