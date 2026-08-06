@@ -23,7 +23,7 @@ source(here("scripts/01_data_wrangling.R"))
 
 # Prepare data ------------------------------------------------------------
 
-#Filter to keep only 2019 rows
+#Filter to keep only 2019 rows (add 2018)
 mocness_major_taxa_19 <- filter(mocness_major_taxa, collection_date > "2019-01-01" & collection_date < "2019-12-31") %>%
   #add time of day column
   mutate(time_of_day = substr(replicate, 3, 3)) %>%
@@ -31,27 +31,6 @@ mocness_major_taxa_19 <- filter(mocness_major_taxa, collection_date > "2019-01-0
 
 
 # # Classify taxa by habitat affinity and create color vectors ---------------
-# # Categorize taxa by habitat affinity
-# nearshore_species <- c("Ammodytidae", "Cottidae", "Gadidae", "Glyptocephalus_zachirus", "Hemilepidotus_spp", 
-#                        "Hexagrammidae", "Psychrolutidae", "Scorpaenichthys_marmoratus")
-# nearshore_colors <- colorRampPalette(brewer.pal(9, "Greens")[2:9])(length(nearshore_species))
-# 
-# coastal_species <- c("Agonidae", "Cyclopsettidae", "Isopsetta_isolepis", "Liparis_spp", "Lyopsetta_exilis", "Osmeridae", 
-#                      "Parophrys_vetulus", "Psettichthys_melanostictus", "Sebastes_spp")
-# coastal_colors <- colorRampPalette(brewer.pal(10, "Blues")[1:9])(length(coastal_species))
-# 
-# oceanic_species <- c("Bathylagus_ochotensis", "Lestidiops_ringens", "Protomyctophum_spp", "Stenobrachius_leucopsarus", 
-#                      "Tarletonbeania_crenularis")
-# oceanic_colors <- colorRampPalette(brewer.pal(5, "Purples")[2:6])(length(oceanic_species))
-# 
-# # Named species color vector
-# species_colors <- c(setNames(nearshore_colors, nearshore_species),
-#                     setNames(coastal_colors, coastal_species),
-#                     setNames(oceanic_colors, oceanic_species))
-# 
-# # Vector of taxa ordered alphabetically within categories to order bars and figure legends
-# ordered_taxa_19 <- c(nearshore_species, coastal_species, oceanic_species)
-
 ordered_taxa_19 <- c(mesopelagic_species, flatfish_species, sculpin_relatives_species, other_species)
 
 mocness_major_taxa_19 <- mocness_major_taxa_19 %>%
@@ -117,25 +96,6 @@ ggplot(avgd_mocness_major_taxa_19, aes(x = depth_range, y = avg_taxa_concentrati
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 #Scatterplot
-# taxon_labels <- c(
-#   "Bathylagus_ochotensis" = "italic('Bathylagus ochotensis')",
-#   "Lestidiops_ringens" = "italic('Lestidiops ringens')",
-#   "Protomyctophum_spp" = "italic('Protomyctophum')~'spp.'",
-#   "Stenobrachius_leucopsarus" = "italic('Stenobrachius leucopsarus')",
-#   "Tarletonbeania_crenularis" = "italic('Tarletonbeania crenularis')",
-#   "Glyptocephalus_zachirus" = "italic('Glyptocephalus zachirus')",
-#   "Cyclopsettidae" = "Cyclopsettidae",
-#   "Isopsetta_isolepis" = "italic('Isopsetta isolepis')",
-#   "Lyopsetta_exilis" = "italic('Lyopsetta exilis')",
-#   "Parophrys_vetulus" = "italic('Parophrys vetulus')",
-#   "Psettichthys_melanostictus" = "italic('Psettichthys melanostictus')",
-#   "Cottidae" = "Cottidae",
-#   "Psychrolutidae" = "Psychrolutidae",
-#   "Liparis_spp" =  "italic('Liparis')~'spp.'",
-#   "Hexagrammidae" = "Hexagrammidae",
-#   "Sebastes_spp" = "italic('Sebastes')~'spp.'",
-#   "Ammodytidae" = "Ammodytidae") ##RM: moved this to script 01 so might not need here anymore
-
 d_n_scatter_all <- ggplot(model_data, aes(x = depth_mean_m, y = log(individuals_per_m3), color = taxon)) +
   geom_point() +
   geom_smooth(method = "lm",se = FALSE) +

@@ -237,7 +237,6 @@ mocness_full <- mocness_full_old_metadata %>%
 bathy <- readRDS(here("data/marmap_bathymetry.rds"))
 
 # Get list of sampling stations from whatever data frame contains the working version of the data set
-# Currently only returns MEZCAL stations because SPECTRA lat/lon haven't been added in yet
 sampling_stations_geographic <- mocness_full %>%
   distinct(start_latitude_dd, start_longitude_dd) %>%
   filter(!is.na(start_latitude_dd) & !is.na(start_longitude_dd)) %>%
@@ -613,9 +612,6 @@ mocness_clean <- mocness_full_geographic_isiis_mixing_fluor %>%
 taxa_w_gt_15pct <- mocness_clean %>%
   filter(individuals_in_tow != "") %>%
   mutate(individuals_in_tow = as.numeric(individuals_in_tow)) %>%
-  # LB; Here, individuals_in_tow is by taxon, so filtering like this only keeps observations with > 15 individuals
-  # per taxon per tow, which seems very high. I think we want to filter by the total number of individuals per tow,
-  # not individuals per tow per taxon, right?
   # filter(individuals_in_tow > 15) %>%
   group_by(taxon) %>%
   summarize(freq = n_distinct(transect_station_rep_year_net)) %>%
@@ -638,7 +634,7 @@ mocness_major_taxa_nets <- mocness_major_taxa %>%
   # The value to filter by here can be adjusted to threshold on the total number of individuals per tow 
   filter(n >= 15)
 # RM; I was just thinking, do we want to use the net 0s since these aren't depth-stratified? If not, when should we remove them? Before
- # or after filtering?
+ # or after filtering? (leave for now)
 
 sample_sizes_major_taxa_nets <- mocness_major_taxa_nets %>%
   group_by(taxon) %>%
@@ -647,32 +643,9 @@ sample_sizes_major_taxa_nets <- mocness_major_taxa_nets %>%
             proportion_tows_present = n_distinct(transect_station_rep_year_net) /
               n_distinct(mocness_major_taxa$transect_station_rep_year_net))
 
-mocness_major_taxa_nets %>%
-  distinct(collection_date, transect, station, replicate, net, .keep_all = TRUE) %>%
-  pull(n) %>%
-  hist(breaks = 253)
-# RM ; what is this histogram for? how did you decide on the break level?
-# LB; I wanted to be able to see how this histogram changes when different 
-# thresholds for individuals per net are applied. I just chose a relatively
-# arbitrary number of breaks that was high enough to see what's being 
-# excluded when a threshold of 15 is used.
-
 
 # Taxon colors for plots --------------------------------------------------
 # # Categorize taxa by habitat affinity
-# nearshore_species <- c()
-# nearshore_colors <- colorRampPalette(brewer.pal(9, "Greens")[2:9])(length(nearshore_species))
-# coastal_species <- c()
-# coastal_colors <- colorRampPalette(brewer.pal(10, "Blues")[1:9])(length(coastal_species))
-# oceanic_species <- c()
-# oceanic_colors <- colorRampPalette(brewer.pal(5, "Purples")[2:6])(length(oceanic_species))
-# # Named species color vector
-# species_colors <- c(setNames(nearshore_colors, nearshore_species),
-#                     setNames(coastal_colors, coastal_species),
-#                     setNames(oceanic_colors, oceanic_species))
-# # Vector of taxa ordered alphabetically within categories to order bars and figure legends
-# ordered_taxa <- c(nearshore_species, coastal_species, oceanic_species)
-
 # New taxa color scheme: mesopelagics, flatfishes, sculpin relatives, and others/junkdrawer
 mesopelagic_species <- c("Bathylagus_ochotensis", "Lestidiops_ringens", "Protomyctophum_spp", 
                          "Stenobrachius_leucopsarus", "Tarletonbeania_crenularis")
