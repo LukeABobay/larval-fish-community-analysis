@@ -29,6 +29,8 @@ library(marmap)
 library(rnaturalearthhires)
 library(patchwork)
 library(cowplot)
+library(gtable)
+library(grid)
 
 # Source code -------------------------------------------------------------
 
@@ -536,7 +538,7 @@ max_height <- max(bar_heights$total_height)
 
 # Plot by transect_station_rep_year, sorted by cluster
 windows()
-ggplot(AHC_comm_matrix_transformed_long, aes(x = chrono_sample_ID, y = sqrt_concentration, fill = factor(taxon, levels = ordered_taxa))) +
+clust_abun_bar_plot <- ggplot(AHC_comm_matrix_transformed_long, aes(x = chrono_sample_ID, y = sqrt_concentration, fill = factor(taxon, levels = ordered_taxa))) +
   geom_bar(stat = "identity", position = "stack") +
   scale_fill_manual(values = species_colors, breaks = ordered_taxa, name = "Taxonomic group") +
   geom_vline(data = cluster_bounds[-1,],
@@ -548,10 +550,23 @@ ggplot(AHC_comm_matrix_transformed_long, aes(x = chrono_sample_ID, y = sqrt_conc
   coord_cartesian(clip = "off") +
   scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
   labs(x = "Sample ID", y = "Concentration (ind./m^3)") +
+  guides(fill = guide_legend(ncol = 1)) +
   theme_light() +
   theme(panel.background = element_rect(fill = "white", color = NA),
         plot.margin = margin(t = 35, r = 30, b = 5, l = 5),
         axis.text.x = element_text(angle = 60, hjust = 1, size = 5))
+## Extract legend
+legend_only <- cowplot::get_legend(clust_abun_bar_plot)
+### Wrap legend in a ggplot so ggsave works
+legend_plot <- cowplot::ggdraw(legend_only)
+ggsave(filename = "barplot_taxa_legend.png",
+  plot = legend_plot,
+  path = here("output"),
+  width = 2, height = 6, dpi = 300)
+## Plot without legend
+clust_abun_bar_plot_no_legend <- clust_abun_bar_plot + theme(legend.position = "none")
+ggsave("clusters_abundance_bar_plot.png", plot = get_last_plot(), path = here("output"),
+       width = 10, height = 5, units = "in", dpi = 300)
 
 
 # Plot same but only for the four clusters with the most net tows
