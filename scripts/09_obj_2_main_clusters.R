@@ -408,7 +408,7 @@ main_clust_max_height <- max(main_clust_bar_heights$total_height)
 
 
 # Plot by transect_station_rep_year, sorted by cluster
-ggplot(main_clust_AHC_comm_matrix_transformed_long, aes(x = chrono_sample_ID, y = sqrt_concentration, fill = factor(taxon, levels = ordered_taxa))) +
+main_clust_abun_bar_plot<- ggplot(main_clust_AHC_comm_matrix_transformed_long, aes(x = chrono_sample_ID, y = sqrt_concentration, fill = factor(taxon, levels = ordered_taxa))) +
   geom_bar(stat = "identity", position = "stack") +
   scale_fill_manual(values = species_colors, breaks = ordered_taxa, name = "Taxonomic group") +
   geom_vline(data = main_clust_cluster_bounds[-1,],
@@ -420,12 +420,25 @@ ggplot(main_clust_AHC_comm_matrix_transformed_long, aes(x = chrono_sample_ID, y 
   coord_cartesian(clip = "off") +
   scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
   labs(x = "Sample ID", y = "Concentration (ind./m^3)") +
+  guides(fill = guide_legend(ncol = 1)) +
   theme_light() +
   theme(panel.background = element_rect(fill = "white", color = NA),
         plot.margin = margin(t = 35, r = 30, b = 5, l = 5),
         axis.text.x = element_text(angle = 60, hjust = 1, size = 5))
+## Extract legend
+main_clust_legend_only <- cowplot::get_legend(clust_abun_bar_plot)
+### Wrap legend in a ggplot so ggsave works
+main_clust_legend_plot <- cowplot::ggdraw(main_clust_legend_only)
+ggsave(filename = "main_clust_barplot_taxa_legend.png",
+       plot = main_clust_legend_plot,
+       path = here("output"),
+       width = 2, height = 6, dpi = 300)
+## Plot without legend
+main_clust_abun_bar_plot_no_legend <- main_clust_abun_bar_plot + theme(legend.position = "none")
+ggsave("clusters_abundance_bar_plot.png", plot = get_last_plot(), path = here("output"),
+       width = 10, height = 5, units = "in", dpi = 300)
 ggsave("main_clusters_clusters_abundance_bar_plot.png", plot = get_last_plot(), path = here("output"),
-       width = 6, height = 5, units = "in", dpi = 300)
+       width = 10, height = 5, units = "in", dpi = 300)
 #RM note: "main_cluster_cluster_abundance_bar_plot.png" isn't working I think because I tried to save without ggsave. disregard this output.
 
 # Check NMDS Stress -------------------------------------------------------
