@@ -23,14 +23,16 @@ source(here("scripts/01_data_wrangling.R"))
 
 # Prepare data ------------------------------------------------------------
 
-#Filter to keep only 2019 rows (add 2018)
-mocness_major_taxa_19 <- filter(mocness_major_taxa, collection_date > "2019-01-01" & collection_date < "2019-12-31") %>%
+#Filter to keep only 2018-19 rows and nets 1-4
+mocness_major_taxa_19 <- filter(mocness_major_taxa, collection_date > "2018-01-01" & collection_date < "2019-12-31",
+                                net %in% 1:4) %>%
   #add time of day column
   mutate(time_of_day = substr(replicate, 3, 3)) %>%
   mutate(time_of_day = recode(time_of_day, "D" = "Day", "N" = "Night"))
+  
 
 
-# # Classify taxa by habitat affinity and create color vectors ---------------
+# Classify taxa by habitat affinity and create color vectors ---------------
 ordered_taxa_19 <- c(mesopelagic_species, flatfish_species, sculpin_relatives_species, other_species)
 
 mocness_major_taxa_19 <- mocness_major_taxa_19 %>%
