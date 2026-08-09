@@ -1,5 +1,7 @@
 # Description -------------------------------------------------------------
 
+#This script may now be obsolete as analysis with only main 4 clusters doesn't seem to apply for objective 3
+
 #Run objective 3 analyses and plots with only 4 main clusters
 
 # Load packages -----------------------------------------------------------

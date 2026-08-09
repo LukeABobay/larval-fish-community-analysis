@@ -577,7 +577,7 @@ main_clust_fit_vectors <- envfit(main_clust_NMDS_result, main_clust_env_numeric2
 main_clust_vector_scores <- scores(main_clust_fit_vectors, display = "vectors")
 main_clust_vector_df <- as.data.frame(main_clust_vector_scores) %>% 
   mutate(variable = rownames(main_clust_vector_scores)) %>% 
-  filter(grepl("^year_", variable) | variable %in% c("start_longitude_dd", "depth_mean_m", "seafloor_depth_m"))
+  filter(grepl("^year_", variable) | variable %in% c("start_latitude_dd", "depth_mean_m", "seafloor_depth_m"))
 
 
 # Ellipses
