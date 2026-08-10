@@ -66,11 +66,12 @@ names(isiis_list) <- tools::file_path_sans_ext(files)
 isiis_w22_env <- read.csv(here("data/W22_ISIIS3_enviro.csv"))
 isiis_w23_env <- read.csv(here("data/W23_ISIIS3_enviro.csv"))
 
-# Load anchovy observational data that have been matched with GLORYS mixed layer depth
-glorys_covariates <- read.csv(here("data/glorys_covariates_all_derived.csv"))
+# CTD fluorescence, temperature, and salinity data
+ctd_fluorescence <- read.csv(here("data/ctd_fluorescence_temperature_binned.csv")) %>%
+  mutate(start_time_pt = as.POSIXct(start_time_pt, tz = "America/Los_Angeles"))
 
-# CTD fluorescence data
-ctd_fluorescence <- read.csv(here("data/ctd_fluorescence_binned.csv"))
+mld_reference_depth_m <- 5
+mld_density_threshold_kgm3 <- 0.03
 
 
 # Data wrangling ----------------------------------------------------------
@@ -443,20 +444,96 @@ mocness_full_geographic_isiis <- merge(
   by.y = c("date",            "transect", "station", "maximum_depth_m", "minimum_depth_m"))
 
 
-# GLORYS mixed layer depth ---------------------------------------------------
+# CTD fluorescence and mixed layer depth ----------------------------------
 
-# Get unique MOCNESS sampling events from mocness_full
-mixed_layer_depth <- glorys_covariates %>%
-  distinct(date, latitude_dd, longitude_dd, mlotst) %>%
-  mutate(date = as.Date(date))
+ctd_profiles_for_mld <- ctd_fluorescence %>%
+  transmute(
+    start_time_pt,
+    start_longitude_dd,
+    start_latitude_dd,
+    depth_m = abs(as.numeric(depth_bin_mid_m)),
+    temperature_c = as.numeric(mean_temperature_c),
+    salinity_psu = as.numeric(mean_salinity_psu),
+    density_freshwater_kgm3 = 999.842594 +
+      6.793952e-2 * temperature_c -
+      9.095290e-3 * temperature_c^2 +
+      1.001685e-4 * temperature_c^3 -
+      1.120083e-6 * temperature_c^4 +
+      6.536332e-9 * temperature_c^5,
+    salinity_linear_coefficient = 0.824493 -
+      4.0899e-3 * temperature_c +
+      7.6438e-5 * temperature_c^2 -
+      8.2467e-7 * temperature_c^3 +
+      5.3875e-9 * temperature_c^4,
+    salinity_power_coefficient = -5.72466e-3 +
+      1.0227e-4 * temperature_c -
+      1.6546e-6 * temperature_c^2,
+    salinity_quadratic_coefficient = 4.8314e-4,
+    density_kgm3 = density_freshwater_kgm3 +
+      salinity_linear_coefficient * salinity_psu +
+      salinity_power_coefficient * salinity_psu^1.5 +
+      salinity_quadratic_coefficient * salinity_psu^2
+  ) %>%
+  filter(
+    is.finite(depth_m),
+    is.finite(temperature_c),
+    is.finite(salinity_psu),
+    is.finite(density_kgm3),
+    density_kgm3 > 0
+  ) %>%
+  group_by(start_time_pt, start_longitude_dd, start_latitude_dd, depth_m) %>%
+  summarize(
+    temperature_c = mean(temperature_c),
+    salinity_psu = mean(salinity_psu),
+    density_kgm3 = mean(density_kgm3),
+    .groups = "drop"
+  ) %>%
+  arrange(start_time_pt, start_longitude_dd, start_latitude_dd, depth_m)
 
-mocness_full_geographic_isiis_mixing <- left_join(mocness_full_geographic_isiis, mixed_layer_depth,
-                                              by = c("collection_date" = "date",
-                                                     "start_latitude_dd" = "latitude_dd",
-                                                     "start_longitude_dd" = "longitude_dd"))
+ctd_mld_by_cast <- ctd_profiles_for_mld %>%
+  group_by(start_time_pt, start_longitude_dd, start_latitude_dd) %>%
+  reframe({
+    profile_depth_m <- depth_m
+    profile_density_kgm3 <- density_kgm3
+    reference_density_values_kgm3 <- profile_density_kgm3[
+      profile_depth_m <= mld_reference_depth_m
+    ]
+    mld_density_m <- NA_real_
+    mld_density_censor_flag <- 2
+    mld_reference_density_kgm3 <- NA_real_
 
+    if (length(profile_depth_m) >= 2 && length(reference_density_values_kgm3) > 0) {
+      mld_reference_density_kgm3 <- median(reference_density_values_kgm3)
+      density_difference_kgm3 <- profile_density_kgm3 - mld_reference_density_kgm3
+      density_crossing_idx <- which(density_difference_kgm3 >= mld_density_threshold_kgm3)[1]
 
-# CTD fluorescence --------------------------------------------------------
+      if (is.na(density_crossing_idx)) {
+        mld_density_m <- max(profile_depth_m)
+        mld_density_censor_flag <- 1
+      } else if (density_crossing_idx == 1) {
+        mld_density_m <- profile_depth_m[[density_crossing_idx]]
+        mld_density_censor_flag <- 0
+      } else {
+        previous_difference_kgm3 <- density_difference_kgm3[[density_crossing_idx - 1]]
+        current_difference_kgm3 <- density_difference_kgm3[[density_crossing_idx]]
+        previous_depth_m <- profile_depth_m[[density_crossing_idx - 1]]
+        current_depth_m <- profile_depth_m[[density_crossing_idx]]
+        interpolation_fraction <- (mld_density_threshold_kgm3 - previous_difference_kgm3) /
+          (current_difference_kgm3 - previous_difference_kgm3)
+        interpolation_fraction <- pmin(1, pmax(0, interpolation_fraction))
+        mld_density_m <- previous_depth_m +
+          interpolation_fraction * (current_depth_m - previous_depth_m)
+        mld_density_censor_flag <- 0
+      }
+    }
+
+    tibble(
+      mld_density_0_03_m = mld_density_m,
+      mld_density_censor_flag = mld_density_censor_flag,
+      mld_reference_depth_m = mld_reference_depth_m,
+      mld_reference_density_kgm3 = mld_reference_density_kgm3
+    )
+  })
 
 # Get coordinates for each MOCNESS net tow (start_time_pt, transect, replicate, station, net)
 mocness_tow_coordinates <- mocness_metadata %>%
@@ -468,17 +545,64 @@ mocness_tow_coordinates <- mocness_metadata %>%
   # Add point geometries
   st_as_sf(coords = c("start_longitude_dd", "start_latitude_dd"), crs = 4326, remove = FALSE)
 
-# Calculate average fluorescence in top 100 m of water column
+# Calculate average and integrated fluorescence in top 100 m of water column
 ctd_fluorescence_0_100_m <- ctd_fluorescence %>%
-  filter(depth_bin_mid_m < 100) %>%
   group_by(start_time_pt, start_longitude_dd, start_latitude_dd) %>%
-  summarize(mean_chl_0_100_m_mgm3 = mean(mean_fluor), .groups = "drop")
+  summarize(
+    mean_chl_0_100_m_mgm3 = mean(mean_fluor[depth_bin_mid_m < 100]),
+    integrated_chl_0_100_m_mgm2 = {
+      chl_depths_m <- abs(as.numeric(depth_bin_mid_m))
+      chl_values_mgm3 <- as.numeric(mean_fluor)
+      valid_chl <- is.finite(chl_depths_m) & is.finite(chl_values_mgm3)
+
+      if (sum(valid_chl) < 2) {
+        NA_real_
+      } else {
+        chl_profile <- tibble(
+          depth_m = chl_depths_m[valid_chl],
+          chl_mgm3 = chl_values_mgm3[valid_chl]
+        ) %>%
+          group_by(depth_m) %>%
+          summarize(chl_mgm3 = mean(chl_mgm3), .groups = "drop") %>%
+          arrange(depth_m)
+
+        integration_deep_limit_m <- min(100, max(chl_profile$depth_m))
+        chl_profile <- chl_profile %>%
+          filter(depth_m <= integration_deep_limit_m)
+
+        integration_depths_m <- sort(unique(c(
+          0,
+          chl_profile$depth_m,
+          integration_deep_limit_m
+        )))
+
+        integration_chl_mgm3 <- approx(
+          x = chl_profile$depth_m,
+          y = chl_profile$chl_mgm3,
+          xout = integration_depths_m,
+          rule = 2,
+          ties = mean
+        )$y
+
+        sum(diff(integration_depths_m) *
+              (integration_chl_mgm3[-1] +
+                 integration_chl_mgm3[-length(integration_chl_mgm3)]) / 2)
+      }
+    },
+    .groups = "drop") %>%
+  left_join(
+    ctd_mld_by_cast,
+    by = c("start_time_pt", "start_longitude_dd", "start_latitude_dd")
+  )
 
 # Get coordinates for each CTD cast
 ctd_coordinates <- ctd_fluorescence_0_100_m %>%
   st_as_sf(coords = c("start_longitude_dd", "start_latitude_dd"), crs = 4326, remove = FALSE) %>%
   mutate(ctd_id = row_number()) %>%
-  select(ctd_id, ctd_time_pt = start_time_pt, mean_chl_0_100_m_mgm3)
+  select(ctd_id, ctd_time_pt = start_time_pt, mean_chl_0_100_m_mgm3,
+         integrated_chl_0_100_m_mgm2, mld_density_0_03_m,
+         mld_density_censor_flag, mld_reference_depth_m,
+         mld_reference_density_kgm3)
 
 # Get all candidate pairs within 1 km
 pairs <- st_join(mocness_tow_coordinates, ctd_coordinates,
@@ -499,11 +623,14 @@ ctd_with_mocness <- pairs %>%
   slice_min(order_by = time_diff_min, n = 1, with_ties = TRUE) %>%
   slice_min(order_by = dist_m, n = 1, with_ties = FALSE) %>%
   ungroup() %>%
-  select(start_time_pt, mean_chl_0_100_m_mgm3) %>%
+  select(start_time_pt, mean_chl_0_100_m_mgm3,
+         integrated_chl_0_100_m_mgm2, mld_density_0_03_m,
+         mld_density_censor_flag, mld_reference_depth_m,
+         mld_reference_density_kgm3) %>%
   st_drop_geometry(geometry)
 
 # Merge with full data frame
-mocness_full_geographic_isiis_mixing_fluor <- left_join(mocness_full_geographic_isiis_mixing, ctd_with_mocness,
+mocness_full_geographic_isiis_mixing_fluor <- left_join(mocness_full_geographic_isiis, ctd_with_mocness,
                                                         by = c("start_time_pt")) %>%
   # Remove ISIIS chlorophyll values
   select(-chlorophyll_ug_l)
@@ -585,13 +712,21 @@ mocness_clean <- mocness_full_geographic_isiis_mixing_fluor %>%
   mutate(individuals_per_m3 = individuals_in_tow/volume_best_m3_both_sides) %>%
   mutate(depth_mean_m = (maximum_depth_m + minimum_depth_m)/2) %>%
   mutate(depth_diff_m = maximum_depth_m - minimum_depth_m) %>%
+  mutate(mixed_layer_boundary_depth_m = case_when(
+    is.na(mld_density_0_03_m) ~ NA_real_,
+    is.na(seafloor_depth_m) ~ mld_density_0_03_m,
+    mld_density_0_03_m >= abs(seafloor_depth_m) ~ abs(seafloor_depth_m),
+    TRUE ~ mld_density_0_03_m),
+    tow_mid_depth_relative_to_mld_m = depth_mean_m - mixed_layer_boundary_depth_m) %>%
   select(project, year, cruise, collection_date, start_time_pt, start_latitude_dd, start_longitude_dd, 
          transect_station_rep_year_net, transect_station_rep_year, transect_station_rep,
          transect_station, transect, station, replicate, mocness_side, net, volume_best_m3_both_sides,
          depth_range, maximum_depth_m, minimum_depth_m, depth_mean_m, depth_diff_m, taxon, individuals_in_tow,
          individuals_per_m3, mean_temperature_c, mean_salinity_psu, mean_density_kgm3,
          seafloor_depth_m, distance_to_shore_km, shelf_position, prey_zooplankton_abundance_ind_m3,
-         dissolved_oxygen_ml_l, mlotst, mean_chl_0_100_m_mgm3)
+         dissolved_oxygen_ml_l, mld_density_0_03_m, mixed_layer_boundary_depth_m,
+         tow_mid_depth_relative_to_mld_m, mean_chl_0_100_m_mgm3,
+         integrated_chl_0_100_m_mgm2)
 
 
 # filter out rare taxa (present in <5% of samples) -----------------------
