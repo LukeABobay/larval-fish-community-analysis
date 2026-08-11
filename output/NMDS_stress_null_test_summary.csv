@@ -1,0 +1,2 @@
+"observed_stress_null_pipeline","observed_stress_sqrt_concentration_nmds","null_mean_stress","null_sd_stress","null_stress_q025","null_stress_q975","z","p_value_two_tailed","n_permutations","null_model"
+0.200906385995868,0.2011995376809,0.28874485758927,0.00422343078100994,0.280332879321512,0.296750656458524,-20.7978953954579,4.52220944351208e-96,1000,"quasiswap_count"
