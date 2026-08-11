@@ -726,8 +726,7 @@ cluster_groups <- cutree(AHC_result, k = 10)
 station_scores <- mutate(site_scores, transect_station_rep_year_net = AHC_comm_matrix_transformed$transect_station_rep_year_net)
 stations_clustered <- mutate(station_scores, cluster = cluster_groups)
 stations_clustered$cluster <- as.numeric(as.character(stations_clustered$cluster))
-stations_clustered$cluster <- factor(stations_clustered$cluster, levels = c(1,2,3,4,5,6,7,8,9,10), 
-                                     labels = c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster 4", "Cluster 5", "Cluster 6", "Cluster 7", "Cluster 8", "Cluster 9", "Cluster 10"))
+stations_clustered$cluster <- factor(stations_clustered$cluster, levels = c(1,2,3,4,5,6,7,8,9,10))
 
 hulls <- stations_clustered %>%
   group_by(cluster) %>%
@@ -758,7 +757,7 @@ fit_vectors <- envfit(NMDS_result, env_numeric2, permutations = 1000, na.rm = TR
 vector_scores <- scores(fit_vectors, display = "vectors")
 vector_df <- as.data.frame(vector_scores) %>% 
   mutate(variable = rownames(vector_scores)) %>% 
-  filter(grepl("^year_", variable) | variable %in% c("start_longitude_dd", "depth_mean_m", "seafloor_depth_m")
+  filter(grepl("^year_", variable) | variable %in% c("start_latitude_dd", "depth_mean_m", "seafloor_depth_m")
   )
 
 #Ellipses
