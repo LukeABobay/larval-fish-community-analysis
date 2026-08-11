@@ -329,7 +329,7 @@ testResiduals(res_p_vetulus)
 testDispersion(res_p_vetulus)
 testZeroInflation(res_p_vetulus)
 
-#Cluster 3: S. leucopsarus 
+#Cluster 4: S. leucopsarus 
 s_leucopsarus_df <- model_data %>%
   filter(taxon == "Stenobrachius_leucopsarus")
 s_leucopsarus_lm <- glmmTMB(individuals_in_tow ~ time_of_day * depth_mean_scaled + seafloor_depth_scaled +
@@ -347,21 +347,21 @@ testResiduals(res_s_leucopsarus)
 testDispersion(res_s_leucopsarus)
 testZeroInflation(res_s_leucopsarus)
 
-#Cluster 5: I. isolepis
-i_isolepis_df <- model_data %>%
-  filter(taxon == "Isopsetta_isolepis")
-i_isolepis_lm <- glmmTMB(individuals_in_tow ~ time_of_day * depth_mean_scaled + seafloor_depth_scaled +
+#Cluster 6: Ammodytidae
+ammodytidae_df <- model_data %>%
+  filter(taxon == "Ammodytidae")
+ammodytidae_lm <- glmmTMB(individuals_in_tow ~ time_of_day * depth_mean_scaled + seafloor_depth_scaled +
                            mean_temperature_scaled + mean_salinity_scaled + dissolved_oxygen_scaled + mean_chl_0_100_m_scaled +
                            offset(log(volume_best_m3_both_sides)),
                          family = nbinom2,
-                         data = i_isolepis_df)
-summary(i_isolepis_lm)
-visreg(i_isolepis_lm)
-visreg(i_isolepis_lm, "depth_mean_scaled", by = "time_of_day",
-       ylab = "I. isolepis individuals in tow", xlab = "scaled mean depth")
-res_i_isolepis <- simulateResiduals(i_isolepis_lm, n = 1000)
-plot(res_i_isolepis)
-testResiduals(res_i_isolepis)
-testDispersion(res_i_isolepis)
-testZeroInflation(res_i_isolepis)
+                         data = ammodytidae_df)
+summary(ammodytidae_lm)
+visreg(ammodytidae_lm)
+visreg(ammodytidae_lm, "depth_mean_scaled", by = "time_of_day",
+       ylab = "Ammodytidae individuals in tow", xlab = "scaled mean depth")
+res_ammodytidae <- simulateResiduals(ammodytidae_lm, n = 1000)
+plot(res_ammodytidae)
+testResiduals(res_ammodytidae)
+testDispersion(res_ammodytidae)
+testZeroInflation(res_ammodytidae)
 
