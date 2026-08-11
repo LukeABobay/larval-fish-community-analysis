@@ -31,7 +31,7 @@ dbRDA_major_taxa_wide <- mocness_major_taxa_nets %>%
          depth_mean_m, depth_diff_m, volume_best_m3_both_sides,
          mean_temperature_c, mean_salinity_psu, mean_density_kgm3, seafloor_depth_m,
          distance_to_shore_km, shelf_position, prey_zooplankton_abundance_ind_m3,
-         dissolved_oxygen_ml_l, mean_chl_0_100_m_mgm3, mlotst,
+         dissolved_oxygen_ml_l, mean_chl_0_100_m_mgm3,
          taxon, individuals_per_m3) %>%
   # For some reason, MOC 1 and MOC 4 have different values of mean_temperature_c,
   # mean_salinity_psu, and mean_density_kgm3 in 6 cases. To eliminate differences,
@@ -63,7 +63,7 @@ dbRDA_metadata_cols <- c("project", "year", "cruise", "collection_date", "transe
                          "mean_temperature_c", "mean_salinity_psu", "mean_density_kgm3",
                          "seafloor_depth_m", "distance_to_shore_km", "shelf_position",
                          "prey_zooplankton_abundance_ind_m3", "dissolved_oxygen_ml_l",
-                         "mean_chl_0_100_m_mgm3", "mlotst")
+                         "mean_chl_0_100_m_mgm3")
 
 dbRDA_taxa_cols <- names(dbRDA_major_taxa_wide) %>%
   setdiff(dbRDA_metadata_cols)
@@ -273,40 +273,40 @@ dbRDA_vector_scores <- scores(dbRDA_full_model, display = "bp", choices = 1:2) %
       "mean_temperature_c" = "Temperature",
       "mean_salinity_psu" = "Salinity",
       "dissolved_oxygen_ml_l" = "Oxygen",
-      "mean_chl_0_100_m_mgm3" = "Chl a (0-100 m)",
+      "mean_chl_0_100_m_mgm3" = "Chl a",
       "depth_mean_m" = "Mean depth",
       "seafloor_depth_m" = "Seafloor depth",
       "start_latitude_dd" = "Latitude",
-      "time_of_dayNight" = "Night vs day",
-      "year2018" = "Year 2018",
-      "year2019" = "Year 2019",
-      "year2023" = "Year 2023",
+      "time_of_dayNight" = "Night",
+      "year2018" = "2018",
+      "year2019" = "2019",
+      "year2023" = "2023",
       .default = variable
     ),
     base_label_x = CAP1 + if_else(CAP1 >= 0, 0.14, -0.14),
     base_label_y = CAP2 + if_else(CAP2 >= 0, 0.10, -0.10),
     label_x = case_when(
       variable == "year2019" ~ -0.25,
-      variable == "time_of_dayNight" ~ -0.18,
+      variable == "time_of_dayNight" ~ -0.05,
       variable == "dissolved_oxygen_ml_l" ~ 0.15,
-      variable == "year2018" ~ -0.30,
-      variable == "year2023" ~ 0.32,
+      variable == "year2018" ~ -0.5,
+      variable == "year2023" ~ 0.65,
       variable == "mean_chl_0_100_m_mgm3" ~ 0.62,
       TRUE ~ base_label_x
     ),
     label_y = case_when(
-      variable == "year2019" ~ 0.72,
-      variable == "time_of_dayNight" ~ 0.45,
+      variable == "year2019" ~ 1,
+      variable == "time_of_dayNight" ~ 0.8,
       variable == "dissolved_oxygen_ml_l" ~ 0.64,
-      variable == "year2018" ~ -0.16,
-      variable == "year2023" ~ 0.16,
-      variable == "mean_chl_0_100_m_mgm3" ~ 0.06,
+      variable == "year2018" ~ -0.1,
+      variable == "year2023" ~ 0.35,
+      variable == "mean_chl_0_100_m_mgm3" ~ -0.1,
       TRUE ~ base_label_y
     ),
     label_hjust = case_when(
-      variable %in% c("year2019", "time_of_dayNight", "year2018") ~ 1,
-      variable %in% c("dissolved_oxygen_ml_l", "year2023",
-                      "mean_chl_0_100_m_mgm3") ~ 0,
+      variable %in% c("year2019", "year2018") ~ 1,
+      variable %in% c("dissolved_oxygen_ml_l", "time_of_dayNight", 
+                      "year2023", "mean_chl_0_100_m_mgm3") ~ 0,
       CAP1 >= 0 ~ 0,
       TRUE ~ 1
     )
@@ -340,13 +340,13 @@ dbRDA_plot <- ggplot(dbRDA_site_scores, aes(x = CAP1, y = CAP2, color = cluster)
   geom_segment(data = dbRDA_vector_scores,
                aes(x = 0, y = 0, xend = CAP1, yend = CAP2),
                inherit.aes = FALSE,
-               arrow = arrow(length = unit(0.3, "cm")),
-               color = "black", linewidth = 0.85) +
+               arrow = arrow(length = unit(0.15, "cm")),
+               color = "black", linewidth = 0.5) +
   geom_segment(data = dbRDA_vector_scores,
                aes(x = CAP1, y = CAP2, xend = label_x, yend = label_y),
                inherit.aes = FALSE,
                color = "grey35",
-               linewidth = 0.5) +
+               linewidth = 0.25) +
   geom_text(data = dbRDA_vector_scores,
             aes(x = label_x, y = label_y, label = plot_label,
                 hjust = label_hjust),
