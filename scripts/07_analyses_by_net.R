@@ -33,7 +33,7 @@ nets_major_taxa_wide <- mocness_major_taxa_nets %>%
          depth_mean_m, depth_diff_m, volume_best_m3_both_sides,
          mean_temperature_c, mean_salinity_psu, mean_density_kgm3, seafloor_depth_m,
          distance_to_shore_km, shelf_position, prey_zooplankton_abundance_ind_m3,
-         dissolved_oxygen_ml_l, mean_chl_0_100_m_mgm3, mlotst, 
+         dissolved_oxygen_ml_l, mean_chl_0_100_m_mgm3, any_of("mlotst"),
          taxon, individuals_per_m3) %>%
   # For some reason, MOC 1 and MOC 4 have different values of mean_temperature_c, mean_salinity_psu, and mean_density_kgm3 in 6 cases. To eliminate differences, calculate mean
   group_by(transect_station_rep_year_net) %>%
@@ -57,11 +57,34 @@ nets_env_wide <- nets_major_taxa_wide %>%
 
 # Perform cluster analysis ------------------------------------------------
 
-nets_AHC_comm_matrix <- nets_major_taxa_wide %>%
-  select(transect_station_rep_year_net, depth_mean_m, 29:50)
+nets_metadata_cols <- c(
+  "project", "year", "cruise", "collection_date",
+  "transect", "replicate", "station", "net",
+  "transect_station_rep_year_net", "transect_station_rep_year",
+  "start_time_pt", "start_longitude_dd", "start_latitude_dd",
+  "maximum_depth_m", "minimum_depth_m", "depth_mean_m", "depth_diff_m",
+  "volume_best_m3_both_sides",
+  "mean_temperature_c", "mean_salinity_psu", "mean_density_kgm3",
+  "seafloor_depth_m", "distance_to_shore_km", "shelf_position",
+  "prey_zooplankton_abundance_ind_m3", "dissolved_oxygen_ml_l",
+  "mean_chl_0_100_m_mgm3", "mlotst"
+)
 
-nets_transform_taxa_concentrations <- nets_AHC_comm_matrix[, 3:24] %>%
+nets_taxa_cols <- setdiff(names(nets_major_taxa_wide), nets_metadata_cols)
+
+nets_AHC_comm_matrix <- nets_major_taxa_wide %>%
+  select(transect_station_rep_year_net, depth_mean_m, all_of(nets_taxa_cols))
+
+nets_transform_taxa_concentrations <- nets_AHC_comm_matrix[, nets_taxa_cols] %>%
   sqrt()
+
+nets_empty_comm_rows <- rowSums(nets_AHC_comm_matrix[, nets_taxa_cols], na.rm = TRUE) == 0
+if (any(nets_empty_comm_rows)) {
+  stop(
+    "Net community matrix has zero-abundance rows after taxon selection: ",
+    paste(nets_AHC_comm_matrix$transect_station_rep_year_net[nets_empty_comm_rows], collapse = ", ")
+  )
+}
 
 # Add rownames
 row.names(nets_transform_taxa_concentrations) <- nets_AHC_comm_matrix$transect_station_rep_year_net
@@ -93,7 +116,7 @@ nets_clusters <- data.frame(
   
 # Add cluster identities to long version of AHC_comm_matrix_transformed
 nets_AHC_comm_matrix_transformed_long <- nets_AHC_comm_matrix_transformed %>%
-  pivot_longer(cols = 3:24, names_to = "taxon", values_to = "concentration_transformed") %>%
+  pivot_longer(cols = all_of(nets_taxa_cols), names_to = "taxon", values_to = "concentration_transformed") %>%
   merge(., nets_clusters, by = "transect_station_rep_year_net")
 
 # Plot by transect_station_rep_year, sorted by cluster

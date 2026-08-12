@@ -649,7 +649,7 @@ main_clust_dbRDA_major_taxa_wide <- main_clust_mocness %>%
          depth_mean_m, depth_diff_m, volume_best_m3_both_sides,
          mean_temperature_c, mean_salinity_psu, mean_density_kgm3, seafloor_depth_m,
          distance_to_shore_km, shelf_position, prey_zooplankton_abundance_ind_m3,
-         dissolved_oxygen_ml_l, mean_chl_0_100_m_mgm3, mlotst,
+         dissolved_oxygen_ml_l, mean_chl_0_100_m_mgm3,
          taxon, individuals_per_m3) %>%
   # For some reason, MOC 1 and MOC 4 have different values of mean_temperature_c,
   # mean_salinity_psu, and mean_density_kgm3 in 6 cases. To eliminate differences,
@@ -681,7 +681,7 @@ main_clust_dbRDA_metadata_cols <- c("project", "year", "cruise", "collection_dat
                          "mean_temperature_c", "mean_salinity_psu", "mean_density_kgm3",
                          "seafloor_depth_m", "distance_to_shore_km", "shelf_position",
                          "prey_zooplankton_abundance_ind_m3", "dissolved_oxygen_ml_l",
-                         "mean_chl_0_100_m_mgm3", "mlotst")
+                         "mean_chl_0_100_m_mgm3")
 
 main_clust_dbRDA_taxa_cols <- names(main_clust_dbRDA_major_taxa_wide) %>%
   setdiff(main_clust_dbRDA_metadata_cols)

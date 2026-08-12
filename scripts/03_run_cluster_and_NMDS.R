@@ -49,7 +49,7 @@ wide_major_taxa_nets <- mocness_major_taxa_nets %>%
          depth_mean_m, depth_diff_m, volume_best_m3_both_sides,
          mean_temperature_c, mean_salinity_psu, mean_density_kgm3, seafloor_depth_m,
          distance_to_shore_km, shelf_position, prey_zooplankton_abundance_ind_m3,
-         dissolved_oxygen_ml_l, mean_chl_0_100_m_mgm3, mlotst, 
+         dissolved_oxygen_ml_l, mean_chl_0_100_m_mgm3,
          taxon, individuals_per_m3) %>%
   # For some reason, MOC 1 and MOC 4 have different values of mean_temperature_c, mean_salinity_psu, and mean_density_kgm3 in 6 cases. To eliminate differences, calculate mean
   group_by(transect_station_rep_year_net) %>%
@@ -95,13 +95,34 @@ env_wide <- wide_major_taxa_nets %>%
 
 # Create community matrix -------------------------------------------------
 
-AHC_comm_matrix <- wide_major_taxa_nets %>%
-  select(transect_station_rep_year_net, chrono_sample_ID, depth_mean_m, 29:50)
+AHC_metadata_cols <- c(
+  "project", "year", "cruise", "collection_date", "start_time_pt",
+  "transect", "replicate", "station", "net",
+  "transect_station_rep_year_net", "transect_station_rep_year",
+  "start_longitude_dd", "start_latitude_dd",
+  "maximum_depth_m", "minimum_depth_m", "depth_mean_m", "depth_diff_m",
+  "volume_best_m3_both_sides",
+  "mean_temperature_c", "mean_salinity_psu", "mean_density_kgm3",
+  "seafloor_depth_m", "distance_to_shore_km", "shelf_position",
+  "prey_zooplankton_abundance_ind_m3", "dissolved_oxygen_ml_l",
+  "mean_chl_0_100_m_mgm3", "chrono_sample_ID"
+)
 
-taxa_cols <- names(AHC_comm_matrix)[4:ncol(AHC_comm_matrix)]
+taxa_cols <- setdiff(names(wide_major_taxa_nets), AHC_metadata_cols)
+
+AHC_comm_matrix <- wide_major_taxa_nets %>%
+  select(transect_station_rep_year_net, chrono_sample_ID, depth_mean_m, all_of(taxa_cols))
 
 transform_taxa_concentrations <- AHC_comm_matrix[, taxa_cols] %>%
   sqrt()
+
+empty_comm_rows <- rowSums(AHC_comm_matrix[, taxa_cols], na.rm = TRUE) == 0
+if (any(empty_comm_rows)) {
+  stop(
+    "Community matrix has zero-abundance rows after taxon selection: ",
+    paste(AHC_comm_matrix$transect_station_rep_year_net[empty_comm_rows], collapse = ", ")
+  )
+}
 
 # Add rownames
 row.names(transform_taxa_concentrations) <- AHC_comm_matrix$transect_station_rep_year_net
@@ -161,10 +182,10 @@ dissim_matrix <- vegdist(transform_taxa_concentrations, method = "bray")
 AHC_result <- hclust(dissim_matrix, method = "average")
 
 ## Assign cluster colors
-cluster_colors <- c("1" = "#1F77B4", "2" = "#FF7F0E", "3" = "#2CA02C", "4" = "#8C564B", "5" = "#9467BD",
-                    "6" = "#D62728", "7" = "#17BECF", "8" = "#BCBD22", "9" = "#7F7F7F", "10"= "#E377C2")
-cluster_levels <- as.character(seq_len(10))
-dendrogram_clusters <- cutree(AHC_result, k = 10)
+cluster_colors <- c("1" = "#e6ab02", "2" = "#1b9e77", "3" = "#e7298a", "4" = "#d95f02", "5" = "#66a61e",
+                    "6" = "#a6761d", "7" = "#7570b3")
+cluster_levels <- as.character(seq_len(7))
+dendrogram_clusters <- cutree(AHC_result, k = 7)
 dendrogram_cluster_order <- unique(dendrogram_clusters[AHC_result$order])
 dendrogram_cluster_colors <- cluster_colors[as.character(dendrogram_cluster_order)]
 
@@ -174,7 +195,7 @@ dendrogram_cluster_colors <- cluster_colors[as.character(dendrogram_cluster_orde
 windows()
 plot(AHC_result, labels = AHC_comm_matrix_transformed$chrono_sample_ID,
      xlab = "Net tows", main = "Clusters of Net Tows", cex = 0.4)
-rect.hclust(AHC_result, k = 10, border = dendrogram_cluster_colors)
+rect.hclust(AHC_result, k = 7, border = dendrogram_cluster_colors)
 
 png(filename = here("output/AHC_sampling_events_dendrogram.png"),
     width = 12,
@@ -183,7 +204,7 @@ png(filename = here("output/AHC_sampling_events_dendrogram.png"),
     res = 300)
 plot(AHC_result, labels = AHC_comm_matrix_transformed$chrono_sample_ID,
      xlab = "Net tows", main = "Clusters of Net Tows", cex = 0.4)
-rect.hclust(AHC_result, k = 10, border = dendrogram_cluster_colors)
+rect.hclust(AHC_result, k = 7, border = dendrogram_cluster_colors)
 dev.off()
 
 # Extract list of sampling events belonging to each cluster
@@ -199,12 +220,12 @@ main_clusters <- clusters %>%
 # Indicator Species Analysis ----------------------------------------------
 
 comm_for_isa <- AHC_comm_matrix_transformed %>%
-  select(where(is.numeric)) %>%
+  select(all_of(taxa_cols)) %>%
   as.data.frame()
 
 clusters_for_isa <- as.factor(clusters$cluster)
 
-isa_result <- multipatt(comm_for_isa, clusters_for_isa, func = "IndVal.g", max.order = 2)
+isa_result <- multipatt(comm_for_isa, clusters_for_isa, func = "IndVal.g", max.order = 3)
 summary(isa_result)
 
 # Map points in space by cluster and net ----------------------------------
@@ -518,7 +539,7 @@ p
 
 # Add cluster identities and chronological sample IDs
 AHC_comm_matrix_transformed_long <- AHC_comm_matrix_transformed %>%
-  pivot_longer(cols = 3:24, names_to = "taxon", values_to = "sqrt_concentration") %>%
+  pivot_longer(cols = all_of(taxa_cols), names_to = "taxon", values_to = "sqrt_concentration") %>%
   merge(., clusters, by = "transect_station_rep_year_net") %>%
   arrange(cluster) %>%
   mutate(chrono_sample_ID = factor(chrono_sample_ID, levels = unique(chrono_sample_ID)))
@@ -722,11 +743,11 @@ ggsave(
 )
 
 site_scores <- as.data.frame(scores(NMDS_result, display = "sites"))
-cluster_groups <- cutree(AHC_result, k = 10)
+cluster_groups <- cutree(AHC_result, k = 9)
 station_scores <- mutate(site_scores, transect_station_rep_year_net = AHC_comm_matrix_transformed$transect_station_rep_year_net)
 stations_clustered <- mutate(station_scores, cluster = cluster_groups)
 stations_clustered$cluster <- as.numeric(as.character(stations_clustered$cluster))
-stations_clustered$cluster <- factor(stations_clustered$cluster, levels = c(1,2,3,4,5,6,7,8,9,10))
+stations_clustered$cluster <- factor(stations_clustered$cluster, levels = c(1,2,3,4,5,6,7,8,9))
 
 hulls <- stations_clustered %>%
   group_by(cluster) %>%
