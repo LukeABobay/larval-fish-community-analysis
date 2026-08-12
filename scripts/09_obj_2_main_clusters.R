@@ -839,6 +839,29 @@ main_clust_dbRDA_hulls <- main_clust_dbRDA_site_scores %>%
   slice(chull(CAP1, CAP2)) %>%
   ungroup()
 
+windows()
+main_clust_dbRDA_plot <- ggplot(main_clust_dbRDA_site_scores, aes(x = CAP1, y = CAP2, color = cluster)) +
+  geom_polygon(data = main_clust_dbRDA_hulls,
+               aes(x = CAP1, y = CAP2, fill = cluster, group = cluster),
+               alpha = 0.25,
+               color = NA,
+               inherit.aes = FALSE) +
+  geom_point(size = 1, alpha = 0.9) +
+  scale_fill_manual(values = main_clust_cluster_colors,
+                    limits = main_clust_cluster_levels,
+                    breaks = main_clust_cluster_levels,
+                    drop = FALSE) +
+  scale_color_manual(values = main_clust_cluster_colors,
+                     limits = main_clust_cluster_levels,
+                     breaks = main_clust_cluster_levels,
+                     drop = FALSE) +
+  theme_classic() +
+  labs(title = "db-RDA of larval fish assemblage composition for main clusters",
+       x = "CAP1", y = "CAP2", color = "Cluster", fill = "Cluster")
+print(main_clust_dbRDA_plot)
+ggsave("main_clust_dbRDA_cluster_ordination_no_overlays.png", plot = main_clust_dbRDA_plot, path = here("output"),
+       width = 7, height = 5, units = "in", dpi = 300)
+
 main_clust_dbRDA_vector_scores <- scores(main_clust_full_model, display = "bp", choices = 1:2) %>%
   as.data.frame() %>%
   rownames_to_column("variable") %>%
@@ -881,7 +904,7 @@ main_clust_dbRDA_vector_scores <- scores(main_clust_full_model, display = "bp", 
       TRUE ~ 1))
 
 windows()
-main_clust_dbRDA_plot <- ggplot(main_clust_dbRDA_site_scores, aes(x = CAP1, y = CAP2, color = cluster)) +
+main_clust_dbRDA_overlays_plot <- ggplot(main_clust_dbRDA_site_scores, aes(x = CAP1, y = CAP2, color = cluster)) +
   geom_polygon(data = main_clust_dbRDA_hulls,
                aes(x = CAP1, y = CAP2, fill = cluster, group = cluster),
                alpha = 0.25,
@@ -924,8 +947,6 @@ main_clust_dbRDA_plot <- ggplot(main_clust_dbRDA_site_scores, aes(x = CAP1, y = 
   theme_classic() +
   labs(title = "db-RDA of larval fish assemblage composition for main clusters",
        x = "CAP1", y = "CAP2", color = "Cluster", fill = "Cluster", linetype = "Time of Day")
-
-print(main_clust_dbRDA_plot)
-
-ggsave("main_clust_dbRDA_cluster_ordination.png", plot = main_clust_dbRDA_plot, path = here("output"),
+print(main_clust_dbRDA_overlays_plot)
+ggsave("main_clust_dbRDA_cluster_ordination_with_overlays.png", plot = main_clust_dbRDA_overlays_plot, path = here("output"),
        width = 7, height = 5, units = "in", dpi = 300)

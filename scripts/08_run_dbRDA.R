@@ -252,7 +252,6 @@ dev.off()
 
 
 # Plot constrained ordination --------------------------------------------
-
 dbRDA_site_scores <- scores(dbRDA_full_model, display = "sites", choices = 1:2) %>%
   as.data.frame() %>%
   rownames_to_column("transect_station_rep_year_net") %>%
@@ -263,6 +262,30 @@ dbRDA_hulls <- dbRDA_site_scores %>%
   group_by(cluster) %>%
   slice(chull(CAP1, CAP2)) %>%
   ungroup()
+
+windows()
+dbRDA_plot <- ggplot(dbRDA_site_scores, aes(x = CAP1, y = CAP2, color = cluster)) +
+  geom_polygon(data = dbRDA_hulls,
+               aes(x = CAP1, y = CAP2, fill = cluster, group = cluster),
+               alpha = 0.25,
+               color = NA,
+               inherit.aes = FALSE) +
+  geom_point(size = 1, alpha = 0.9) +
+  scale_fill_manual(values = cluster_colors,
+                    limits = cluster_levels,
+                    breaks = cluster_levels,
+                    drop = FALSE) +
+  scale_color_manual(values = cluster_colors,
+                     limits = cluster_levels,
+                     breaks = cluster_levels,
+                     drop = FALSE) +
+  theme_classic() +
+  labs(title = "db-RDA of larval fish assemblage composition",
+       x = "CAP1", y = "CAP2", color = "Cluster", fill = "Cluster")
+print(dbRDA_plot)
+ggsave("dbRDA_cluster_ordination_no_overlays.png", plot = dbRDA_plot, path = here("output"),
+       width = 7, height = 5, units = "in", dpi = 300)
+
 
 dbRDA_vector_scores <- scores(dbRDA_full_model, display = "bp", choices = 1:2) %>%
   as.data.frame() %>%
@@ -313,7 +336,7 @@ dbRDA_vector_scores <- scores(dbRDA_full_model, display = "bp", choices = 1:2) %
   )
 
 windows()
-dbRDA_plot <- ggplot(dbRDA_site_scores, aes(x = CAP1, y = CAP2, color = cluster)) +
+dbRDA_overlays_plot <- ggplot(dbRDA_site_scores, aes(x = CAP1, y = CAP2, color = cluster)) +
   geom_polygon(data = dbRDA_hulls,
                aes(x = CAP1, y = CAP2, fill = cluster, group = cluster),
                alpha = 0.25,
@@ -356,8 +379,6 @@ dbRDA_plot <- ggplot(dbRDA_site_scores, aes(x = CAP1, y = CAP2, color = cluster)
   theme_classic() +
   labs(title = "db-RDA of larval fish assemblage composition",
        x = "CAP1", y = "CAP2", color = "Cluster", fill = "Cluster", linetype = "Time of Day")
-
-print(dbRDA_plot)
-
-ggsave("dbRDA_cluster_ordination.png", plot = dbRDA_plot, path = here("output"),
+print(dbRDA_overlays_plot)
+ggsave("dbRDA_cluster_ordination_with_overlays.png", plot = dbRDA_overlays_plot, path = here("output"),
        width = 7, height = 5, units = "in", dpi = 300)
