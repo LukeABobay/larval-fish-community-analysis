@@ -50,12 +50,20 @@ main_clust_env_wide <- main_clust_wide_major_taxa_nets %>%
 
 # Recompute matrices ------------------------------------------------------
 
-main_clust_AHC_comm_matrix <- main_clust_wide_major_taxa_nets %>%
-  select(transect_station_rep_year_net, chrono_sample_ID, depth_mean_m, 29:50)
+main_clust_taxa_cols <- setdiff(names(main_clust_wide_major_taxa_nets), AHC_metadata_cols)
 
-main_clust_taxa_cols <- names(main_clust_AHC_comm_matrix)[4:ncol(main_clust_AHC_comm_matrix)]
+main_clust_AHC_comm_matrix <- main_clust_wide_major_taxa_nets %>%
+  select(transect_station_rep_year_net, chrono_sample_ID, depth_mean_m, all_of(main_clust_taxa_cols))
 
 main_clust_transform_taxa_concentrations <- main_clust_AHC_comm_matrix[, main_clust_taxa_cols] %>% sqrt()
+
+main_clust_empty_comm_rows <- rowSums(main_clust_AHC_comm_matrix[, main_clust_taxa_cols], na.rm = TRUE) == 0
+if (any(main_clust_empty_comm_rows)) {
+  stop(
+    "Main-cluster community matrix has zero-abundance rows after taxon selection: ",
+    paste(main_clust_AHC_comm_matrix$transect_station_rep_year_net[main_clust_empty_comm_rows], collapse = ", ")
+  )
+}
 
 # Add rownames
 row.names(main_clust_transform_taxa_concentrations) <- main_clust_AHC_comm_matrix$transect_station_rep_year_net
@@ -78,7 +86,7 @@ main_clust_wide_major_taxa_counts_nets <- mocness_major_taxa_nets %>%
               values_fn = sum)
 
 main_clust_AHC_count_abundances <- main_clust_wide_major_taxa_counts_nets %>%
-  select(transect_station_rep_year_net, all_of(taxa_cols))
+  select(transect_station_rep_year_net, all_of(main_clust_taxa_cols))
 
 
 # Reorder count matrix to match original community matrix
@@ -140,7 +148,7 @@ main_clust_new_clusters <- data.frame(transect_station_rep_year_net = names(main
 # Indicator Species Analysis ----------------------------------------------
 
 main_clust_comm_for_isa <- main_clust_AHC_comm_matrix_transformed %>%
-  select(3:24) %>% as.data.frame()
+  select(all_of(main_clust_taxa_cols)) %>% as.data.frame()
 
 main_clust_new_clusters_for_isa <- as.factor(main_clust_new_clusters$cluster)
 
@@ -387,7 +395,7 @@ ggsave("main_clust_cluster_map.png", plot = get_last_plot(), path = here("output
 
 # Add cluster identities and chronological sample IDs
 main_clust_AHC_comm_matrix_transformed_long <- main_clust_AHC_comm_matrix_transformed %>%
-  pivot_longer(cols = 3:24, names_to = "taxon", values_to = "sqrt_concentration") %>%
+  pivot_longer(cols = all_of(main_clust_taxa_cols), names_to = "taxon", values_to = "sqrt_concentration") %>%
   merge(., main_clust_new_clusters, by = "transect_station_rep_year_net") %>%
   arrange(cluster) %>%
   mutate(chrono_sample_ID = factor(chrono_sample_ID, levels = unique(chrono_sample_ID)))
