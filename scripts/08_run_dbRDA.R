@@ -183,6 +183,7 @@ dev.off()
 dbRDA_site_scores <- scores(dbRDA_full_model, display = "sites", choices = 1:2) %>%
   as.data.frame() %>%
   rownames_to_column("transect_station_rep_year_net") %>%
+  mutate(CAP1 = -CAP1) %>%
   left_join(dbRDA_env_model, by = "transect_station_rep_year_net") %>%
   left_join(dbRDA_clusters, by = "transect_station_rep_year_net")
 
@@ -219,6 +220,7 @@ dbRDA_vector_scores <- scores(dbRDA_full_model, display = "bp", choices = 1:2) %
   as.data.frame() %>%
   rownames_to_column("variable") %>%
   mutate(
+    CAP1 = -CAP1,
     plot_label = recode(
       variable,
       "mean_temperature_c" = "Temperature",
@@ -228,8 +230,8 @@ dbRDA_vector_scores <- scores(dbRDA_full_model, display = "bp", choices = 1:2) %
       "depth_mean_m" = "Mean depth",
       "seafloor_depth_m" = "Seafloor depth",
       "start_latitude_dd" = "Latitude",
-      "solar_dayness" = "Dayness",
-      "year2018" = "2018",
+      "solar_dayness" = "Daytime",
+      "year2022" = "2022",
       "year2019" = "2019",
       "year2023" = "2023",
       .default = variable
@@ -237,27 +239,27 @@ dbRDA_vector_scores <- scores(dbRDA_full_model, display = "bp", choices = 1:2) %
     base_label_x = CAP1 + if_else(CAP1 >= 0, 0.14, -0.14),
     base_label_y = CAP2 + if_else(CAP2 >= 0, 0.10, -0.10),
     label_x = case_when(
-      variable == "year2019" ~ -0.25,
-      variable == "solar_dayness" ~ -0.05,
-      variable == "dissolved_oxygen_ml_l" ~ 0.15,
-      variable == "year2018" ~ -0.5,
-      variable == "year2023" ~ 0.65,
-      variable == "mean_chl_0_100_m_mgm3" ~ 0.62,
+      variable == "year2019" ~ 0.25,
+      variable == "solar_dayness" ~ -0.15,
+      variable == "dissolved_oxygen_ml_l" ~ -0.15,
+      variable == "year2018" ~ 0.5,
+      variable == "year2023" ~ -0.65,
+      variable == "mean_chl_0_100_m_mgm3" ~ -0.55,
       TRUE ~ base_label_x
     ),
     label_y = case_when(
       variable == "year2019" ~ 1,
-      variable == "solar_dayness" ~ 0.8,
+      variable == "solar_dayness" ~ -0.7,
       variable == "dissolved_oxygen_ml_l" ~ 0.64,
       variable == "year2018" ~ -0.1,
       variable == "year2023" ~ 0.35,
-      variable == "mean_chl_0_100_m_mgm3" ~ -0.1,
+      variable == "mean_chl_0_100_m_mgm3" ~ 0.5,
       TRUE ~ base_label_y
     ),
     label_hjust = case_when(
-      variable %in% c("year2019", "year2018") ~ 1,
+      variable %in% c("year2019", "year2018") ~ 0,
       variable %in% c("dissolved_oxygen_ml_l", "solar_dayness", 
-                      "year2023", "mean_chl_0_100_m_mgm3") ~ 0,
+                      "year2023", "mean_chl_0_100_m_mgm3") ~ 1,
       CAP1 >= 0 ~ 0,
       TRUE ~ 1
     )
@@ -296,8 +298,8 @@ dbRDA_overlays_plot <- ggplot(dbRDA_site_scores, aes(x = CAP1, y = CAP2, color =
             color = "black",
             size = 2) +
   theme_classic() +
-  labs(title = "db-RDA of larval fish assemblage composition",
-       x = "CAP1", y = "CAP2", color = "Cluster", fill = "Cluster")
+  labs(x = "CAP1", y = "CAP2", color = "Cluster", fill = "Cluster")
 print(dbRDA_overlays_plot)
+
 ggsave("dbRDA_cluster_ordination_with_overlays.png", plot = dbRDA_overlays_plot, path = here("output"),
        width = 7, height = 5, units = "in", dpi = 300)
