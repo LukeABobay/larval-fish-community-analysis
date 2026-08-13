@@ -11,7 +11,6 @@ library(RColorBrewer)
 library(dplyr)
 library(ggrepel)
 library(vegan)
-library(suncalc)
 
 
 # Source code -------------------------------------------------------------
@@ -26,26 +25,7 @@ main_clust_samples <- clusters %>% filter(cluster %in% main_clusters)
 main_clust_wide_major_taxa_nets <- wide_major_taxa_nets %>% 
   semi_join(main_clust_samples, by = "transect_station_rep_year_net")
 
-main_clust_env_wide <- main_clust_wide_major_taxa_nets %>%
-  mutate(time_of_day = substr(replicate, 3, 3),
-         time_of_day = recode(time_of_day, "D" = "Day", "N" = "Night", .default = NA_character_)) %>%
-  group_by(transect_station_rep_year_net) %>%   # or collection_date, or station, etc.
-  mutate(
-    # compute sunrise/sunset at that station/date
-    sunrise = getSunlightTimes(date = as.Date(collection_date),
-                               lat  = first(start_latitude_dd),
-                               lon  = first(start_longitude_dd),
-                               keep = c("sunrise", "sunset"))$sunrise,
-    sunset  = getSunlightTimes(date = as.Date(collection_date),
-                               lat  = first(start_latitude_dd),
-                               lon  = first(start_longitude_dd),
-                               keep = c("sunrise", "sunset"))$sunset,
-    time_of_day = case_when(!is.na(time_of_day) ~ time_of_day,
-                            start_time_pt >= sunrise & start_time_pt < sunset ~ "Day",
-                            TRUE                                              ~ "Night"),
-    time_of_day = factor(time_of_day, levels = c("Day", "Night"))) %>%
-  ungroup() %>%
-  select(-sunrise, -sunset)
+main_clust_env_wide <- main_clust_wide_major_taxa_nets
 
 
 # Recompute matrices ------------------------------------------------------
@@ -573,8 +553,8 @@ ggsave("NMDS_main_clusters.png", plot = get_last_plot(), path = here("output"),
 # Overlays for NMDS plots -------------------------------------------------
 
 # Vectors
-main_clust_env_wide_aligned <- env_wide[match(rownames(scores(main_clust_NMDS_result, display = "sites")),
-                                              main_clust_env_wide$transect_station_rep_year_net), ]
+main_clust_env_wide_aligned <- main_clust_env_wide[match(rownames(scores(main_clust_NMDS_result, display = "sites")),
+                                                        main_clust_env_wide$transect_station_rep_year_net), ]
 main_clust_year_mat <- model.matrix(~ factor(year) - 1, data = main_clust_env_wide_aligned)
 colnames(main_clust_year_mat) <- paste0("year_", levels(factor(main_clust_env_wide_aligned$year)))
 main_clust_env_numeric <- main_clust_env_wide_aligned[, sapply(main_clust_env_wide_aligned, is.numeric)]
@@ -585,25 +565,9 @@ main_clust_fit_vectors <- envfit(main_clust_NMDS_result, main_clust_env_numeric2
 main_clust_vector_scores <- scores(main_clust_fit_vectors, display = "vectors")
 main_clust_vector_df <- as.data.frame(main_clust_vector_scores) %>% 
   mutate(variable = rownames(main_clust_vector_scores)) %>% 
-  filter(grepl("^year_", variable) | variable %in% c("start_latitude_dd", "depth_mean_m", "seafloor_depth_m"))
-
-
-# Ellipses
-main_clust_time_groups <- main_clust_env_wide_aligned$time_of_day
-main_clust_ell_time <- ordiellipse(main_clust_NMDS_result, main_clust_time_groups, kind = "sd", 
-                        conf = 0.95,  draw = "none")
-
-##  Convert output to dataframe
-main_clust_ell_time_df <- purrr::map_dfr(names(main_clust_ell_time), ~ {
-  e     <- main_clust_ell_time[[.x]]
-  theta <- seq(0, 2 * pi, length.out = 200)
-  circle <- cbind(cos(theta), sin(theta))
-  xy <- circle %*% chol(e$cov)
-  xy <- sweep(xy * e$scale, 2, e$center, "+")
-  tibble(
-    NMDS1 = xy[, 1],
-    NMDS2 = xy[, 2],
-    group = .x)})
+  filter(grepl("^year_", variable) |
+           variable %in% c("solar_dayness", "start_latitude_dd",
+                           "depth_mean_m", "seafloor_depth_m"))
 
 
 # Plot NMDS with overlays
@@ -616,18 +580,14 @@ ggplot(main_clust_stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)
   #2 Points (cluster colors)
   geom_point(size = 1) +
   scale_color_manual(values = main_clust_cluster_colors) +
-  #3 Ellipses - Day/Night
-  geom_path(data = main_clust_ell_time_df, aes(x = NMDS1, y = NMDS2, linetype = group), 
-            size = 0.5, color = "black", inherit.aes = FALSE) +
-  scale_linetype_manual(name = "Time of Day", values = c("Day" = "solid", "Night" = "dashed")) +
-  #4 Vectors
+  #3 Vectors
   geom_segment(data = main_clust_vector_df, aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
                arrow = arrow(length = unit(0.3, "cm")), 
                color = "black", linewidth = 0.5, inherit.aes = FALSE) +
   geom_text(data = main_clust_vector_df, aes(x = NMDS1, y = NMDS2, label = variable), 
             color = "black", size = 2, vjust = -0.5,inherit.aes = FALSE) +
   labs(title = "NMDS ordination with clustered points and covariate overlays for main clusters", x = "NMDS1", y = "NMDS2",
-       color = "Cluster", fill = "Cluster", linetype = "Time of Day") + 
+       color = "Cluster", fill = "Cluster") + 
   theme_classic()
 ggsave("NMDS_overlays_main_clusters.png", plot = get_last_plot(), path = here("output"),
        width = 7, height = 5, units = "in", dpi = 300)
@@ -643,7 +603,8 @@ main_clust_dbRDA_major_taxa_wide <- main_clust_mocness %>%
   # Removing NAs for now, but there shouldn't be any to begin with
   filter(!is.na(individuals_in_tow)) %>%
   filter(!is.na(individuals_per_m3)) %>%
-  select(project, year, cruise, collection_date, transect, replicate, station, net,
+  select(project, year, cruise, collection_date, solar_dayness,
+         transect, replicate, station, net,
          transect_station_rep_year_net, transect_station_rep_year, start_time_pt,
          start_longitude_dd, start_latitude_dd, maximum_depth_m, minimum_depth_m,
          depth_mean_m, depth_diff_m, volume_best_m3_both_sides,
@@ -664,7 +625,7 @@ main_clust_dbRDA_major_taxa_wide <- main_clust_mocness %>%
 
 
 # Choose db-RDA covariates
-main_clust_spatiotemporal_covariates <- c("year", "time_of_day", "start_latitude_dd",
+main_clust_spatiotemporal_covariates <- c("year", "solar_dayness", "start_latitude_dd",
                                "depth_mean_m", "seafloor_depth_m")
 
 main_clust_environmental_covariates <- c("mean_temperature_c", "mean_salinity_psu",
@@ -672,7 +633,8 @@ main_clust_environmental_covariates <- c("mean_temperature_c", "mean_salinity_ps
 
 main_clust_dbRDA_covariates <- c(main_clust_spatiotemporal_covariates, main_clust_environmental_covariates)
 
-main_clust_dbRDA_metadata_cols <- c("project", "year", "cruise", "collection_date", "transect",
+main_clust_dbRDA_metadata_cols <- c("project", "year", "cruise", "collection_date",
+                         "solar_dayness", "transect",
                          "replicate", "station", "net", "transect_station_rep_year_net",
                          "transect_station_rep_year", "start_time_pt",
                          "start_longitude_dd", "start_latitude_dd",
@@ -726,14 +688,14 @@ main_clust_clusters <- main_clust_new_clusters %>%
 # Fit db-RDA models
 set.seed(123)
 
-main_clust_base_model <- capscale(main_clust_comm_matrix ~ year + time_of_day +
+main_clust_base_model <- capscale(main_clust_comm_matrix ~ year + solar_dayness +
                                     start_latitude_dd + depth_mean_m +
                                     seafloor_depth_m,
                                   data = main_clust_env_model,
                                   distance = "bray",
                                   add = "lingoes")
 
-main_clust_full_model <- capscale(main_clust_comm_matrix ~ year + time_of_day +
+main_clust_full_model <- capscale(main_clust_comm_matrix ~ year + solar_dayness +
                                     start_latitude_dd + depth_mean_m +
                                     seafloor_depth_m + mean_temperature_c +
                                     mean_salinity_psu + dissolved_oxygen_ml_l +
@@ -747,7 +709,7 @@ main_clust_full_model <- capscale(main_clust_comm_matrix ~ year + time_of_day +
 main_clust_dbRDA_env_partial_model <- capscale(main_clust_comm_matrix ~ mean_temperature_c +
                                       mean_salinity_psu + dissolved_oxygen_ml_l +
                                       mean_chl_0_100_m_mgm3 +
-                                      Condition(year + time_of_day +
+                                      Condition(year + solar_dayness +
                                                   start_latitude_dd +
                                                   depth_mean_m +
                                                   seafloor_depth_m),
@@ -760,7 +722,7 @@ main_clust_dbRDA_env_partial_model <- capscale(main_clust_comm_matrix ~ mean_tem
 main_clust_dbRDA_bray_dist <- vegdist(main_clust_comm_matrix, method = "bray")
 
 main_clust_dbRDA_varpart <- varpart(main_clust_dbRDA_bray_dist,
-                         ~ year + time_of_day + start_latitude_dd + depth_mean_m + seafloor_depth_m,
+                         ~ year + solar_dayness + start_latitude_dd + depth_mean_m + seafloor_depth_m,
                          ~ mean_temperature_c + mean_salinity_psu + dissolved_oxygen_ml_l +
                            mean_chl_0_100_m_mgm3,
                          data = main_clust_env_model,
@@ -772,7 +734,7 @@ main_clust_dbRDA_varpart_summary <- summary(main_clust_dbRDA_varpart)
 
 
 # Testable unique fractions from the two-set variation partitioning
-main_clust_dbRDA_spatiotemporal_unique_model <- dbrda(main_clust_dbRDA_bray_dist ~ year + time_of_day + start_latitude_dd + depth_mean_m +
+main_clust_dbRDA_spatiotemporal_unique_model <- dbrda(main_clust_dbRDA_bray_dist ~ year + solar_dayness + start_latitude_dd + depth_mean_m +
                                              seafloor_depth_m +
                                              Condition(mean_temperature_c + mean_salinity_psu + dissolved_oxygen_ml_l +
                                                          mean_chl_0_100_m_mgm3),
@@ -781,7 +743,7 @@ main_clust_dbRDA_spatiotemporal_unique_model <- dbrda(main_clust_dbRDA_bray_dist
 
 main_clust_dbRDA_environmental_unique_model <- dbrda(main_clust_dbRDA_bray_dist ~ mean_temperature_c + mean_salinity_psu +
                                             dissolved_oxygen_ml_l + mean_chl_0_100_m_mgm3 +
-                                            Condition(year + time_of_day + start_latitude_dd + depth_mean_m +
+                                            Condition(year + solar_dayness + start_latitude_dd + depth_mean_m +
                                                         seafloor_depth_m),
                                           data = main_clust_env_model,
                                           add = "lingoes")
@@ -873,7 +835,7 @@ main_clust_dbRDA_vector_scores <- scores(main_clust_full_model, display = "bp", 
       "depth_mean_m" = "Mean depth",
       "seafloor_depth_m" = "Seafloor depth",
       "start_latitude_dd" = "Latitude",
-      "time_of_dayNight" = "Night vs day",
+      "solar_dayness" = "Dayness",
       "year2018" = "Year 2018",
       "year2019" = "Year 2019",
       "year2023" = "Year 2023",
@@ -882,7 +844,7 @@ main_clust_dbRDA_vector_scores <- scores(main_clust_full_model, display = "bp", 
     base_label_y = CAP2 + if_else(CAP2 >= 0, 0.10, -0.10),
     label_x = case_when(
       variable == "year2019" ~ -0.25,
-      variable == "time_of_dayNight" ~ -0.18,
+      variable == "solar_dayness" ~ -0.18,
       variable == "dissolved_oxygen_ml_l" ~ 0.15,
       variable == "year2018" ~ -0.30,
       variable == "year2023" ~ 0.32,
@@ -890,14 +852,14 @@ main_clust_dbRDA_vector_scores <- scores(main_clust_full_model, display = "bp", 
       TRUE ~ base_label_x),
     label_y = case_when(
       variable == "year2019" ~ 0.72,
-      variable == "time_of_dayNight" ~ 0.45,
+      variable == "solar_dayness" ~ 0.45,
       variable == "dissolved_oxygen_ml_l" ~ 0.64,
       variable == "year2018" ~ -0.16,
       variable == "year2023" ~ 0.16,
       variable == "mean_chl_0_100_m_mgm3" ~ 0.06,
       TRUE ~ base_label_y),
     label_hjust = case_when(
-      variable %in% c("year2019", "time_of_dayNight", "year2018") ~ 1,
+      variable %in% c("year2019", "solar_dayness", "year2018") ~ 1,
       variable %in% c("dissolved_oxygen_ml_l", "year2023",
                       "mean_chl_0_100_m_mgm3") ~ 0,
       CAP1 >= 0 ~ 0,
@@ -911,14 +873,6 @@ main_clust_dbRDA_overlays_plot <- ggplot(main_clust_dbRDA_site_scores, aes(x = C
                color = NA,
                inherit.aes = FALSE) +
   geom_point(size = 1, alpha = 0.9) +
-  stat_ellipse(data = main_clust_dbRDA_site_scores,
-               aes(x = CAP1, y = CAP2, linetype = time_of_day),
-               color = "grey20",
-               linewidth = 0.5,
-               type = "norm",
-               level = 0.68,
-               show.legend = c(linetype = TRUE, color = FALSE),
-               inherit.aes = FALSE) +
   scale_fill_manual(values = main_clust_cluster_colors,
                     limits = main_clust_cluster_levels,
                     breaks = main_clust_cluster_levels,
@@ -927,7 +881,6 @@ main_clust_dbRDA_overlays_plot <- ggplot(main_clust_dbRDA_site_scores, aes(x = C
                      limits = main_clust_cluster_levels,
                      breaks = main_clust_cluster_levels,
                      drop = FALSE) +
-  scale_linetype_manual(values = c("Day" = "solid", "Night" = "dashed")) +
   geom_segment(data = main_clust_dbRDA_vector_scores,
                aes(x = 0, y = 0, xend = CAP1, yend = CAP2),
                inherit.aes = FALSE,
@@ -946,7 +899,7 @@ main_clust_dbRDA_overlays_plot <- ggplot(main_clust_dbRDA_site_scores, aes(x = C
             size = 2) +
   theme_classic() +
   labs(title = "db-RDA of larval fish assemblage composition for main clusters",
-       x = "CAP1", y = "CAP2", color = "Cluster", fill = "Cluster", linetype = "Time of Day")
+       x = "CAP1", y = "CAP2", color = "Cluster", fill = "Cluster")
 print(main_clust_dbRDA_overlays_plot)
 ggsave("main_clust_dbRDA_cluster_ordination_with_overlays.png", plot = main_clust_dbRDA_overlays_plot, path = here("output"),
        width = 7, height = 5, units = "in", dpi = 300)

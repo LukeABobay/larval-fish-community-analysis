@@ -10,43 +10,21 @@ library(here)
 library(tidyverse)
 library(vegan)
 library(ggrepel)
-library(suncalc)
 
 
 # Source code -------------------------------------------------------------
 
-source(here("scripts/01_data_wrangling.R"))
+source(here("scripts/02_prepare_community_data.R"))
 
 
 # Create wide dataframe ---------------------------------------------------
 
-# Copied from 03 script
-dbRDA_major_taxa_wide <- mocness_major_taxa_nets %>%
-  # Removing NAs for now, but there shouldn't be any to begin with
-  filter(!is.na(individuals_in_tow)) %>%
-  filter(!is.na(individuals_per_m3)) %>%
-  select(project, year, cruise, collection_date, transect, replicate, station, net,
-         transect_station_rep_year_net, transect_station_rep_year, start_time_pt,
-         start_longitude_dd, start_latitude_dd, maximum_depth_m, minimum_depth_m,
-         depth_mean_m, depth_diff_m, volume_best_m3_both_sides,
-         mean_temperature_c, mean_salinity_psu, mean_density_kgm3, seafloor_depth_m,
-         distance_to_shore_km, shelf_position, prey_zooplankton_abundance_ind_m3,
-         dissolved_oxygen_ml_l, mean_chl_0_100_m_mgm3,
-         taxon, individuals_per_m3) %>%
-  # For some reason, MOC 1 and MOC 4 have different values of mean_temperature_c,
-  # mean_salinity_psu, and mean_density_kgm3 in 6 cases. To eliminate differences,
-  # calculate mean, as in scripts 03 and 07.
-  group_by(transect_station_rep_year_net) %>%
-  mutate(mean_temperature_c = mean(mean_temperature_c),
-         mean_salinity_psu = mean(mean_salinity_psu),
-         mean_density_kgm3 = mean(mean_density_kgm3)) %>%
-  ungroup() %>%
-  pivot_wider(names_from = taxon, values_from = individuals_per_m3, values_fill = 0)
+dbRDA_major_taxa_wide <- wide_major_taxa_nets
 
 
 # Choose db-RDA covariates ------------------------------------------------
 
-spatiotemporal_covariates <- c("year", "time_of_day", "start_latitude_dd",
+spatiotemporal_covariates <- c("year", "solar_dayness", "start_latitude_dd",
                                "depth_mean_m", "seafloor_depth_m")
 
 environmental_covariates <- c("mean_temperature_c", "mean_salinity_psu",
@@ -54,44 +32,14 @@ environmental_covariates <- c("mean_temperature_c", "mean_salinity_psu",
 
 dbRDA_covariates <- c(spatiotemporal_covariates, environmental_covariates)
 
-dbRDA_metadata_cols <- c("project", "year", "cruise", "collection_date", "transect",
-                         "replicate", "station", "net", "transect_station_rep_year_net",
-                         "transect_station_rep_year", "start_time_pt",
-                         "start_longitude_dd", "start_latitude_dd",
-                         "maximum_depth_m", "minimum_depth_m", "depth_mean_m",
-                         "depth_diff_m", "volume_best_m3_both_sides",
-                         "mean_temperature_c", "mean_salinity_psu", "mean_density_kgm3",
-                         "seafloor_depth_m", "distance_to_shore_km", "shelf_position",
-                         "prey_zooplankton_abundance_ind_m3", "dissolved_oxygen_ml_l",
-                         "mean_chl_0_100_m_mgm3")
-
-dbRDA_taxa_cols <- names(dbRDA_major_taxa_wide) %>%
-  setdiff(dbRDA_metadata_cols)
+dbRDA_metadata_cols <- AHC_metadata_cols
+dbRDA_taxa_cols <- taxa_cols
 
 
 # Prepare environmental data ---------------------------------------------
 
 dbRDA_env <- dbRDA_major_taxa_wide %>%
-  mutate(time_of_day = substr(replicate, 3, 3),
-         time_of_day = recode(time_of_day, "D" = "Day", "N" = "Night", .default = NA_character_)) %>%
-  group_by(transect_station_rep_year_net) %>%
-  # Fill missing day/night labels using sunrise/sunset, as in script 03, 
-  # to avoid dropping samples where replicate labels do not indicate day/night
-  mutate(sunrise = getSunlightTimes(date = as.Date(collection_date),
-                                    lat  = first(start_latitude_dd),
-                                    lon  = first(start_longitude_dd),
-                                    keep = c("sunrise", "sunset"))$sunrise,
-         sunset  = getSunlightTimes(
-           date = as.Date(collection_date),
-           lat  = first(start_latitude_dd),
-           lon  = first(start_longitude_dd),
-           keep = c("sunrise", "sunset"))$sunset,
-         time_of_day = case_when(!is.na(time_of_day) ~ time_of_day,
-                                 start_time_pt >= sunrise & start_time_pt < sunset ~ "Day",
-                                 TRUE ~ "Night"),
-         year = factor(year),
-         time_of_day = factor(time_of_day, levels = c("Day", "Night"))) %>%
-  ungroup() %>%
+  mutate(year = factor(year)) %>%
   mutate(total_concentration = rowSums(across(all_of(dbRDA_taxa_cols)))) %>%
   # Keep only complete cases in order to make the base and full models comparable
   # Actually, looks like we aren't losing any incomplete cases, but I'll keep this in place
@@ -117,30 +65,10 @@ dbRDA_env_model <- dbRDA_env %>%
 row.names(dbRDA_env_model) <- dbRDA_env_model$transect_station_rep_year_net
 
 
-# Recreate NMDS cluster assignments from script 03 ------------------------
+# Use NMDS cluster assignments from shared community prep -----------------
 
-dbRDA_cluster_matrix <- dbRDA_major_taxa_wide %>%
-  select(transect_station_rep_year_net, depth_mean_m, all_of(dbRDA_taxa_cols))
-
-dbRDA_cluster_taxa <- dbRDA_cluster_matrix %>%
-  select(all_of(dbRDA_taxa_cols)) %>%
-  mutate(across(everything(), sqrt))
-
-row.names(dbRDA_cluster_taxa) <- dbRDA_cluster_matrix$transect_station_rep_year_net
-
-dbRDA_cluster_dissimilarity <- vegdist(dbRDA_cluster_taxa, method = "bray")
-dbRDA_cluster_result <- hclust(dbRDA_cluster_dissimilarity, method = "average")
-
-cluster_levels <- paste("Cluster", 1:10)
-cluster_colors <- c("1" = "#1F77B4", "2" = "#FF7F0E", "3" = "#2CA02C", "4" = "#8C564B", "5" = "#9467BD",
-                    "6" = "#D62728", "7" = "#17BECF", "8" = "#BCBD22", "9" = "#7F7F7F", "10"= "#E377C2")
-names(cluster_colors) <- cluster_levels
-
-dbRDA_clusters <- tibble(
-  transect_station_rep_year_net = names(cutree(dbRDA_cluster_result, k = 10)),
-  cluster = cutree(dbRDA_cluster_result, k = 10)
-) %>%
-  mutate(cluster = factor(cluster, levels = 1:10, labels = cluster_levels))
+dbRDA_clusters <- clusters %>%
+  mutate(cluster = factor(as.character(cluster), levels = cluster_levels))
 
 
 # Fit db-RDA models -------------------------------------------------------
@@ -149,7 +77,7 @@ set.seed(123)
 
 # Using Bray-Curtis dissimilarity because these are community
 # composition data with many zeros, matches NMDS/cluster analyses
-dbRDA_base_model <- capscale(dbRDA_comm_matrix ~ year + time_of_day +
+dbRDA_base_model <- capscale(dbRDA_comm_matrix ~ year + solar_dayness +
                                start_latitude_dd + depth_mean_m +
                                seafloor_depth_m,
                              data = dbRDA_env_model,
@@ -158,7 +86,7 @@ dbRDA_base_model <- capscale(dbRDA_comm_matrix ~ year + time_of_day +
                              # eigenvalues that can arise with Bray-Curtis dissimilarity
                              add = "lingoes")
 
-dbRDA_full_model <- capscale(dbRDA_comm_matrix ~ year + time_of_day +
+dbRDA_full_model <- capscale(dbRDA_comm_matrix ~ year + solar_dayness +
                                start_latitude_dd + depth_mean_m +
                                seafloor_depth_m + mean_temperature_c +
                                mean_salinity_psu + dissolved_oxygen_ml_l +
@@ -172,7 +100,7 @@ dbRDA_full_model <- capscale(dbRDA_comm_matrix ~ year + time_of_day +
 dbRDA_env_partial_model <- capscale(dbRDA_comm_matrix ~ mean_temperature_c +
                                       mean_salinity_psu + dissolved_oxygen_ml_l +
                                       mean_chl_0_100_m_mgm3 +
-                                      Condition(year + time_of_day +
+                                      Condition(year + solar_dayness +
                                                   start_latitude_dd +
                                                   depth_mean_m +
                                                   seafloor_depth_m),
@@ -184,7 +112,7 @@ dbRDA_env_partial_model <- capscale(dbRDA_comm_matrix ~ mean_temperature_c +
 dbRDA_bray_dist <- vegdist(dbRDA_comm_matrix, method = "bray")
 
 dbRDA_varpart <- varpart(dbRDA_bray_dist,
-                         ~ year + time_of_day + start_latitude_dd + depth_mean_m + seafloor_depth_m,
+                         ~ year + solar_dayness + start_latitude_dd + depth_mean_m + seafloor_depth_m,
                          ~ mean_temperature_c + mean_salinity_psu + dissolved_oxygen_ml_l +
                            mean_chl_0_100_m_mgm3,
                          data = dbRDA_env_model,
@@ -194,7 +122,7 @@ dbRDA_varpart <- varpart(dbRDA_bray_dist,
 dbRDA_varpart_summary <- summary(dbRDA_varpart)
 
 # Testable unique fractions from the two-set variation partitioning
-dbRDA_spatiotemporal_unique_model <- dbrda(dbRDA_bray_dist ~ year + time_of_day + start_latitude_dd + depth_mean_m +
+dbRDA_spatiotemporal_unique_model <- dbrda(dbRDA_bray_dist ~ year + solar_dayness + start_latitude_dd + depth_mean_m +
                                              seafloor_depth_m +
                                              Condition(mean_temperature_c + mean_salinity_psu + dissolved_oxygen_ml_l +
                                                          mean_chl_0_100_m_mgm3),
@@ -203,7 +131,7 @@ dbRDA_spatiotemporal_unique_model <- dbrda(dbRDA_bray_dist ~ year + time_of_day 
 
 dbRDA_environmental_unique_model <- dbrda(dbRDA_bray_dist ~ mean_temperature_c + mean_salinity_psu +
                                             dissolved_oxygen_ml_l + mean_chl_0_100_m_mgm3 +
-                                            Condition(year + time_of_day + start_latitude_dd + depth_mean_m +
+                                            Condition(year + solar_dayness + start_latitude_dd + depth_mean_m +
                                                         seafloor_depth_m),
                                           data = dbRDA_env_model,
                                           add = "lingoes")
@@ -300,7 +228,7 @@ dbRDA_vector_scores <- scores(dbRDA_full_model, display = "bp", choices = 1:2) %
       "depth_mean_m" = "Mean depth",
       "seafloor_depth_m" = "Seafloor depth",
       "start_latitude_dd" = "Latitude",
-      "time_of_dayNight" = "Night",
+      "solar_dayness" = "Dayness",
       "year2018" = "2018",
       "year2019" = "2019",
       "year2023" = "2023",
@@ -310,7 +238,7 @@ dbRDA_vector_scores <- scores(dbRDA_full_model, display = "bp", choices = 1:2) %
     base_label_y = CAP2 + if_else(CAP2 >= 0, 0.10, -0.10),
     label_x = case_when(
       variable == "year2019" ~ -0.25,
-      variable == "time_of_dayNight" ~ -0.05,
+      variable == "solar_dayness" ~ -0.05,
       variable == "dissolved_oxygen_ml_l" ~ 0.15,
       variable == "year2018" ~ -0.5,
       variable == "year2023" ~ 0.65,
@@ -319,7 +247,7 @@ dbRDA_vector_scores <- scores(dbRDA_full_model, display = "bp", choices = 1:2) %
     ),
     label_y = case_when(
       variable == "year2019" ~ 1,
-      variable == "time_of_dayNight" ~ 0.8,
+      variable == "solar_dayness" ~ 0.8,
       variable == "dissolved_oxygen_ml_l" ~ 0.64,
       variable == "year2018" ~ -0.1,
       variable == "year2023" ~ 0.35,
@@ -328,7 +256,7 @@ dbRDA_vector_scores <- scores(dbRDA_full_model, display = "bp", choices = 1:2) %
     ),
     label_hjust = case_when(
       variable %in% c("year2019", "year2018") ~ 1,
-      variable %in% c("dissolved_oxygen_ml_l", "time_of_dayNight", 
+      variable %in% c("dissolved_oxygen_ml_l", "solar_dayness", 
                       "year2023", "mean_chl_0_100_m_mgm3") ~ 0,
       CAP1 >= 0 ~ 0,
       TRUE ~ 1
@@ -343,14 +271,6 @@ dbRDA_overlays_plot <- ggplot(dbRDA_site_scores, aes(x = CAP1, y = CAP2, color =
                color = NA,
                inherit.aes = FALSE) +
   geom_point(size = 1, alpha = 0.9) +
-  stat_ellipse(data = dbRDA_site_scores,
-               aes(x = CAP1, y = CAP2, linetype = time_of_day),
-               color = "grey20",
-               linewidth = 0.5,
-               type = "norm",
-               level = 0.68,
-               show.legend = c(linetype = TRUE, color = FALSE),
-               inherit.aes = FALSE) +
   scale_fill_manual(values = cluster_colors,
                     limits = cluster_levels,
                     breaks = cluster_levels,
@@ -359,7 +279,6 @@ dbRDA_overlays_plot <- ggplot(dbRDA_site_scores, aes(x = CAP1, y = CAP2, color =
                      limits = cluster_levels,
                      breaks = cluster_levels,
                      drop = FALSE) +
-  scale_linetype_manual(values = c("Day" = "solid", "Night" = "dashed")) +
   geom_segment(data = dbRDA_vector_scores,
                aes(x = 0, y = 0, xend = CAP1, yend = CAP2),
                inherit.aes = FALSE,
@@ -378,7 +297,7 @@ dbRDA_overlays_plot <- ggplot(dbRDA_site_scores, aes(x = CAP1, y = CAP2, color =
             size = 2) +
   theme_classic() +
   labs(title = "db-RDA of larval fish assemblage composition",
-       x = "CAP1", y = "CAP2", color = "Cluster", fill = "Cluster", linetype = "Time of Day")
+       x = "CAP1", y = "CAP2", color = "Cluster", fill = "Cluster")
 print(dbRDA_overlays_plot)
 ggsave("dbRDA_cluster_ordination_with_overlays.png", plot = dbRDA_overlays_plot, path = here("output"),
        width = 7, height = 5, units = "in", dpi = 300)
