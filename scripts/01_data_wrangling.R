@@ -15,6 +15,7 @@ library(marmap)
 library(lubridate)
 library(sf)
 library(RColorBrewer)
+library(suncalc)
 
 
 # Load data ---------------------------------------------------------------
@@ -635,11 +636,66 @@ mocness_full_geographic_isiis_mixing_fluor <- left_join(mocness_full_geographic_
   # Remove ISIIS chlorophyll values
   select(-chlorophyll_ug_l)
 
+mocness_solar_dayness <- mocness_full_geographic_isiis_mixing_fluor %>%
+  distinct(collection_date, start_time_pt, start_latitude_dd, start_longitude_dd,
+           transect, station, replicate, mocness_side, net) %>%
+  filter(!is.na(collection_date), !is.na(start_time_pt),
+         !is.na(start_latitude_dd), !is.na(start_longitude_dd)) %>%
+  rowwise() %>%
+  mutate(
+    sunrise = getSunlightTimes(date = as.Date(collection_date),
+                               lat = start_latitude_dd,
+                               lon = start_longitude_dd,
+                               keep = c("sunrise", "sunset"),
+                               tz = "America/Los_Angeles")$sunrise,
+    sunset = getSunlightTimes(date = as.Date(collection_date),
+                              lat = start_latitude_dd,
+                              lon = start_longitude_dd,
+                              keep = c("sunrise", "sunset"),
+                              tz = "America/Los_Angeles")$sunset,
+    previous_sunset = getSunlightTimes(date = as.Date(collection_date) - 1,
+                                       lat = start_latitude_dd,
+                                       lon = start_longitude_dd,
+                                       keep = c("sunrise", "sunset"),
+                                       tz = "America/Los_Angeles")$sunset,
+    next_sunrise = getSunlightTimes(date = as.Date(collection_date) + 1,
+                                    lat = start_latitude_dd,
+                                    lon = start_longitude_dd,
+                                    keep = c("sunrise", "sunset"),
+                                    tz = "America/Los_Angeles")$sunrise
+  ) %>%
+  ungroup() %>%
+  mutate(
+    daylight_duration_hours = as.numeric(difftime(sunset, sunrise, units = "hours")),
+    night_duration_before_sunrise_hours = as.numeric(difftime(sunrise, previous_sunset, units = "hours")),
+    night_duration_after_sunset_hours = as.numeric(difftime(next_sunrise, sunset, units = "hours")),
+    solar_dayness = case_when(
+      start_time_pt >= sunrise & start_time_pt < sunset ~
+        pmin(as.numeric(difftime(start_time_pt, sunrise, units = "hours")),
+             as.numeric(difftime(sunset, start_time_pt, units = "hours"))) /
+        (daylight_duration_hours / 2),
+      start_time_pt < sunrise ~
+        -pmin(as.numeric(difftime(start_time_pt, previous_sunset, units = "hours")),
+              as.numeric(difftime(sunrise, start_time_pt, units = "hours"))) /
+        (night_duration_before_sunrise_hours / 2),
+      start_time_pt >= sunset ~
+        -pmin(as.numeric(difftime(start_time_pt, sunset, units = "hours")),
+              as.numeric(difftime(next_sunrise, start_time_pt, units = "hours"))) /
+        (night_duration_after_sunset_hours / 2),
+      TRUE ~ NA_real_
+    )
+  ) %>%
+  select(collection_date, start_time_pt, transect, station, replicate,
+         mocness_side, net, solar_dayness)
+
 
 # MOCNESS data cleanup ----------------------------------------------------
 
 # Add columns with combined location/station and min/max depth
 mocness_clean <- mocness_full_geographic_isiis_mixing_fluor %>%
+  left_join(mocness_solar_dayness,
+            by = c("collection_date", "start_time_pt", "transect", "station",
+                   "replicate", "mocness_side", "net")) %>%
   unite(col = "transect_station", transect, station, sep="_", remove = FALSE) %>%
   unite(col = "transect_station_rep", transect_station, replicate, sep="_", remove=FALSE) %>%
   mutate(year = year(collection_date)) %>%
@@ -718,7 +774,8 @@ mocness_clean <- mocness_full_geographic_isiis_mixing_fluor %>%
     mld_density_0_03_m >= abs(seafloor_depth_m) ~ abs(seafloor_depth_m),
     TRUE ~ mld_density_0_03_m),
     tow_mid_depth_relative_to_mld_m = depth_mean_m - mixed_layer_boundary_depth_m) %>%
-  select(project, year, cruise, collection_date, start_time_pt, start_latitude_dd, start_longitude_dd, 
+  select(project, year, cruise, collection_date, start_time_pt, solar_dayness,
+         start_latitude_dd, start_longitude_dd,
          transect_station_rep_year_net, transect_station_rep_year, transect_station_rep,
          transect_station, transect, station, replicate, mocness_side, net, volume_best_m3_both_sides,
          depth_range, maximum_depth_m, minimum_depth_m, depth_mean_m, depth_diff_m, taxon, individuals_in_tow,
@@ -787,13 +844,13 @@ mesopelagic_species <- c("Bathylagus_ochotensis", "Lestidiops_ringens", "Protomy
                          "Stenobrachius_leucopsarus", "Tarletonbeania_crenularis")
 mesopelagic_colors <- brewer.pal(length(mesopelagic_species) + 1, "Purples")[-1]
 
-flatfish_species <- c("Glyptocephalus_zachirus", "Cyclopsettidae", "Isopsetta_isolepis", 
+flatfish_species <- c("Cyclopsettidae", "Glyptocephalus_zachirus", "Isopsetta_isolepis", 
                       "Lyopsetta_exilis", "Parophrys_vetulus", "Psettichthys_melanostictus")
 flatfish_colors <- brewer.pal(length(flatfish_species) + 1, "Oranges")[-1]
 
-sculpin_relatives_species <- c("Cottidae", "Hemilepidotus_spp", "Psychrolutidae", 
-                               "Scorpaenichthys_marmoratus", "Agonidae", "Liparis_spp",
-                               "Hexagrammidae", "Sebastes_spp")
+sculpin_relatives_species <- c("Agonidae", "Cottidae", "Hemilepidotus_spp", 
+                               "Hexagrammidae", "Liparis_spp", "Psychrolutidae",
+                               "Scorpaenichthys_marmoratus", "Sebastes_spp")
 sculpin_relatives_colors <- brewer.pal(length(sculpin_relatives_species) + 1, "Blues")[-1]
 
 other_species <- c("Ammodytidae", "Gadidae", "Osmeridae")
@@ -807,20 +864,20 @@ species_colors <- c(setNames(mesopelagic_colors, mesopelagic_species),
 ordered_taxa <- c(mesopelagic_species, flatfish_species, sculpin_relatives_species, other_species)
 
 taxon_labels <- c(
-  "Ammodytidae" = "Ammodytidae",
-  "Cottidae" = "Cottidae",
-  "Gadidae" = "Gadidae",
+  "Ammodytidae" = "'Ammodytidae'",
+  "Cottidae" = "'Cottidae'",
+  "Gadidae" = "'Gadidae'",
   "Glyptocephalus_zachirus" = "italic('Glyptocephalus zachirus')",
-  "Hemilepidotus" = "italic('Hemilepidotus')~'spp.'",
-  "Hexagrammidae" = "Hexagrammidae",
-  "Psychrolutidae" = "Psychrolutidae",
+  "Hemilepidotus_spp" = "italic('Hemilepidotus')~'spp.'",
+  "Hexagrammidae" = "'Hexagrammidae'",
+  "Psychrolutidae" = "'Psychrolutidae'",
   "Scorpaenichthys_marmoratus" = "italic('Scorpaenichthys marmoratus')",
-  "Agonidae" = "Agonidae",
-  "Cyclopsettidae" = "Cyclopsettidae",
+  "Agonidae" = "'Agonidae'",
+  "Cyclopsettidae" = "'Cyclopsettidae'",
   "Isopsetta_isolepis" = "italic('Isopsetta isolepis')",
   "Liparis_spp" =  "italic('Liparis')~'spp.'",
   "Lyopsetta_exilis" = "italic('Lyopsetta exilis')",
-  "Osmeridae" ="Osmeridae",
+  "Osmeridae" = "'Osmeridae'",
   "Parophrys_vetulus" = "italic('Parophrys vetulus')",
   "Psettichthys_melanostictus" = "italic('Psettichthys melanostictus')",
   "Sebastes_spp" = "italic('Sebastes')~'spp.'",
