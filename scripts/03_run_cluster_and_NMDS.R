@@ -908,8 +908,11 @@ env_wide_aligned <- env_wide[match(rownames(scores(NMDS_result, display = "sites
                                    env_wide$transect_station_rep_year_net), ]
 year_mat <- model.matrix(~ factor(year) - 1, data = env_wide_aligned)
 colnames(year_mat) <- paste0("year_", levels(factor(env_wide_aligned$year)))
-env_numeric <- env_wide_aligned[, sapply(env_wide_aligned, is.numeric)]
-env_numeric2 <- cbind(env_numeric[, !names(env_numeric) %in% "year"], year_mat)
+envfit_covariates <- c("solar_dayness_scaled", "start_latitude_dd_scaled",
+                       "depth_mean_m_scaled", "seafloor_depth_m_scaled")
+env_numeric2 <- bind_cols(env_wide_aligned %>% select(all_of(envfit_covariates)),
+                          as_tibble(year_mat)) %>%
+  as.data.frame()
 fit_vectors <- envfit(NMDS_result, env_numeric2, permutations = 1000, na.rm = TRUE)
 
 ##Extract vector scores for plotting
@@ -917,16 +920,16 @@ vector_scores <- scores(fit_vectors, display = "vectors")
 vector_df <- as.data.frame(vector_scores) %>% 
   mutate(variable = rownames(vector_scores)) %>% 
   filter(grepl("^year_", variable) |
-           variable %in% c("solar_dayness", "start_latitude_dd",
-                           "depth_mean_m", "seafloor_depth_m")
+           variable %in% c("solar_dayness_scaled", "start_latitude_dd_scaled",
+                           "depth_mean_m_scaled", "seafloor_depth_m_scaled")
   ) %>%
   mutate(
     plot_label = recode(
       variable,
-      "depth_mean_m" = "Mean depth",
-      "seafloor_depth_m" = "Seafloor depth",
-      "start_latitude_dd" = "Latitude",
-      "solar_dayness" = "Daytime",
+      "depth_mean_m_scaled" = "Mean depth",
+      "seafloor_depth_m_scaled" = "Seafloor depth",
+      "start_latitude_dd_scaled" = "Latitude",
+      "solar_dayness_scaled" = "Daytime",
       "year_2018" = "2018",
       "year_2019" = "2019",
       "year_2022" = "2022",
@@ -936,29 +939,30 @@ vector_df <- as.data.frame(vector_scores) %>%
     base_label_x = NMDS1 + if_else(NMDS1 >= 0, 0.14, -0.14),
     base_label_y = NMDS2 + if_else(NMDS2 >= 0, 0.10, -0.10),
     label_x = case_when(
-      variable == "seafloor_depth_m" ~ -0.95,
-      variable == "start_latitude_dd" ~ -0.65,
-      variable == "depth_mean_m" ~ 0.25,
-      variable == "solar_dayness" ~ -0.1,
+      variable == "seafloor_depth_m_scaled" ~ -0.75,
+      variable == "start_latitude_dd_scaled" ~ -0.65,
+      variable == "depth_mean_m_scaled" ~ 0.3,
+      variable == "solar_dayness_scaled" ~ -0.1,
       variable == "year_2018" ~ 0.08,
-      variable == "year_2019" ~ 0.22,
-      variable == "year_2022" ~ 0.22,
-      variable == "year_2023" ~ 0.25,
+      variable == "year_2019" ~ 0.3,
+      variable == "year_2022" ~ 0.05,
+      variable == "year_2023" ~ -0.5,
       TRUE ~ base_label_x
     ),
     label_y = case_when(
-      variable == "seafloor_depth_m" ~ 0.45,
-      variable == "start_latitude_dd" ~ -0.5,
-      variable == "depth_mean_m" ~ 0.4,
-      variable == "solar_dayness" ~ 0.25,
+      variable == "seafloor_depth_m_scaled" ~ -0.1,
+      variable == "start_latitude_dd_scaled" ~ -0.5,
+      variable == "depth_mean_m_scaled" ~ 0.4,
+      variable == "solar_dayness_scaled" ~ 0.25,
       variable == "year_2018" ~ -0.25,
-      variable == "year_2019" ~ 0.2,
-      variable == "year_2022" ~ -0.05,
-      variable == "year_2023" ~ 0.05,
+      variable == "year_2019" ~ -0.15,
+      variable == "year_2022" ~ 0.3,
+      variable == "year_2023" ~ 0,
       TRUE ~ base_label_y
     ),
     label_hjust = case_when(
-      variable %in% c("seafloor_depth_m", "start_latitude_dd", "solar_dayness") ~ 1,
+      variable %in% c("seafloor_depth_m_scaled", "start_latitude_dd_scaled",
+                      "solar_dayness_scaled", "year_2023") ~ 1,
       TRUE ~ 0
     )
   )
