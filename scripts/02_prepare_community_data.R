@@ -42,9 +42,26 @@ wide_major_taxa_nets <- mocness_major_taxa_nets %>%
   pivot_wider(names_from = taxon, values_from = individuals_per_m3, values_fill = 0) %>%
   # Assign net tows unique sample IDs chronologically
   arrange(start_time_pt) %>%
-  mutate(chrono_sample_ID = row_number())
+  mutate(chrono_sample_ID = row_number(),
+         across(c(solar_dayness, start_latitude_dd, depth_mean_m,
+                  seafloor_depth_m, mean_temperature_c, mean_salinity_psu,
+                  dissolved_oxygen_ml_l, mean_chl_0_100_m_mgm3),
+                ~ as.numeric(scale(.x)),
+                .names = "{.col}_scaled"))
 
 env_wide <- wide_major_taxa_nets
+
+spatiotemporal_covariates <- c("year", "solar_dayness_scaled",
+                               "start_latitude_dd_scaled",
+                               "depth_mean_m_scaled",
+                               "seafloor_depth_m_scaled")
+
+environmental_covariates <- c("mean_temperature_c_scaled",
+                              "mean_salinity_psu_scaled",
+                              "dissolved_oxygen_ml_l_scaled",
+                              "mean_chl_0_100_m_mgm3_scaled")
+
+dbRDA_covariates <- c(spatiotemporal_covariates, environmental_covariates)
 
 
 # Create community matrix -------------------------------------------------
@@ -59,7 +76,11 @@ AHC_metadata_cols <- c(
   "mean_temperature_c", "mean_salinity_psu", "mean_density_kgm3",
   "seafloor_depth_m", "distance_to_shore_km", "shelf_position",
   "prey_zooplankton_abundance_ind_m3", "dissolved_oxygen_ml_l",
-  "mean_chl_0_100_m_mgm3", "chrono_sample_ID"
+  "mean_chl_0_100_m_mgm3", "chrono_sample_ID",
+  "solar_dayness_scaled", "start_latitude_dd_scaled",
+  "depth_mean_m_scaled", "seafloor_depth_m_scaled",
+  "mean_temperature_c_scaled", "mean_salinity_psu_scaled",
+  "dissolved_oxygen_ml_l_scaled", "mean_chl_0_100_m_mgm3_scaled"
 )
 
 taxa_cols <- setdiff(names(wide_major_taxa_nets), AHC_metadata_cols)
