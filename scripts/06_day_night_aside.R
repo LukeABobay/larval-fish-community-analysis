@@ -131,6 +131,9 @@ summary(gam_dayness_depth_model)
 
 gam_taxa <- levels(gam_model_data$taxon)
 gam_years <- levels(gam_model_data$year)
+taxon_facet_labeller <- labeller(
+  taxon = as_labeller(taxon_labels[gam_taxa], default = label_parsed)
+)
 gam_solar_dayness_center <- mean(env_wide$solar_dayness, na.rm = TRUE)
 gam_solar_dayness_scale <- sd(env_wide$solar_dayness, na.rm = TRUE)
 gam_depth_mean_center <- mean(env_wide$depth_mean_m, na.rm = TRUE)
@@ -189,7 +192,7 @@ gam_surface_plot <- ggplot(gam_surface_predictions,
   geom_contour(aes(z = log_fit), color = "white", linewidth = 0.2, alpha = 0.6) +
   scale_y_reverse() +
   scale_fill_viridis_c(option = "magma") +
-  facet_wrap(~ taxon) +
+  facet_wrap(~ taxon, labeller = taxon_facet_labeller) +
   labs(x = "Solar dayness",
        y = "Mean tow depth (m)",
        fill = expression("Log predicted larvae " ~ m^{-3})) +
@@ -263,7 +266,7 @@ gam_slope_plot <- ggplot(gam_slope_predictions,
   geom_hline(yintercept = 0, color = "black", linewidth = 0.3, linetype = "11") +
   geom_ribbon(alpha = 0.25, fill = "grey60") +
   geom_line(linewidth = 0.5) +
-  facet_wrap(~ taxon, scales = "free_y") +
+  facet_wrap(~ taxon, scales = "free_y", labeller = taxon_facet_labeller) +
   labs(x = "Solar dayness",
        y = expression("Depth gradient of log predicted larvae " ~ m^{-3} ~ m^{-1})) +
   theme_classic()
@@ -351,7 +354,7 @@ gam_integrated_plot <- ggplot(gam_integrated_summary,
                               aes(x = solar_dayness, y = fit, ymin = lwr, ymax = upr)) +
   geom_ribbon(alpha = 0.25, fill = "grey60") +
   geom_line(linewidth = 0.5) +
-  facet_wrap(~ taxon, scales = "free_y") +
+  facet_wrap(~ taxon, scales = "free_y", labeller = taxon_facet_labeller) +
   labs(x = "Solar dayness",
        y = expression("Integrated predicted larvae " ~ m^{-2})) +
   theme_classic()
@@ -430,10 +433,10 @@ glmm_surface_plot <- ggplot(glmm_surface_predictions,
   geom_contour(aes(z = log_fit), color = "white", linewidth = 0.2, alpha = 0.6) +
   scale_y_reverse() +
   scale_fill_viridis_c(option = "magma") +
-  facet_wrap(~ taxon) +
-  labs(x = "Solar dayness",
+  facet_wrap(~ taxon, labeller = taxon_facet_labeller) +
+  labs(x = "Daytime",
        y = "Mean tow depth (m)",
-       fill = expression("Log predicted larvae " ~ m^{-3})) +
+       fill = expression(paste("log(Predicted concentration (", m^{-3}, "))"))) +
   theme_classic()
 
 ggsave(here("output/glmm_predicted_abundance_surfaces_all_taxa.png"),
@@ -494,9 +497,9 @@ glmm_slope_plot <- ggplot(glmm_slope_predictions,
   geom_hline(yintercept = 0, color = "black", linewidth = 0.3, linetype = "11") +
   geom_ribbon(alpha = 0.25, fill = "grey60") +
   geom_line(linewidth = 0.5) +
-  facet_wrap(~ taxon, scales = "free_y") +
-  labs(x = "Solar dayness",
-       y = expression("Depth gradient of log predicted larvae " ~ m^{-3} ~ m^{-1})) +
+  facet_wrap(~ taxon, scales = "free_y", labeller = taxon_facet_labeller) +
+  labs(x = "Daytime",
+       y = expression(paste("Slope of effect of depth on abundance (", m^{-3}, " ", m^{-1}, ")"))) +
   theme_classic()
 
 ggsave(here("output/glmm_depth_slope_functions_all_taxa.png"),
@@ -569,9 +572,9 @@ glmm_integrated_plot <- ggplot(glmm_integrated_summary,
                                aes(x = solar_dayness, y = fit, ymin = lwr, ymax = upr)) +
   geom_ribbon(alpha = 0.25, fill = "grey60") +
   geom_line(linewidth = 0.5) +
-  facet_wrap(~ taxon, scales = "free_y") +
-  labs(x = "Solar dayness",
-       y = expression("Integrated predicted larvae " ~ m^{-2})) +
+  facet_wrap(~ taxon, scales = "free_y", labeller = taxon_facet_labeller) +
+  labs(x = "Daytime",
+       y = expression(paste("Predicted count in top 100 m (", m^{-2}, ")"))) +
   theme_classic()
 
 ggsave(here("output/glmm_integrated_abundance_functions_all_taxa.png"),
