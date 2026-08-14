@@ -27,7 +27,8 @@ nets_major_taxa_wide <- mocness_major_taxa_nets %>%
   # Removing NAs for now, but there shouldn't be any to begin with
   filter(!is.na(individuals_in_tow)) %>%
   filter(!is.na(individuals_per_m3)) %>%
-  select(project, year, cruise, collection_date, transect, replicate, station, net,
+  select(project, year, cruise, collection_date, solar_dayness,
+         transect, replicate, station, net,
          transect_station_rep_year_net, transect_station_rep_year, start_time_pt,
          start_longitude_dd, start_latitude_dd, maximum_depth_m, minimum_depth_m, 
          depth_mean_m, depth_diff_m, volume_best_m3_both_sides,
@@ -44,10 +45,7 @@ nets_major_taxa_wide <- mocness_major_taxa_nets %>%
   pivot_wider(names_from = taxon, values_from = individuals_per_m3, values_fill = 0)
 
 nets_env_wide <- nets_major_taxa_wide %>%
-  mutate(time_of_day = substr(replicate, 3, 3)) %>%
-  mutate(time_of_day = recode(time_of_day, "D" = "Day", "N" = "Night")) %>%
-  mutate(time_of_day = factor(time_of_day, levels = c("Day", "Night"))) %>%
-  select(project, collection_date, year, transect_station_rep_year_net, time_of_day, start_time_pt,
+  select(project, collection_date, year, transect_station_rep_year_net, solar_dayness, start_time_pt,
          start_latitude_dd, shelf_position, seafloor_depth_m, dissolved_oxygen_ml_l, 
          mean_temperature_c, mean_salinity_psu, mean_chl_0_100_m_mgm3, depth_mean_m, volume_best_m3_both_sides)
 #removed mlotst and prey abundance for right now because both have NAs at the moment and I don't want this to cause errors down the line
@@ -58,7 +56,7 @@ nets_env_wide <- nets_major_taxa_wide %>%
 # Perform cluster analysis ------------------------------------------------
 
 nets_metadata_cols <- c(
-  "project", "year", "cruise", "collection_date",
+  "project", "year", "cruise", "collection_date", "solar_dayness",
   "transect", "replicate", "station", "net",
   "transect_station_rep_year_net", "transect_station_rep_year",
   "start_time_pt", "start_longitude_dd", "start_latitude_dd",
@@ -213,45 +211,6 @@ ggplot(nets_stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
   theme_classic() +
   labs(title = "NMDS Ordination with Clustered Points and Shelf Position Ellipses",
        x = "NMDS1", y = "NMDS2")
-
-##time_of_day
-###fit ellipses
-nets_time_groups <- nets_env_wide_aligned$time_of_day
-
-nets_ell_time <- ordiellipse(
-  nets_NMDS_result,
-  nets_time_groups,
-  kind = "sd",
-  conf = 0.95, 
-  draw = "none"
-)
-
-### convert ellipse output to data frame
-nets_ell_time_df <- purrr::map_dfr(names(nets_ell_time), ~ {
-  e     <- nets_ell_time[[.x]]
-  theta <- seq(0, 2 * pi, length.out = 200)
-  circle <- cbind(cos(theta), sin(theta))
-  
-  xy <- circle %*% chol(e$cov)
-  xy <- sweep(xy * e$scale, 2, e$center, "+")
-  
-  tibble(
-    NMDS1 = xy[, 1],
-    NMDS2 = xy[, 2],
-    group = .x
-  )
-})
-
-###overlay ellipses on NMDS plot
-ggplot(nets_stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
-  geom_point(size = 3) +
-  geom_path(data = nets_ell_time_df, aes(x = NMDS1, y = NMDS2, color = group),
-            size = 1, linetype = 2) +
-  scale_color_manual(values = c("indianred", "lightsalmon", "lightblue", "palegreen", "khaki", "plum", "turquoise", "pink", "tan3", "darkolivegreen4", "royalblue4", "orangered4")) +
-  theme_classic() +
-  labs(title = "NMDS Ordination with Clustered Points and Time of Day Ellipses",
-       x = "NMDS1", y = "NMDS2")
-
 
 # Fit db-RDA models and evaluate support for env vars ---------------------
 
