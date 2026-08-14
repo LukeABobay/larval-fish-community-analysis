@@ -187,33 +187,195 @@ map_layers <- list(
         axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
 )
 
-net4_sampling_locations_df <- mapping_df2 %>%
+net4_sampling_locations_df <- mocness_clean %>%
   filter(net == 4) %>%
+  distinct(transect_station_rep_year_net, year, start_longitude_dd,
+           start_latitude_dd) %>%
   mutate(year = factor(year, levels = c(2018, 2019, 2022, 2023))) %>%
-  filter(!is.na(plot_longitude_dd), !is.na(plot_latitude_dd), !is.na(year))
+  filter(!is.na(start_longitude_dd), !is.na(start_latitude_dd), !is.na(year))
+
+year_shape_values <- c("2018" = 16, "2019" = 17, "2022" = 15, "2023" = 18)
 
 net4_sampling_locations_map <- ggplot() +
   map_layers +
   geom_point(
     data = net4_sampling_locations_df,
-    aes(plot_longitude_dd, plot_latitude_dd, shape = year),
+    aes(start_longitude_dd, start_latitude_dd, shape = year),
     color = "black",
     size = 0.5,
     stroke = 0.7
   ) +
   scale_shape_manual(
-    values = c("2018" = 16, "2019" = 17, "2022" = 15, "2023" = 18),
+    values = year_shape_values,
     name = "Year",
     drop = FALSE
   ) +
   guides(shape = guide_legend(override.aes = list(color = "black", size = 1))) +
   labs(x = NULL, y = NULL) +
-  theme(legend.position = "right")
+  theme(aspect.ratio = 3.35, legend.position = "right")
 
 ggsave("net4_sampling_locations_map.png",
        plot = net4_sampling_locations_map,
        path = here("output"),
        width = 6, height = 9, units = "in", dpi = 600)
+
+environment_covariates_df <- env_wide %>%
+  select(transect_station_rep_year_net, year, net, depth_mean_m,
+         mean_temperature_c, mean_salinity_psu, dissolved_oxygen_ml_l,
+         mean_chl_0_100_m_mgm3, seafloor_depth_m) %>%
+  distinct() %>%
+  filter(net != 0) %>%
+  mutate(year = factor(year, levels = c(2018, 2019, 2022, 2023)),
+         seafloor_depth_plot_m = abs(seafloor_depth_m))
+
+seafloor_depth_color_limits <- range(environment_covariates_df$seafloor_depth_plot_m,
+                                     na.rm = TRUE)
+
+environment_depth_plot_df <- environment_covariates_df %>%
+  pivot_longer(cols = c(mean_temperature_c, mean_salinity_psu,
+                        dissolved_oxygen_ml_l),
+               names_to = "variable", values_to = "value") %>%
+  mutate(variable = recode(
+    variable,
+    mean_temperature_c = "Temperature (C)",
+    mean_salinity_psu = "Salinity (PSU)",
+    dissolved_oxygen_ml_l = "Dissolved oxygen (mL L-1)"
+  ),
+  variable = factor(variable,
+                    levels = c("Temperature (C)", "Salinity (PSU)",
+                               "Dissolved oxygen (mL L-1)"))) %>%
+  filter(!is.na(value), !is.na(depth_mean_m),
+         !is.na(seafloor_depth_plot_m), !is.na(year))
+
+make_environment_depth_plot <- function(plot_variable, plot_title, show_y_title = FALSE) {
+  ggplot(filter(environment_depth_plot_df, variable == plot_variable),
+         aes(x = value, y = depth_mean_m,
+             color = seafloor_depth_plot_m, shape = year)) +
+    geom_smooth(aes(x = value, y = depth_mean_m,
+                    group = year, linetype = year),
+                method = "loess", formula = y ~ x, se = FALSE,
+                orientation = "y",
+                color = "black", linewidth = 0.4,
+                inherit.aes = FALSE) +
+    geom_point(size = 1, alpha = 0.85) +
+    scale_y_reverse() +
+    scale_color_viridis_c(name = "Seafloor depth (m)",
+                          limits = seafloor_depth_color_limits) +
+    scale_shape_manual(values = year_shape_values, drop = FALSE) +
+    scale_linetype_manual(
+      values = c("2018" = "solid",
+                 "2019" = "dotted",
+                 "2022" = "dashed",
+                 "2023" = "11"),
+      drop = FALSE
+    ) +
+    guides(shape = guide_legend(title = "Year"),
+           linetype = guide_legend(title = "Year")) +
+    labs(x = plot_title,
+         y = "Mean tow depth (m)") +
+    theme_classic(base_size = 10) +
+    theme(aspect.ratio = 2,
+          legend.position = "right",
+          axis.title.y = if (show_y_title) {
+            element_text()
+          } else {
+            element_text(color = "transparent")
+          },
+          plot.margin = margin(t = 4, r = 2, b = 4, l = 2))
+}
+
+temperature_depth_plot <- make_environment_depth_plot(
+  "Temperature (C)", "Temperature (°C)", show_y_title = TRUE
+)
+salinity_depth_plot <- make_environment_depth_plot(
+  "Salinity (PSU)", "Salinity (PSU)"
+)
+dissolved_oxygen_depth_plot <- make_environment_depth_plot(
+  "Dissolved oxygen (mL L-1)",
+  expression(paste("Dissolved oxygen (mL ", plain(L)^{-1}, ")"))
+)
+
+chlorophyll_plot_df <- environment_covariates_df %>%
+  filter(!is.na(mean_chl_0_100_m_mgm3), !is.na(seafloor_depth_plot_m),
+         !is.na(year))
+
+chlorophyll_box_plot <- ggplot(chlorophyll_plot_df,
+                               aes(x = year, y = mean_chl_0_100_m_mgm3)) +
+  geom_boxplot(outlier.shape = NA, fill = "grey85", color = "black",
+               linewidth = 0.3) +
+  geom_jitter(aes(color = seafloor_depth_plot_m, shape = year),
+              width = 0.15, height = 0, size = 1, alpha = 0.85) +
+  scale_color_viridis_c(name = "Seafloor depth (m)",
+                        limits = seafloor_depth_color_limits) +
+  scale_shape_manual(values = year_shape_values, drop = FALSE) +
+  guides(shape = "none") +
+  labs(x = "Year",
+       y = expression("Mean chlorophyll 0-100 m"~(mg~m^{-3}))) +
+  theme_classic(base_size = 10) +
+  theme(aspect.ratio = 0.485, legend.position = "right")
+
+environmental_covariates_legend <- cowplot::get_legend(
+  temperature_depth_plot + theme(legend.position = "right")
+)
+
+environment_depth_profiles <- cowplot::plot_grid(
+  temperature_depth_plot + theme(legend.position = "none"),
+  salinity_depth_plot + theme(legend.position = "none"),
+  dissolved_oxygen_depth_plot + theme(legend.position = "none"),
+  ncol = 3,
+  labels = c("B", "C", "D"),
+  label_size = 12,
+  label_fontface = "bold",
+  align = "hv",
+  axis = "tblr"
+)
+
+environment_depth_profiles_for_layout <- cowplot::ggdraw() +
+  cowplot::draw_plot(environment_depth_profiles,
+                     x = -0.031, y = -0.01,
+                     width = 1, height = 1)
+
+net4_sampling_locations_map_for_layout <- cowplot::ggdraw() +
+  cowplot::draw_plot(net4_sampling_locations_map + theme(legend.position = "none"),
+                     x = 0.045, y = -0.01,
+                     width = 1, height = 1)
+
+environmental_covariates_legend_for_layout <- cowplot::ggdraw() +
+  cowplot::draw_plot(environmental_covariates_legend,
+                     x = -0.25, y = 0,
+                     width = 1, height = 1)
+
+environmental_covariates <- ggarrange(
+  environment_depth_profiles_for_layout,
+  chlorophyll_box_plot + theme(legend.position = "none"),
+  ncol = 1,
+  labels = c("", "E"),
+  font.label = list(size = 12, face = "bold"),
+  heights = c(1, 0.8),
+  align = "v"
+)
+
+net4_sampling_locations_environmental_covariates_no_legend <- ggarrange(
+  net4_sampling_locations_map_for_layout,
+  environmental_covariates,
+  ncol = 2,
+  labels = c("A", ""),
+  font.label = list(size = 12, face = "bold"),
+  widths = c(0.77, 2),
+  align = "hv"
+)
+
+net4_sampling_locations_environmental_covariates <- ggarrange(
+  net4_sampling_locations_environmental_covariates_no_legend,
+  environmental_covariates_legend_for_layout,
+  ncol = 2,
+  widths = c(1, 0.16)
+)
+
+ggsave("net4_sampling_locations_environmental_covariates.png",
+       plot = net4_sampling_locations_environmental_covariates,
+       path = here("output"),
+       width = 12.5, height = 8.5, units = "in", dpi = 600)
 
 cluster_map_cluster_legend <- ggplot(
   tibble(cluster = factor(cluster_levels, levels = cluster_levels),
