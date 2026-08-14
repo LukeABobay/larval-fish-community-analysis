@@ -24,11 +24,15 @@ dbRDA_major_taxa_wide <- wide_major_taxa_nets
 
 # Choose db-RDA covariates ------------------------------------------------
 
-spatiotemporal_covariates <- c("year", "solar_dayness", "start_latitude_dd",
-                               "depth_mean_m", "seafloor_depth_m")
+spatiotemporal_covariates <- c("year", "solar_dayness_scaled",
+                               "start_latitude_dd_scaled",
+                               "depth_mean_m_scaled",
+                               "seafloor_depth_m_scaled")
 
-environmental_covariates <- c("mean_temperature_c", "mean_salinity_psu",
-                              "dissolved_oxygen_ml_l", "mean_chl_0_100_m_mgm3")
+environmental_covariates <- c("mean_temperature_c_scaled",
+                              "mean_salinity_psu_scaled",
+                              "dissolved_oxygen_ml_l_scaled",
+                              "mean_chl_0_100_m_mgm3_scaled")
 
 dbRDA_covariates <- c(spatiotemporal_covariates, environmental_covariates)
 
@@ -60,6 +64,7 @@ row.names(dbRDA_comm_matrix) <- dbRDA_env$transect_station_rep_year_net
 dbRDA_env_model <- dbRDA_env %>%
   select(transect_station_rep_year_net, all_of(dbRDA_covariates), shelf_position,
          collection_date, cruise, net) %>%
+  mutate(year = factor(year)) %>%
   as.data.frame()
 
 row.names(dbRDA_env_model) <- dbRDA_env_model$transect_station_rep_year_net
@@ -77,33 +82,33 @@ set.seed(123)
 
 # Using Bray-Curtis dissimilarity because these are community
 # composition data with many zeros, matches NMDS/cluster analyses
-dbRDA_base_model <- capscale(dbRDA_comm_matrix ~ year + solar_dayness +
-                               start_latitude_dd + depth_mean_m +
-                               seafloor_depth_m,
+dbRDA_base_model <- capscale(dbRDA_comm_matrix ~ year + solar_dayness_scaled +
+                               start_latitude_dd_scaled + depth_mean_m_scaled +
+                               seafloor_depth_m_scaled,
                              data = dbRDA_env_model,
                              distance = "bray",
                              # add = "lingoes" applies a correction for negative
                              # eigenvalues that can arise with Bray-Curtis dissimilarity
                              add = "lingoes")
 
-dbRDA_full_model <- capscale(dbRDA_comm_matrix ~ year + solar_dayness +
-                               start_latitude_dd + depth_mean_m +
-                               seafloor_depth_m + mean_temperature_c +
-                               mean_salinity_psu + dissolved_oxygen_ml_l +
-                               mean_chl_0_100_m_mgm3,
+dbRDA_full_model <- capscale(dbRDA_comm_matrix ~ year + solar_dayness_scaled +
+                               start_latitude_dd_scaled + depth_mean_m_scaled +
+                               seafloor_depth_m_scaled + mean_temperature_c_scaled +
+                               mean_salinity_psu_scaled + dissolved_oxygen_ml_l_scaled +
+                               mean_chl_0_100_m_mgm3_scaled,
                              data = dbRDA_env_model,
                              distance = "bray",
                              add = "lingoes")
 
 # This partial model tests environmental variables after conditioning on the
 # spatiotemporal variables in the base model
-dbRDA_env_partial_model <- capscale(dbRDA_comm_matrix ~ mean_temperature_c +
-                                      mean_salinity_psu + dissolved_oxygen_ml_l +
-                                      mean_chl_0_100_m_mgm3 +
-                                      Condition(year + solar_dayness +
-                                                  start_latitude_dd +
-                                                  depth_mean_m +
-                                                  seafloor_depth_m),
+dbRDA_env_partial_model <- capscale(dbRDA_comm_matrix ~ mean_temperature_c_scaled +
+                                      mean_salinity_psu_scaled + dissolved_oxygen_ml_l_scaled +
+                                      mean_chl_0_100_m_mgm3_scaled +
+                                      Condition(year + solar_dayness_scaled +
+                                                  start_latitude_dd_scaled +
+                                                  depth_mean_m_scaled +
+                                                  seafloor_depth_m_scaled),
                                     data = dbRDA_env_model,
                                     distance = "bray",
                                     add = "lingoes")
@@ -112,9 +117,11 @@ dbRDA_env_partial_model <- capscale(dbRDA_comm_matrix ~ mean_temperature_c +
 dbRDA_bray_dist <- vegdist(dbRDA_comm_matrix, method = "bray")
 
 dbRDA_varpart <- varpart(dbRDA_bray_dist,
-                         ~ year + solar_dayness + start_latitude_dd + depth_mean_m + seafloor_depth_m,
-                         ~ mean_temperature_c + mean_salinity_psu + dissolved_oxygen_ml_l +
-                           mean_chl_0_100_m_mgm3,
+                         ~ year + solar_dayness_scaled + start_latitude_dd_scaled +
+                           depth_mean_m_scaled + seafloor_depth_m_scaled,
+                         ~ mean_temperature_c_scaled + mean_salinity_psu_scaled +
+                           dissolved_oxygen_ml_l_scaled +
+                           mean_chl_0_100_m_mgm3_scaled,
                          data = dbRDA_env_model,
                          add = "lingoes")
 
@@ -122,17 +129,23 @@ dbRDA_varpart <- varpart(dbRDA_bray_dist,
 dbRDA_varpart_summary <- summary(dbRDA_varpart)
 
 # Testable unique fractions from the two-set variation partitioning
-dbRDA_spatiotemporal_unique_model <- dbrda(dbRDA_bray_dist ~ year + solar_dayness + start_latitude_dd + depth_mean_m +
-                                             seafloor_depth_m +
-                                             Condition(mean_temperature_c + mean_salinity_psu + dissolved_oxygen_ml_l +
-                                                         mean_chl_0_100_m_mgm3),
+dbRDA_spatiotemporal_unique_model <- dbrda(dbRDA_bray_dist ~ year + solar_dayness_scaled +
+                                             start_latitude_dd_scaled + depth_mean_m_scaled +
+                                             seafloor_depth_m_scaled +
+                                             Condition(mean_temperature_c_scaled + mean_salinity_psu_scaled +
+                                                         dissolved_oxygen_ml_l_scaled +
+                                                         mean_chl_0_100_m_mgm3_scaled),
                                            data = dbRDA_env_model,
                                            add = "lingoes")
 
-dbRDA_environmental_unique_model <- dbrda(dbRDA_bray_dist ~ mean_temperature_c + mean_salinity_psu +
-                                            dissolved_oxygen_ml_l + mean_chl_0_100_m_mgm3 +
-                                            Condition(year + solar_dayness + start_latitude_dd + depth_mean_m +
-                                                        seafloor_depth_m),
+dbRDA_environmental_unique_model <- dbrda(dbRDA_bray_dist ~ mean_temperature_c_scaled +
+                                            mean_salinity_psu_scaled +
+                                            dissolved_oxygen_ml_l_scaled +
+                                            mean_chl_0_100_m_mgm3_scaled +
+                                            Condition(year + solar_dayness_scaled +
+                                                        start_latitude_dd_scaled +
+                                                        depth_mean_m_scaled +
+                                                        seafloor_depth_m_scaled),
                                           data = dbRDA_env_model,
                                           add = "lingoes")
 
@@ -223,14 +236,14 @@ dbRDA_vector_scores <- scores(dbRDA_full_model, display = "bp", choices = 1:2) %
     CAP1 = -CAP1,
     plot_label = recode(
       variable,
-      "mean_temperature_c" = "Temperature",
-      "mean_salinity_psu" = "Salinity",
-      "dissolved_oxygen_ml_l" = "Oxygen",
-      "mean_chl_0_100_m_mgm3" = "Chl a",
-      "depth_mean_m" = "Mean depth",
-      "seafloor_depth_m" = "Seafloor depth",
-      "start_latitude_dd" = "Latitude",
-      "solar_dayness" = "Daytime",
+      "mean_temperature_c_scaled" = "Temperature",
+      "mean_salinity_psu_scaled" = "Salinity",
+      "dissolved_oxygen_ml_l_scaled" = "Oxygen",
+      "mean_chl_0_100_m_mgm3_scaled" = "Chl a",
+      "depth_mean_m_scaled" = "Mean depth",
+      "seafloor_depth_m_scaled" = "Seafloor depth",
+      "start_latitude_dd_scaled" = "Latitude",
+      "solar_dayness_scaled" = "Daytime",
       "year2022" = "2022",
       "year2019" = "2019",
       "year2023" = "2023",
@@ -240,26 +253,26 @@ dbRDA_vector_scores <- scores(dbRDA_full_model, display = "bp", choices = 1:2) %
     base_label_y = CAP2 + if_else(CAP2 >= 0, 0.10, -0.10),
     label_x = case_when(
       variable == "year2019" ~ 0.25,
-      variable == "solar_dayness" ~ -0.15,
-      variable == "dissolved_oxygen_ml_l" ~ -0.15,
+      variable == "solar_dayness_scaled" ~ -0.15,
+      variable == "dissolved_oxygen_ml_l_scaled" ~ -0.15,
       variable == "year2018" ~ 0.5,
       variable == "year2023" ~ -0.65,
-      variable == "mean_chl_0_100_m_mgm3" ~ -0.55,
+      variable == "mean_chl_0_100_m_mgm3_scaled" ~ -0.55,
       TRUE ~ base_label_x
     ),
     label_y = case_when(
       variable == "year2019" ~ 1,
-      variable == "solar_dayness" ~ -0.7,
-      variable == "dissolved_oxygen_ml_l" ~ 0.64,
+      variable == "solar_dayness_scaled" ~ -0.7,
+      variable == "dissolved_oxygen_ml_l_scaled" ~ 0.64,
       variable == "year2018" ~ -0.1,
       variable == "year2023" ~ 0.35,
-      variable == "mean_chl_0_100_m_mgm3" ~ 0.5,
+      variable == "mean_chl_0_100_m_mgm3_scaled" ~ 0.5,
       TRUE ~ base_label_y
     ),
     label_hjust = case_when(
       variable %in% c("year2019", "year2018") ~ 0,
-      variable %in% c("dissolved_oxygen_ml_l", "solar_dayness", 
-                      "year2023", "mean_chl_0_100_m_mgm3") ~ 1,
+      variable %in% c("dissolved_oxygen_ml_l_scaled", "solar_dayness_scaled", 
+                      "year2023", "mean_chl_0_100_m_mgm3_scaled") ~ 1,
       CAP1 >= 0 ~ 0,
       TRUE ~ 1
     )
