@@ -226,7 +226,7 @@ environment_covariates_df <- env_wide %>%
   distinct() %>%
   filter(net != 0) %>%
   mutate(year = factor(year, levels = c(2018, 2019, 2022, 2023)),
-         seafloor_depth_plot_m = abs(seafloor_depth_m))
+         seafloor_depth_plot_m = seafloor_depth_m)
 
 seafloor_depth_color_limits <- range(environment_covariates_df$seafloor_depth_plot_m,
                                      na.rm = TRUE)
@@ -613,6 +613,11 @@ bar_heights <- AHC_comm_matrix_transformed_long %>%
 
 max_height <- max(bar_heights$total_height)
 
+AHC_comm_matrix_log_transformed_long <- AHC_comm_matrix_transformed_long %>%
+  filter(sqrt_concentration > 0) %>%
+  mutate(log_concentration = log(sqrt_concentration),
+         log_concentration_shifted = log_concentration - min(log_concentration, na.rm = TRUE))
+
 # Plot proportional taxonomic composition across all net tows, sorted by cluster
 cluster_proportion_bounds <- AHC_comm_matrix_transformed_long %>%
   distinct(cluster, chrono_sample_ID, chrono_sample_numeric) %>%
@@ -668,7 +673,10 @@ ggsave("clusters_proportion_bar_plot.png",
 
 # Plot by transect_station_rep_year, sorted by cluster
 make_cluster_abundance_year_plot <- function(plot_data, separator_data, plot_year,
-                                             y_limit, show_y_axis = FALSE) {
+                                             abundance_column = "sqrt_concentration",
+                                             y_limit = NULL,
+                                             y_label = expression(paste("Concentration (ind. ", m^-3, ")")),
+                                             show_y_axis = FALSE) {
   year_plot_data <- plot_data %>%
     filter(year == plot_year) %>%
     arrange(cluster, chrono_sample_numeric) %>%
@@ -689,7 +697,7 @@ make_cluster_abundance_year_plot <- function(plot_data, separator_data, plot_yea
     as.character(year_cluster_label_positions$cluster)
 
   ggplot(year_plot_data, aes(x = chrono_sample_ID,
-                             y = sqrt_concentration,
+                             y = .data[[abundance_column]],
                              fill = factor(taxon, levels = ordered_taxa))) +
     geom_bar(stat = "identity", position = "stack") +
     scale_fill_manual(
@@ -715,11 +723,11 @@ make_cluster_abundance_year_plot <- function(plot_data, separator_data, plot_yea
         guide = guide_axis(angle = 0)
       )
     ) +
-    scale_y_continuous(limits = c(0, y_limit * 1.05),
+    scale_y_continuous(limits = if (is.null(y_limit)) NULL else c(0, y_limit * 1.05),
                        expand = expansion(mult = c(0, 0))) +
     labs(title = NULL,
          x = NULL,
-         y = expression(paste("Concentration (ind. ", m^-3, ")"))) +
+         y = y_label) +
     guides(fill = guide_legend(ncol = 1)) +
     theme_classic() +
     theme(panel.background = element_rect(fill = "white", color = NA),
@@ -735,13 +743,14 @@ make_cluster_abundance_year_plot <- function(plot_data, separator_data, plot_yea
 }
 
 cluster_years <- sort(unique(AHC_comm_matrix_transformed_long$year))
-cluster_year_widths <- c(23, 75, 60, 35)
+cluster_year_widths <- c(24, 72, 60, 35)
 cluster_year_plots <- map2(cluster_years, seq_along(cluster_years),
                            ~make_cluster_abundance_year_plot(
                              AHC_comm_matrix_transformed_long,
                              cluster_separators,
                              .x,
-                             max_height,
+                             abundance_column = "sqrt_concentration",
+                             y_limit = max_height,
                              show_y_axis = .y == 1
                            ))
 cluster_abun_header <- ggarrange(
@@ -790,6 +799,37 @@ ggsave(filename = "barplot_taxa_legend.png",
   width = 2, height = 6, dpi = 300)
 
 ggsave("clusters_abundance_bar_plot.png", plot = clust_abun_bar_plot_no_legend, path = here("output"),
+       width = 10, height = 5, units = "in", dpi = 300)
+
+cluster_year_log_plots <- map2(cluster_years, seq_along(cluster_years),
+                               ~make_cluster_abundance_year_plot(
+                                 AHC_comm_matrix_log_transformed_long,
+                                 cluster_separators,
+                                 .x,
+                                 abundance_column = "log_concentration_shifted",
+                                 y_label = expression(paste("log Concentration (ind. ", m^-3, ")")),
+                                 show_y_axis = .y == 1
+                               ))
+
+log_clust_abun_panel_row <- ggarrange(
+  plotlist = map(cluster_year_log_plots, ~.x + theme(legend.position = "none")),
+  ncol = length(cluster_year_log_plots),
+  nrow = 1,
+  widths = cluster_year_widths,
+  align = "hv"
+)
+
+log_clust_abun_bar_plot_no_legend <- ggarrange(
+  cluster_abun_header,
+  log_clust_abun_panel_row,
+  text_grob("Sample", size = 12),
+  ncol = 1,
+  heights = c(0.14, 1, 0.06)
+)
+
+ggsave("clusters_abundance_bar_plot_log_transformed.png",
+       plot = log_clust_abun_bar_plot_no_legend,
+       path = here("output"),
        width = 10, height = 5, units = "in", dpi = 300)
 
 
@@ -1091,7 +1131,7 @@ vector_df <- as.data.frame(vector_scores) %>%
       "depth_mean_m_scaled" = "Mean depth",
       "seafloor_depth_m_scaled" = "Seafloor depth",
       "start_latitude_dd_scaled" = "Latitude",
-      "solar_dayness_scaled" = "Daytime",
+      "solar_dayness_scaled" = "Time of day",
       "year_2018" = "2018",
       "year_2019" = "2019",
       "year_2022" = "2022",
@@ -1101,7 +1141,7 @@ vector_df <- as.data.frame(vector_scores) %>%
     base_label_x = NMDS1 + if_else(NMDS1 >= 0, 0.14, -0.14),
     base_label_y = NMDS2 + if_else(NMDS2 >= 0, 0.10, -0.10),
     label_x = case_when(
-      variable == "seafloor_depth_m_scaled" ~ -0.75,
+      variable == "seafloor_depth_m_scaled" ~ 0.75,
       variable == "start_latitude_dd_scaled" ~ -0.65,
       variable == "depth_mean_m_scaled" ~ 0.3,
       variable == "solar_dayness_scaled" ~ -0.1,
@@ -1112,7 +1152,7 @@ vector_df <- as.data.frame(vector_scores) %>%
       TRUE ~ base_label_x
     ),
     label_y = case_when(
-      variable == "seafloor_depth_m_scaled" ~ -0.1,
+      variable == "seafloor_depth_m_scaled" ~ 0.1,
       variable == "start_latitude_dd_scaled" ~ -0.5,
       variable == "depth_mean_m_scaled" ~ 0.4,
       variable == "solar_dayness_scaled" ~ 0.25,
@@ -1123,7 +1163,7 @@ vector_df <- as.data.frame(vector_scores) %>%
       TRUE ~ base_label_y
     ),
     label_hjust = case_when(
-      variable %in% c("seafloor_depth_m_scaled", "start_latitude_dd_scaled",
+      variable %in% c("start_latitude_dd_scaled",
                       "solar_dayness_scaled", "year_2023") ~ 1,
       TRUE ~ 0
     )

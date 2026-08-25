@@ -196,7 +196,8 @@ dev.off()
 dbRDA_site_scores <- scores(dbRDA_full_model, display = "sites", choices = 1:2) %>%
   as.data.frame() %>%
   rownames_to_column("transect_station_rep_year_net") %>%
-  mutate(CAP1 = -CAP1) %>%
+  mutate(CAP1 = -CAP1,
+         CAP2 = -CAP2) %>%
   left_join(dbRDA_env_model, by = "transect_station_rep_year_net") %>%
   left_join(dbRDA_clusters, by = "transect_station_rep_year_net")
 
@@ -234,6 +235,7 @@ dbRDA_vector_scores <- scores(dbRDA_full_model, display = "bp", choices = 1:2) %
   rownames_to_column("variable") %>%
   mutate(
     CAP1 = -CAP1,
+    CAP2 = -CAP2,
     plot_label = recode(
       variable,
       "mean_temperature_c_scaled" = "Temperature",
@@ -243,7 +245,7 @@ dbRDA_vector_scores <- scores(dbRDA_full_model, display = "bp", choices = 1:2) %
       "depth_mean_m_scaled" = "Mean depth",
       "seafloor_depth_m_scaled" = "Seafloor depth",
       "start_latitude_dd_scaled" = "Latitude",
-      "solar_dayness_scaled" = "Daytime",
+      "solar_dayness_scaled" = "Time of day",
       "year2022" = "2022",
       "year2019" = "2019",
       "year2023" = "2023",
@@ -261,12 +263,12 @@ dbRDA_vector_scores <- scores(dbRDA_full_model, display = "bp", choices = 1:2) %
       TRUE ~ base_label_x
     ),
     label_y = case_when(
-      variable == "year2019" ~ 1,
-      variable == "solar_dayness_scaled" ~ -0.7,
-      variable == "dissolved_oxygen_ml_l_scaled" ~ 0.64,
-      variable == "year2018" ~ -0.1,
-      variable == "year2023" ~ 0.35,
-      variable == "mean_chl_0_100_m_mgm3_scaled" ~ 0.5,
+      variable == "year2019" ~ -1,
+      variable == "solar_dayness_scaled" ~ 0.7,
+      variable == "dissolved_oxygen_ml_l_scaled" ~ -0.64,
+      variable == "year2018" ~ 0.1,
+      variable == "year2023" ~ 0.05,
+      variable == "mean_chl_0_100_m_mgm3_scaled" ~ -0.5,
       TRUE ~ base_label_y
     ),
     label_hjust = case_when(

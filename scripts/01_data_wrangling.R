@@ -243,13 +243,13 @@ sampling_stations_geographic <- mocness_full %>%
   distinct(start_latitude_dd, start_longitude_dd) %>%
   filter(!is.na(start_latitude_dd) & !is.na(start_longitude_dd)) %>%
   # Get depth of each sampling station
-  mutate(seafloor_depth_m = get.depth(bathy, x = start_longitude_dd, y = start_latitude_dd, locator = FALSE)$depth) %>%
+  mutate(seafloor_depth_m = abs(get.depth(bathy, x = start_longitude_dd, y = start_latitude_dd, locator = FALSE)$depth)) %>%
   # Get distance to shore from each sampling station
   mutate(distance_to_shore_km = dist2isobath(bathy, x = start_longitude_dd, y = start_latitude_dd, isobath = 0, locator = FALSE)$distance 
          # Convert distance from m to km
          / 1000) %>%
   # Evaluate position relative to 200-m isobath
-  mutate(shelf_position = ifelse(seafloor_depth_m > -200, "shelf", "offshore"))
+  mutate(shelf_position = ifelse(seafloor_depth_m < 200, "shelf", "offshore"))
 
 mocness_full_geographic <- merge(mocness_full, sampling_stations_geographic, all.x = TRUE, by = c("start_latitude_dd", "start_longitude_dd"))
 
@@ -771,7 +771,7 @@ mocness_clean <- mocness_full_geographic_isiis_mixing_fluor %>%
   mutate(mixed_layer_boundary_depth_m = case_when(
     is.na(mld_density_0_03_m) ~ NA_real_,
     is.na(seafloor_depth_m) ~ mld_density_0_03_m,
-    mld_density_0_03_m >= abs(seafloor_depth_m) ~ abs(seafloor_depth_m),
+    mld_density_0_03_m >= seafloor_depth_m ~ seafloor_depth_m,
     TRUE ~ mld_density_0_03_m),
     tow_mid_depth_relative_to_mld_m = depth_mean_m - mixed_layer_boundary_depth_m) %>%
   select(project, year, cruise, collection_date, start_time_pt, solar_dayness,
