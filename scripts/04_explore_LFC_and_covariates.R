@@ -72,7 +72,7 @@ dissim_matrix <- vegdist(comm_matrix_for_dist, method = "bray")
 ##bin environmental data for plotting
 env_meta_binned <- env_meta %>%
   mutate(
-    seafloor_bin = cut(seafloor_depth_m, breaks = c(0, -100, -500, -1000), labels = c("0-100", "100-500", "500-1000")),
+    seafloor_bin = cut(seafloor_depth_m, breaks = c(0, 100, 500, 1000), labels = c("0-100", "100-500", "500-1000"), include.lowest = TRUE),
     prey_abundance_bin = cut(prey_zooplankton_abundance_ind_m3, breaks = quantile(prey_zooplankton_abundance_ind_m3, probs = seq(0, 1, 0.25), na.rm = TRUE), labels = c("1", "2", "3", "4"), include.lowest = TRUE),
     DO_bin = cut(dissolved_oxygen_ml_l, breaks = quantile(dissolved_oxygen_ml_l, probs = seq(0, 1, 0.25), na.rm = TRUE), labels = c("1", "2", "3", "4"), include.lowest = TRUE),
     density_bin = cut(seawater_density_1000_kg_m3, breaks = quantile(seawater_density_1000_kg_m3, probs = seq(0, 1, 0.25), na.rm = TRUE), labels = c("1", "2", "3", "4"), include.lowest = TRUE),

@@ -184,6 +184,9 @@ gam_surface_predictions <- gam_surface_predictions %>%
             lwr = mean(lwr, na.rm = TRUE),
             upr = mean(upr, na.rm = TRUE),
             .groups = "drop") %>%
+  group_by(taxon) %>%
+  mutate(normalized_fit = fit / max(fit, na.rm = TRUE)) %>%
+  ungroup() %>%
   mutate(log_fit = log(fit))
 
 gam_surface_plot <- ggplot(gam_surface_predictions,
@@ -200,6 +203,24 @@ gam_surface_plot <- ggplot(gam_surface_predictions,
 
 ggsave(here("output/gam_predicted_abundance_surfaces_all_taxa.png"),
        plot = gam_surface_plot,
+       width = 12,
+       height = 8,
+       dpi = 300)
+
+gam_surface_normalized_plot <- ggplot(gam_surface_predictions,
+                                      aes(x = solar_dayness, y = depth_mean_m, fill = normalized_fit)) +
+  geom_raster(interpolate = TRUE) +
+  geom_contour(aes(z = normalized_fit), color = "white", linewidth = 0.2, alpha = 0.6) +
+  scale_y_reverse() +
+  scale_fill_viridis_c(option = "magma", limits = c(0, 1)) +
+  facet_wrap(~ taxon, labeller = taxon_facet_labeller) +
+  labs(x = "Time of day",
+       y = "Mean tow depth (m)",
+       fill = "Relative predicted abundance") +
+  theme_classic()
+
+ggsave(here("output/gam_predicted_abundance_surfaces_normalized_all_taxa.png"),
+       plot = gam_surface_normalized_plot,
        width = 12,
        height = 8,
        dpi = 300)
@@ -425,6 +446,9 @@ glmm_surface_predictions <- glmm_surface_predictions %>%
             lwr = mean(lwr, na.rm = TRUE),
             upr = mean(upr, na.rm = TRUE),
             .groups = "drop") %>%
+  group_by(taxon) %>%
+  mutate(normalized_fit = fit / max(fit, na.rm = TRUE)) %>%
+  ungroup() %>%
   mutate(log_fit = log(fit))
 
 glmm_surface_plot <- ggplot(glmm_surface_predictions,
@@ -434,13 +458,31 @@ glmm_surface_plot <- ggplot(glmm_surface_predictions,
   scale_y_reverse() +
   scale_fill_viridis_c(option = "magma") +
   facet_wrap(~ taxon, labeller = taxon_facet_labeller) +
-  labs(x = "Daytime",
+  labs(x = "Time of day",
        y = "Mean tow depth (m)",
        fill = expression(paste("log(Predicted concentration (", m^{-3}, "))"))) +
   theme_classic()
 
 ggsave(here("output/glmm_predicted_abundance_surfaces_all_taxa.png"),
        plot = glmm_surface_plot,
+       width = 12,
+       height = 8,
+       dpi = 300)
+
+glmm_surface_normalized_plot <- ggplot(glmm_surface_predictions,
+                                       aes(x = solar_dayness, y = depth_mean_m, fill = normalized_fit)) +
+  geom_raster(interpolate = TRUE) +
+  geom_contour(aes(z = normalized_fit), color = "white", linewidth = 0.2, alpha = 0.6) +
+  scale_y_reverse() +
+  scale_fill_viridis_c(option = "magma", limits = c(0, 1)) +
+  facet_wrap(~ taxon, labeller = taxon_facet_labeller) +
+  labs(x = "Time of day",
+       y = "Mean tow depth (m)",
+       fill = "Relative predicted abundance") +
+  theme_classic()
+
+ggsave(here("output/glmm_predicted_abundance_surfaces_normalized_all_taxa.png"),
+       plot = glmm_surface_normalized_plot,
        width = 12,
        height = 8,
        dpi = 300)
@@ -498,7 +540,7 @@ glmm_slope_plot <- ggplot(glmm_slope_predictions,
   geom_ribbon(alpha = 0.25, fill = "grey60") +
   geom_line(linewidth = 0.5) +
   facet_wrap(~ taxon, scales = "free_y", labeller = taxon_facet_labeller) +
-  labs(x = "Daytime",
+  labs(x = "Time of day",
        y = expression(paste("Slope of effect of depth on abundance (", m^{-3}, " ", m^{-1}, ")"))) +
   theme_classic()
 
@@ -573,7 +615,7 @@ glmm_integrated_plot <- ggplot(glmm_integrated_summary,
   geom_ribbon(alpha = 0.25, fill = "grey60") +
   geom_line(linewidth = 0.5) +
   facet_wrap(~ taxon, scales = "free_y", labeller = taxon_facet_labeller) +
-  labs(x = "Daytime",
+  labs(x = "Time of day",
        y = expression(paste("Predicted count in top 100 m (", m^{-2}, ")"))) +
   theme_classic()
 
