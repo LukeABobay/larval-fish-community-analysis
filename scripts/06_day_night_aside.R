@@ -131,8 +131,38 @@ summary(gam_dayness_depth_model)
 
 gam_taxa <- levels(gam_model_data$taxon)
 gam_years <- levels(gam_model_data$year)
+taxa_panel_order <- c(
+  "Bathylagus_ochotensis",
+  "Tarletonbeania_crenularis",
+  "Parophrys_vetulus",
+  "Lestidiops_ringens",
+  "Hemilepidotus_spp",
+  "Psettichthys_melanostictus",
+  "Cyclopsettidae",
+  "Scorpaenichthys_marmoratus",
+  "Cottidae",
+  "Ammodytidae",
+  "Sebastes_spp",
+  "Hexagrammidae",
+  "Isopsetta_isolepis",
+  "Osmeridae",
+  "Glyptocephalus_zachirus",
+  "Gadidae",
+  "Lyopsetta_exilis",
+  "Psychrolutidae",
+  "Agonidae",
+  "Protomyctophum_spp",
+  "Stenobrachius_leucopsarus",
+  "Liparis_spp"
+)
+missing_taxa_panel_order <- setdiff(taxa_panel_order, gam_taxa)
+if (length(missing_taxa_panel_order) > 0) {
+  warning("Requested taxa missing from GAM model data: ",
+          paste(missing_taxa_panel_order, collapse = ", "))
+}
+taxa_panel_order <- taxa_panel_order[taxa_panel_order %in% gam_taxa]
 taxon_facet_labeller <- labeller(
-  taxon = as_labeller(taxon_labels[gam_taxa], default = label_parsed)
+  taxon = as_labeller(taxon_labels[taxa_panel_order], default = label_parsed)
 )
 gam_solar_dayness_center <- mean(env_wide$solar_dayness, na.rm = TRUE)
 gam_solar_dayness_scale <- sd(env_wide$solar_dayness, na.rm = TRUE)
@@ -187,7 +217,8 @@ gam_surface_predictions <- gam_surface_predictions %>%
   group_by(taxon) %>%
   mutate(normalized_fit = fit / max(fit, na.rm = TRUE)) %>%
   ungroup() %>%
-  mutate(log_fit = log(fit))
+  mutate(log_fit = log(fit),
+         taxon = factor(as.character(taxon), levels = taxa_panel_order))
 
 gam_surface_plot <- ggplot(gam_surface_predictions,
                            aes(x = solar_dayness, y = depth_mean_m, fill = log_fit)) +
@@ -280,7 +311,8 @@ gam_slope_predictions <- gam_slope_predictions %>%
   mutate(fit = as.numeric(gam_slope_lpmatrix %*% gam_coef),
          se = sqrt(rowSums((gam_slope_lpmatrix %*% gam_vcov) * gam_slope_lpmatrix)),
          lwr = fit - 1.96 * se,
-         upr = fit + 1.96 * se)
+         upr = fit + 1.96 * se,
+         taxon = factor(as.character(taxon), levels = taxa_panel_order))
 
 gam_slope_plot <- ggplot(gam_slope_predictions,
                          aes(x = solar_dayness, y = fit, ymin = lwr, ymax = upr)) +
@@ -371,6 +403,9 @@ for (gam_taxon in gam_taxa) {
                                       gam_integrated_taxon_summary)
 }
 
+gam_integrated_summary <- gam_integrated_summary %>%
+  mutate(taxon = factor(as.character(taxon), levels = taxa_panel_order))
+
 gam_integrated_plot <- ggplot(gam_integrated_summary,
                               aes(x = solar_dayness, y = fit, ymin = lwr, ymax = upr)) +
   geom_ribbon(alpha = 0.25, fill = "grey60") +
@@ -449,7 +484,8 @@ glmm_surface_predictions <- glmm_surface_predictions %>%
   group_by(taxon) %>%
   mutate(normalized_fit = fit / max(fit, na.rm = TRUE)) %>%
   ungroup() %>%
-  mutate(log_fit = log(fit))
+  mutate(log_fit = log(fit),
+         taxon = factor(as.character(taxon), levels = taxa_panel_order))
 
 glmm_surface_plot <- ggplot(glmm_surface_predictions,
                             aes(x = solar_dayness, y = depth_mean_m, fill = log_fit)) +
@@ -532,7 +568,8 @@ glmm_slope_predictions <- glmm_slope_predictions %>%
          se = sqrt(rowSums((glmm_slope_model_matrix %*% glmm_vcov) *
                              glmm_slope_model_matrix)),
          lwr = fit - 1.96 * se,
-         upr = fit + 1.96 * se)
+         upr = fit + 1.96 * se,
+         taxon = factor(as.character(taxon), levels = taxa_panel_order))
 
 glmm_slope_plot <- ggplot(glmm_slope_predictions,
                           aes(x = solar_dayness, y = fit, ymin = lwr, ymax = upr)) +
@@ -609,6 +646,9 @@ for (glmm_taxon in gam_taxa) {
   glmm_integrated_summary <- bind_rows(glmm_integrated_summary,
                                        glmm_integrated_taxon_summary)
 }
+
+glmm_integrated_summary <- glmm_integrated_summary %>%
+  mutate(taxon = factor(as.character(taxon), levels = taxa_panel_order))
 
 glmm_integrated_plot <- ggplot(glmm_integrated_summary,
                                aes(x = solar_dayness, y = fit, ymin = lwr, ymax = upr)) +
