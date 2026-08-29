@@ -67,7 +67,7 @@ names(isiis_list) <- tools::file_path_sans_ext(files)
 isiis_w22_env <- read.csv(here("data/W22_ISIIS3_enviro.csv"))
 isiis_w23_env <- read.csv(here("data/W23_ISIIS3_enviro.csv"))
 
-# CTD fluorescence, temperature, and salinity data
+# CTD fluorescence, oxygen, temperature, and salinity data
 ctd_fluorescence <- read.csv(here("data/ctd_fluorescence_temperature_binned.csv")) %>%
   mutate(start_time_pt = as.POSIXct(start_time_pt, tz = "America/Los_Angeles"))
 
@@ -260,7 +260,7 @@ mocness_full_geographic <- merge(mocness_full, sampling_stations_geographic, all
 isiis_w22_w23_env <- rbind(isiis_w22_env, isiis_w23_env) %>%
   mutate(sw.density = oce::swRho(Salinity, Temperature, Pressure, eos = "unesco")) %>%
   rename(time_Pacific = Time_PT, Lat = Latitude, Long = Longitude, chl.ug.l = chl_a_ul) %>%
-  select(time_Pacific, Depth, Lat, Long, Oxygen, sw.density, chl.ug.l) %>%
+  select(time_Pacific, Depth, Lat, Long, sw.density, chl.ug.l) %>%
   mutate(Transect_ID = case_when(Lat > 47 ~ "GH",
                                  Lat > 46 & Lat < 46.5 ~ "CR",
                                  Lat > 45 & Lat < 46 ~ "CM",
@@ -304,7 +304,7 @@ events_sf <- sampling_events %>%
 # Build ISIIS points
 isiis_needed <- c(
   "Transect_ID", "grp_month", "Long", "Lat", "Depth",
-  "time_Pacific", "Oxygen", "sw.density", "chl.ug.l",
+  "time_Pacific", "sw.density", "chl.ug.l",
   # prey columns used later:
   "appendicularian",
   "copepod_calanoid_calanus", "copepod_calanoid_diaptomoidea",
@@ -426,8 +426,6 @@ isiis_means_by_mocness_tow <- pts_in_events %>%
       if (all(is.na(prey_row))) NA_real_ else sum(prey_row, na.rm = TRUE),
     
     # optional: do the same “all NA -> NA” guard for means
-    dissolved_oxygen_ml_l =
-      if (all(is.na(Oxygen))) NA_real_ else mean(Oxygen, na.rm = TRUE),
     seawater_density_1000_kg_m3 =
       if (all(is.na(sw.density))) NA_real_ else mean(sw.density, na.rm = TRUE),
     chlorophyll_ug_l =
@@ -473,7 +471,9 @@ ctd_profiles_for_mld <- ctd_fluorescence %>%
     density_kgm3 = density_freshwater_kgm3 +
       salinity_linear_coefficient * salinity_psu +
       salinity_power_coefficient * salinity_psu^1.5 +
-      salinity_quadratic_coefficient * salinity_psu^2
+      salinity_quadratic_coefficient * salinity_psu^2,
+    oxygen_umol_kg = as.numeric(mean_oxygen_umol_kg),
+    dissolved_oxygen_ml_l = oxygen_umol_kg * density_kgm3 * 22.391 / 1e6
   ) %>%
   filter(
     is.finite(depth_m),
@@ -487,6 +487,8 @@ ctd_profiles_for_mld <- ctd_fluorescence %>%
     temperature_c = mean(temperature_c),
     salinity_psu = mean(salinity_psu),
     density_kgm3 = mean(density_kgm3),
+    dissolved_oxygen_ml_l =
+      if (all(is.na(dissolved_oxygen_ml_l))) NA_real_ else mean(dissolved_oxygen_ml_l, na.rm = TRUE),
     .groups = "drop"
   ) %>%
   arrange(start_time_pt, start_longitude_dd, start_latitude_dd, depth_m)
@@ -540,7 +542,7 @@ ctd_mld_by_cast <- ctd_profiles_for_mld %>%
 mocness_tow_coordinates <- mocness_metadata %>%
   distinct(start_time_pt, transect, replicate, station, net, .keep_all = TRUE) %>%
   select(cruise, transect, replicate, station, net, start_time_pt,
-         start_longitude_dd, start_latitude_dd) %>%
+         start_longitude_dd, start_latitude_dd, minimum_depth_m, maximum_depth_m) %>%
   mutate(moc_id = row_number(),
          start_time_pt = as.POSIXct(start_time_pt, tz = "America/Los_Angeles")) %>%
   # Add point geometries
@@ -600,12 +602,28 @@ ctd_fluorescence_0_100_m <- ctd_fluorescence %>%
 ctd_coordinates <- ctd_fluorescence_0_100_m %>%
   st_as_sf(coords = c("start_longitude_dd", "start_latitude_dd"), crs = 4326, remove = FALSE) %>%
   mutate(ctd_id = row_number()) %>%
-  select(ctd_id, ctd_time_pt = start_time_pt, mean_chl_0_100_m_mgm3,
+  select(ctd_id, ctd_time_pt = start_time_pt,
+         ctd_start_longitude_dd = start_longitude_dd,
+         ctd_start_latitude_dd = start_latitude_dd,
+         mean_chl_0_100_m_mgm3,
          integrated_chl_0_100_m_mgm2, mld_density_0_03_m,
          mld_density_censor_flag, mld_reference_depth_m,
          mld_reference_density_kgm3)
 
-# Get all candidate pairs within 1 km
+ctd_profiles_with_id <- ctd_profiles_for_mld %>%
+  inner_join(
+    ctd_coordinates %>%
+      st_drop_geometry() %>%
+      select(ctd_id, ctd_time_pt, ctd_start_longitude_dd,
+             ctd_start_latitude_dd),
+    by = c(
+      "start_time_pt" = "ctd_time_pt",
+      "start_longitude_dd" = "ctd_start_longitude_dd",
+      "start_latitude_dd" = "ctd_start_latitude_dd"
+    )
+  )
+
+# Get all candidate pairs within 5 km
 pairs <- st_join(mocness_tow_coordinates, ctd_coordinates,
                  join = st_is_within_distance,
                  dist = 5000,
@@ -619,16 +637,39 @@ pairs <- pairs %>%
                           as.numeric(st_distance(geometry, st_geometry(ctd_coordinates)[ctd_id], by_element = TRUE))))
 
 # Pick best CTD per MOC: closest in time, tie-break by distance
-ctd_with_mocness <- pairs %>%
+ctd_best_matches <- pairs %>%
   group_by(moc_id) %>%
   slice_min(order_by = time_diff_min, n = 1, with_ties = TRUE) %>%
   slice_min(order_by = dist_m, n = 1, with_ties = FALSE) %>%
   ungroup() %>%
-  select(start_time_pt, mean_chl_0_100_m_mgm3,
+  st_drop_geometry()
+
+ctd_oxygen_by_mocness_tow <- ctd_best_matches %>%
+  select(moc_id, ctd_id, minimum_depth_m, maximum_depth_m) %>%
+  left_join(
+    ctd_profiles_with_id %>%
+      select(ctd_id, depth_m, dissolved_oxygen_ml_l),
+    by = "ctd_id"
+  ) %>%
+  mutate(dissolved_oxygen_ml_l = if_else(
+    depth_m >= minimum_depth_m & depth_m <= maximum_depth_m,
+    dissolved_oxygen_ml_l,
+    NA_real_
+  )) %>%
+  group_by(moc_id) %>%
+  summarize(
+    dissolved_oxygen_ml_l =
+      if (all(is.na(dissolved_oxygen_ml_l))) NA_real_ else mean(dissolved_oxygen_ml_l, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+ctd_with_mocness <- ctd_best_matches %>%
+  left_join(ctd_oxygen_by_mocness_tow, by = "moc_id") %>%
+  ungroup() %>%
+  select(start_time_pt, dissolved_oxygen_ml_l, mean_chl_0_100_m_mgm3,
          integrated_chl_0_100_m_mgm2, mld_density_0_03_m,
          mld_density_censor_flag, mld_reference_depth_m,
-         mld_reference_density_kgm3) %>%
-  st_drop_geometry(geometry)
+         mld_reference_density_kgm3)
 
 # Merge with full data frame
 mocness_full_geographic_isiis_mixing_fluor <- left_join(mocness_full_geographic_isiis, ctd_with_mocness,
