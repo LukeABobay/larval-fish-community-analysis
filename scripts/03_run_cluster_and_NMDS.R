@@ -41,7 +41,8 @@ source(here("scripts/02_prepare_community_data.R"))
 ##plot k clusters/rectangles
 windows()
 plot(AHC_result, labels = AHC_comm_matrix_transformed$chrono_sample_ID,
-     xlab = "Sample", cex = 0.4)
+     main = "", sub = "",
+     xlab = "Sample", ylab = "Average Bray-Curtis dissimilarity", cex = 0.3)
 rect.hclust(AHC_result, k = 7, border = dendrogram_cluster_colors)
 
 png(filename = here("output/AHC_sampling_events_dendrogram.png"),
@@ -51,12 +52,14 @@ png(filename = here("output/AHC_sampling_events_dendrogram.png"),
     res = 300)
 par(fig = c(0, 0.85, 0, 1), mar =c(5, 4, 4, 0.2), new = FALSE)
 plot(AHC_result, labels = AHC_comm_matrix_transformed$chrono_sample_ID,
-     xlab = "Sample", cex = 0.4)
+     main = "", sub = "",
+     xlab = "Sample", ylab = "Average Bray-Curtis dissimilarity", cex = 0.3)
 rect.hclust(AHC_result, k = 7, border = dendrogram_cluster_colors)
 par(fig = c(0.85, 1, 0, 1), mar =c(5, 0, 4, 1), new = TRUE)
 plot.new()
-legend("center", legend = paste("Cluster", 1:7),
-       col = dendrogram_cluster_colors,
+legend("center", legend = cluster_levels,
+       title = "Cluster",
+       col = cluster_colors[cluster_levels],
        lwd = 2, cex = 1.2, bty = "n")
 dev.off()
 
