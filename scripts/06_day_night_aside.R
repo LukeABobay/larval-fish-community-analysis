@@ -132,28 +132,28 @@ summary(gam_dayness_depth_model)
 gam_taxa <- levels(gam_model_data$taxon)
 gam_years <- levels(gam_model_data$year)
 taxa_panel_order <- c(
+  "Agonidae",
+  "Protomyctophum_spp",
   "Bathylagus_ochotensis",
   "Tarletonbeania_crenularis",
-  "Parophrys_vetulus",
   "Lestidiops_ringens",
   "Hemilepidotus_spp",
   "Psettichthys_melanostictus",
   "Cyclopsettidae",
   "Scorpaenichthys_marmoratus",
-  "Cottidae",
+  "Parophrys_vetulus",
+  "Hexagrammidae",
   "Ammodytidae",
   "Sebastes_spp",
-  "Hexagrammidae",
+  "Cottidae",
   "Isopsetta_isolepis",
   "Osmeridae",
   "Glyptocephalus_zachirus",
   "Gadidae",
-  "Lyopsetta_exilis",
   "Psychrolutidae",
-  "Agonidae",
-  "Protomyctophum_spp",
-  "Stenobrachius_leucopsarus",
-  "Liparis_spp"
+  "Lyopsetta_exilis",
+  "Liparis_spp",
+  "Stenobrachius_leucopsarus"
 )
 missing_taxa_panel_order <- setdiff(taxa_panel_order, gam_taxa)
 if (length(missing_taxa_panel_order) > 0) {
