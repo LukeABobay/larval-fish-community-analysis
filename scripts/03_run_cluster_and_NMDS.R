@@ -49,9 +49,15 @@ png(filename = here("output/AHC_sampling_events_dendrogram.png"),
     height = 6,
     units = "in",
     res = 300)
+par(fig = c(0, 0.85, 0, 1), mar =c(5, 4, 4, 0.2), new = FALSE)
 plot(AHC_result, labels = AHC_comm_matrix_transformed$chrono_sample_ID,
      xlab = "Sample", cex = 0.4)
 rect.hclust(AHC_result, k = 7, border = dendrogram_cluster_colors)
+par(fig = c(0.85, 1, 0, 1), mar =c(5, 0, 4, 1), new = TRUE)
+plot.new()
+legend("center", legend = paste("Cluster", 1:7),
+       col = dendrogram_cluster_colors,
+       lwd = 2, cex = 1.2, bty = "n")
 dev.off()
 
 # Indicator Species Analysis ----------------------------------------------
@@ -257,10 +263,16 @@ make_environment_depth_plot <- function(plot_variable, plot_title, show_y_title 
                 orientation = "y",
                 color = "black", linewidth = 0.4,
                 inherit.aes = FALSE) +
-    geom_point(size = 1, alpha = 0.85) +
+    geom_point(aes(size = year), alpha = 0.85) +
+    scale_size_manual(values = c("2018" = 1,
+                                 "2019" = 1,
+                                 "2022" = 1,
+                                 "2023" = 1.8),
+                      guide = "none") +
     scale_y_reverse() +
     scale_color_viridis_c(name = "Seafloor depth (m)",
-                          limits = seafloor_depth_color_limits) +
+                          limits = seafloor_depth_color_limits,
+                          direction = -1) +
     scale_shape_manual(values = year_shape_values, drop = FALSE) +
     scale_linetype_manual(
       values = c("2018" = "solid",
