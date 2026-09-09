@@ -417,7 +417,12 @@ net4_sampling_locations_map_for_layout <- cowplot::ggdraw() +
                              axis.text.x.top = element_text(angle = 45, hjust = 1, vjust = 1,
                                                             size = net4_sampling_locations_axis_value_size)),
                      x = -0.17, y = 0,
-                     width = 1.2, height = 1)
+                     width = 1.2, height = 1) +
+  cowplot::draw_label("A",
+                      x = -0.1, y = 0.987,
+                      hjust = 0, vjust = 1,
+                      size = 12,
+                      fontface = "bold")
 
 environmental_covariates_legend_for_layout <- cowplot::ggdraw() +
   cowplot::draw_plot(environmental_covariates_legend,
@@ -436,8 +441,6 @@ net4_sampling_locations_environmental_covariates_no_legend <- ggarrange(
   net4_sampling_locations_map_for_layout,
   environmental_covariates,
   ncol = 2,
-  labels = c("A", ""),
-  font.label = list(size = net4_sampling_locations_text_size, face = "bold"),
   widths = c(0.73, 2),
   align = "hv"
 )
