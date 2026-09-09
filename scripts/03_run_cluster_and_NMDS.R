@@ -183,6 +183,10 @@ map_layers <- list(
   geom_sf(data = admin1, color = "black", linewidth = 0.25),
   geom_contour(data = bathy_df, aes(x = x, y = y, z = z),
                breaks = isobath_levels, color = "grey80", linewidth = 0.25),
+  scale_x_continuous(name = "Longitude (°W)",
+                     labels = function(x) scales::number(abs(x), accuracy = 0.1)),
+  scale_y_continuous(name = "Latitude (°N)",
+                     labels = function(y) scales::number(y, accuracy = 0.1)),
   scale_color_manual(values = cluster_colors,
                      limits = cluster_levels,
                      breaks = cluster_levels,
@@ -199,34 +203,19 @@ map_layers <- list(
 net4_sampling_locations_df <- mocness_clean %>%
   filter(net == 4) %>%
   distinct(transect_station_rep_year_net, year, start_longitude_dd,
-           start_latitude_dd) %>%
-  mutate(year = factor(year, levels = c(2018, 2019, 2022, 2023))) %>%
-  filter(!is.na(start_longitude_dd), !is.na(start_latitude_dd), !is.na(year))
+           start_latitude_dd, seafloor_depth_m) %>%
+  mutate(year = factor(year, levels = c(2018, 2019, 2022, 2023)),
+         seafloor_depth_plot_m = seafloor_depth_m) %>%
+  filter(!is.na(start_longitude_dd), !is.na(start_latitude_dd), !is.na(year),
+         !is.na(seafloor_depth_plot_m))
 
 year_shape_values <- c("2018" = 16, "2019" = 17, "2022" = 15, "2023" = 18)
-
-net4_sampling_locations_map <- ggplot() +
-  map_layers +
-  geom_point(
-    data = net4_sampling_locations_df,
-    aes(start_longitude_dd, start_latitude_dd, shape = year),
-    color = "black",
-    size = 0.5,
-    stroke = 0.7
-  ) +
-  scale_shape_manual(
-    values = year_shape_values,
-    name = "Year",
-    drop = FALSE
-  ) +
-  guides(shape = guide_legend(override.aes = list(color = "black", size = 1))) +
-  labs(x = NULL, y = NULL) +
-  theme(aspect.ratio = 3.35, legend.position = "right")
-
-ggsave("net4_sampling_locations_map.png",
-       plot = net4_sampling_locations_map,
-       path = here("output"),
-       width = 6, height = 9, units = "in", dpi = 600)
+year_point_size_values <- c("2018" = 1, "2019" = 1,
+                            "2022" = 1, "2023" = 1.6)
+net4_year_point_size_values <- year_point_size_values * 0.5
+environmental_covariate_point_size_values <- net4_year_point_size_values * 1.25
+net4_sampling_locations_text_size <- 12 * 0.875
+net4_sampling_locations_axis_value_size <- 12 * 0.8 * 0.875
 
 environment_covariates_df <- env_wide %>%
   select(transect_station_rep_year_net, year, net, depth_mean_m,
@@ -237,8 +226,57 @@ environment_covariates_df <- env_wide %>%
   mutate(year = factor(year, levels = c(2018, 2019, 2022, 2023)),
          seafloor_depth_plot_m = seafloor_depth_m)
 
-seafloor_depth_color_limits <- range(environment_covariates_df$seafloor_depth_plot_m,
-                                     na.rm = TRUE)
+seafloor_depth_color_limits <- c(
+  0,
+  max(environment_covariates_df$seafloor_depth_plot_m, na.rm = TRUE)
+)
+seafloor_depth_color_breaks <- c(0, 1000, 2000, 3000)
+seafloor_depth_colors <- c("#4d8d00", "#00897c", "#006091", "#4a0090")
+
+net4_sampling_locations_map <- ggplot() +
+  map_layers +
+  ggnewscale::new_scale_color() +
+  geom_point(
+    data = net4_sampling_locations_df,
+    aes(start_longitude_dd, start_latitude_dd, shape = year, size = year,
+        color = seafloor_depth_plot_m),
+    alpha = 0.85,
+    stroke = 0.7
+  ) +
+  scale_color_gradientn(name = "Seafloor depth (m)",
+                        colors = seafloor_depth_colors,
+                        limits = seafloor_depth_color_limits,
+                        breaks = seafloor_depth_color_breaks) +
+  scale_shape_manual(
+    values = year_shape_values,
+    name = "Year",
+    drop = FALSE
+  ) +
+  scale_size_manual(values = net4_year_point_size_values, guide = "none") +
+  guides(shape = guide_legend(
+    override.aes = list(color = "black", size = year_point_size_values)
+  )) +
+  theme(aspect.ratio = 3.35,
+        text = element_text(size = net4_sampling_locations_text_size),
+        legend.position = "right",
+        axis.title = element_text(size = net4_sampling_locations_text_size),
+        axis.text = element_text(size = net4_sampling_locations_axis_value_size),
+        axis.text.y = element_text(size = net4_sampling_locations_axis_value_size),
+        axis.text.y.left = element_text(size = net4_sampling_locations_axis_value_size),
+        axis.text.y.right = element_text(size = net4_sampling_locations_axis_value_size),
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1,
+                                   size = net4_sampling_locations_axis_value_size),
+        axis.text.x.bottom = element_text(angle = 45, hjust = 1, vjust = 1,
+                                          size = net4_sampling_locations_axis_value_size),
+        axis.text.x.top = element_text(angle = 45, hjust = 1, vjust = 1,
+                                       size = net4_sampling_locations_axis_value_size),
+        legend.title = element_text(size = net4_sampling_locations_text_size),
+        legend.text = element_text(size = net4_sampling_locations_text_size))
+
+ggsave("net4_sampling_locations_map.png",
+       plot = net4_sampling_locations_map,
+       path = here("output"),
+       width = 6, height = 9, units = "in", dpi = 600)
 
 environment_depth_plot_df <- environment_covariates_df %>%
   pivot_longer(cols = c(mean_temperature_c, mean_salinity_psu,
@@ -267,15 +305,13 @@ make_environment_depth_plot <- function(plot_variable, plot_title, show_y_title 
                 color = "black", linewidth = 0.4,
                 inherit.aes = FALSE) +
     geom_point(aes(size = year), alpha = 0.85) +
-    scale_size_manual(values = c("2018" = 1,
-                                 "2019" = 1,
-                                 "2022" = 1,
-                                 "2023" = 1.8),
+    scale_size_manual(values = environmental_covariate_point_size_values,
                       guide = "none") +
     scale_y_reverse() +
-    scale_color_viridis_c(name = "Seafloor depth (m)",
+    scale_color_gradientn(name = "Seafloor depth (m)",
+                          colors = seafloor_depth_colors,
                           limits = seafloor_depth_color_limits,
-                          direction = -1) +
+                          breaks = seafloor_depth_color_breaks) +
     scale_shape_manual(values = year_shape_values, drop = FALSE) +
     scale_linetype_manual(
       values = c("2018" = "solid",
@@ -284,7 +320,10 @@ make_environment_depth_plot <- function(plot_variable, plot_title, show_y_title 
                  "2023" = "11"),
       drop = FALSE
     ) +
-    guides(shape = guide_legend(title = "Year"),
+    guides(shape = guide_legend(
+             title = "Year",
+             override.aes = list(size = environmental_covariate_point_size_values)
+           ),
            linetype = guide_legend(title = "Year")) +
     labs(x = plot_title,
          y = "Mean tow depth (m)") +
@@ -318,16 +357,28 @@ chlorophyll_box_plot <- ggplot(chlorophyll_plot_df,
                                aes(x = year, y = mean_chl_0_100_m_mgm3)) +
   geom_boxplot(outlier.shape = NA, fill = "grey85", color = "black",
                linewidth = 0.3) +
-  geom_jitter(aes(color = seafloor_depth_plot_m, shape = year),
-              width = 0.15, height = 0, size = 1, alpha = 0.85) +
-  scale_color_viridis_c(name = "Seafloor depth (m)",
-                        limits = seafloor_depth_color_limits) +
+  geom_jitter(aes(color = seafloor_depth_plot_m, shape = year, size = year),
+              width = 0.15, height = 0, alpha = 0.85) +
+  scale_color_gradientn(name = "Seafloor depth (m)",
+                        colors = seafloor_depth_colors,
+                        limits = seafloor_depth_color_limits,
+                        breaks = seafloor_depth_color_breaks) +
   scale_shape_manual(values = year_shape_values, drop = FALSE) +
+  scale_size_manual(values = environmental_covariate_point_size_values,
+                    guide = "none") +
   guides(shape = "none") +
   labs(x = "Year",
-       y = expression("Mean chlorophyll 0-100 m"~(mg~m^{-3}))) +
+       y = expression("Chlorophyll "~(mg~m^{-3}))) +
   theme_classic(base_size = 10) +
-  theme(aspect.ratio = 0.485, legend.position = "right")
+  theme(aspect.ratio = 0.486, legend.position = "right")
+
+chlorophyll_box_plot_for_layout <- cowplot::ggdraw() +
+  cowplot::draw_plot(chlorophyll_box_plot + theme(legend.position = "none"),
+                     x = -0.035, y = 0,
+                     width = 1, height = 1) +
+  cowplot::draw_label("E", x = -0.02, y = 0.98,
+                      hjust = 0, vjust = 1,
+                      size = 12, fontface = "bold")
 
 environmental_covariates_legend <- cowplot::get_legend(
   temperature_depth_plot + theme(legend.position = "right")
@@ -351,9 +402,22 @@ environment_depth_profiles_for_layout <- cowplot::ggdraw() +
                      width = 1, height = 1)
 
 net4_sampling_locations_map_for_layout <- cowplot::ggdraw() +
-  cowplot::draw_plot(net4_sampling_locations_map + theme(legend.position = "none"),
-                     x = 0.045, y = -0.01,
-                     width = 1, height = 1)
+  cowplot::draw_plot(net4_sampling_locations_map +
+                       theme(legend.position = "none",
+                             axis.title.y = element_blank(),
+                             text = element_text(size = net4_sampling_locations_text_size),
+                             axis.text = element_text(size = net4_sampling_locations_axis_value_size),
+                             axis.text.y = element_text(size = net4_sampling_locations_axis_value_size),
+                             axis.text.y.left = element_text(size = net4_sampling_locations_axis_value_size),
+                             axis.text.y.right = element_text(size = net4_sampling_locations_axis_value_size),
+                             axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1,
+                                                        size = net4_sampling_locations_axis_value_size),
+                             axis.text.x.bottom = element_text(angle = 45, hjust = 1, vjust = 1,
+                                                               size = net4_sampling_locations_axis_value_size),
+                             axis.text.x.top = element_text(angle = 45, hjust = 1, vjust = 1,
+                                                            size = net4_sampling_locations_axis_value_size)),
+                     x = -0.17, y = 0,
+                     width = 1.2, height = 1)
 
 environmental_covariates_legend_for_layout <- cowplot::ggdraw() +
   cowplot::draw_plot(environmental_covariates_legend,
@@ -362,11 +426,9 @@ environmental_covariates_legend_for_layout <- cowplot::ggdraw() +
 
 environmental_covariates <- ggarrange(
   environment_depth_profiles_for_layout,
-  chlorophyll_box_plot + theme(legend.position = "none"),
+  chlorophyll_box_plot_for_layout,
   ncol = 1,
-  labels = c("", "E"),
-  font.label = list(size = 12, face = "bold"),
-  heights = c(1, 0.8),
+  heights = c(1, 0.85),
   align = "v"
 )
 
@@ -375,17 +437,30 @@ net4_sampling_locations_environmental_covariates_no_legend <- ggarrange(
   environmental_covariates,
   ncol = 2,
   labels = c("A", ""),
-  font.label = list(size = 12, face = "bold"),
-  widths = c(0.77, 2),
+  font.label = list(size = net4_sampling_locations_text_size, face = "bold"),
+  widths = c(0.73, 2),
   align = "hv"
 )
 
-net4_sampling_locations_environmental_covariates <- ggarrange(
+net4_sampling_locations_environmental_covariates_panels <- ggarrange(
   net4_sampling_locations_environmental_covariates_no_legend,
   environmental_covariates_legend_for_layout,
   ncol = 2,
   widths = c(1, 0.16)
 )
+
+net4_sampling_locations_environmental_covariates <- cowplot::ggdraw() +
+  cowplot::draw_plot(ggplot() + theme_void(),
+                     x = 0, y = 0,
+                     width = 0.035, height = 1) +
+  cowplot::draw_plot(net4_sampling_locations_environmental_covariates_panels,
+                     x = 0.035, y = 0,
+                     width = 0.965, height = 1) +
+  cowplot::draw_label("Latitude (°N)",
+                      x = 0.014, y = 0.5,
+                      angle = 90,
+                      hjust = 0.5, vjust = 0.5,
+                      size = net4_sampling_locations_text_size)
 
 ggsave("net4_sampling_locations_environmental_covariates.png",
        plot = net4_sampling_locations_environmental_covariates,
@@ -493,7 +568,8 @@ make_cluster_map_panel <- function(facet, title) {
                aes(plot_longitude_dd + dx, plot_latitude_dd + dy,
                    color = cluster, alpha = mid_tow_depth_alpha),
                size = point_size) +
-    labs(title = title, x = NULL, y = NULL)
+    labs(title = title, x = NULL, y = NULL) +
+    theme(axis.title = element_blank())
 }
 
 p18a <- make_cluster_map_panel("18MaN", "2018N1")
@@ -516,8 +592,21 @@ p2018_2019 <- (p2018_2019_top / p2018_2019_bottom) +
   plot_layout(heights = c(1, 1))
 
 ## Assemble custom layout
-final_cluster_map <- (p2018_2019 | p22 | p23 | wrap_elements(cluster_map_legend)) +
+final_cluster_map_panels <- (p2018_2019 | p22 | p23 | wrap_elements(cluster_map_legend)) +
   plot_layout(widths = c(2, 1, 1, 0.45))
+final_cluster_map <- cowplot::ggdraw() +
+  cowplot::draw_plot(final_cluster_map_panels,
+                     x = 0.025, y = 0.04,
+                     width = 0.975, height = 0.96) +
+  cowplot::draw_label("Longitude (°W)",
+                      y = 0.03,
+                      hjust = 0.5, vjust = 0,
+                      size = 12) +
+  cowplot::draw_label("Latitude (°N)",
+                      x = 0.03,
+                      angle = 90,
+                      hjust = 0.5, vjust = 0,
+                      size = 12)
 final_cluster_map
   #save
 ggsave("cluster_map.png", plot = get_last_plot(), path = here("output"), 
