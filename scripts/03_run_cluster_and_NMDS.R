@@ -727,6 +727,12 @@ AHC_comm_matrix_log_transformed_long <- AHC_comm_matrix_transformed_long %>%
   mutate(log_concentration = log(sqrt_concentration),
          log_concentration_shifted = log_concentration - min(log_concentration, na.rm = TRUE))
 
+log_bar_heights <- AHC_comm_matrix_log_transformed_long %>%
+  group_by(year, chrono_sample_ID) %>%
+  summarize(total_height = sum(log_concentration_shifted), .groups = "drop")
+
+log_max_height <- max(log_bar_heights$total_height)
+
 # Plot proportional taxonomic composition across all net tows, sorted by cluster
 cluster_proportion_bounds <- AHC_comm_matrix_transformed_long %>%
   distinct(cluster, chrono_sample_ID, chrono_sample_numeric) %>%
@@ -786,6 +792,7 @@ make_cluster_abundance_year_plot <- function(plot_data, separator_data, plot_yea
                                              y_limit = NULL,
                                              y_label = expression(paste("Concentration (ind. ", m^-3, ")")),
                                              show_y_axis = FALSE,
+                                             show_y_values = show_y_axis,
                                              show_y_title = show_y_axis) {
   year_plot_data <- plot_data %>%
     filter(year == plot_year) %>%
@@ -805,6 +812,11 @@ make_cluster_abundance_year_plot <- function(plot_data, separator_data, plot_yea
   year_top_axis_labels <- rep("", nrow(year_top_axis_data))
   year_top_axis_labels[year_cluster_label_positions$year_x_position] <-
     as.character(year_cluster_label_positions$cluster)
+  year_label_position <- tibble(
+    x = -Inf,
+    y = Inf,
+    year_label = as.character(plot_year)
+  )
 
   ggplot(year_plot_data, aes(x = chrono_sample_ID,
                              y = .data[[abundance_column]],
@@ -820,6 +832,11 @@ make_cluster_abundance_year_plot <- function(plot_data, separator_data, plot_yea
                aes(xintercept = start - 0.5),
                linetype = "dotted", color = "black", linewidth = 0.25,
                inherit.aes = FALSE) +
+    geom_text(data = year_label_position,
+              aes(x = x, y = y, label = year_label),
+              hjust = -0.06, vjust = 1.25,
+              size = 3.5,
+              inherit.aes = FALSE) +
     coord_cartesian(clip = "off") +
     scale_x_discrete(
       guide = guide_axis(angle = 90),
@@ -847,7 +864,7 @@ make_cluster_abundance_year_plot <- function(plot_data, separator_data, plot_yea
           axis.ticks.x.top = element_blank(),
           axis.text.x = element_text(size = 3.5),
           axis.title.y = if (show_y_title) element_text() else element_blank(),
-          axis.text.y = if (show_y_axis) element_text() else element_blank(),
+          axis.text.y = if (show_y_values) element_text() else element_blank(),
           axis.ticks.y = if (show_y_axis) element_line() else element_blank(),
           axis.line.y = if (show_y_axis) element_line() else element_blank())
 }
@@ -862,19 +879,10 @@ cluster_year_plots <- map2(cluster_years, seq_along(cluster_years),
                              abundance_column = "sqrt_concentration",
                              y_limit = max_height,
                              show_y_axis = TRUE,
+                             show_y_values = .y == 1,
                              show_y_title = .y == 1
                            ))
-cluster_abun_header <- ggarrange(
-  ggarrange(
-    plotlist = map(cluster_years, ~text_grob(as.character(.x), size = 12)),
-    ncol = length(cluster_years),
-    nrow = 1,
-    widths = cluster_year_widths
-  ),
-  text_grob("Cluster", size = 12),
-  ncol = 1,
-  heights = c(1, 0.8)
-)
+cluster_abun_header <- text_grob("Cluster", size = 12)
 
 ## Extract legend
 legend_only <- cowplot::get_legend(cluster_year_plots[[1]] + theme(legend.position = "right"))
@@ -892,7 +900,7 @@ clust_abun_bar_plot_no_legend <- ggarrange(
   clust_abun_panel_row,
   text_grob("Sample", size = 12),
   ncol = 1,
-  heights = c(0.14, 1, 0.06)
+  heights = c(0.07, 1, 0.06)
 )
 
 clust_abun_bar_plot <- ggarrange(
@@ -918,8 +926,10 @@ cluster_year_log_plots <- map2(cluster_years, seq_along(cluster_years),
                                  cluster_separators,
                                  .x,
                                  abundance_column = "log_concentration_shifted",
+                                 y_limit = log_max_height,
                                  y_label = expression(paste("log Concentration (ind. ", m^-3, ")")),
                                  show_y_axis = TRUE,
+                                 show_y_values = .y == 1,
                                  show_y_title = .y == 1
                                ))
 
@@ -936,7 +946,7 @@ log_clust_abun_bar_plot_no_legend <- ggarrange(
   log_clust_abun_panel_row,
   text_grob("Sample", size = 12),
   ncol = 1,
-  heights = c(0.14, 1, 0.06)
+  heights = c(0.07, 1, 0.06)
 )
 
 ggsave("clusters_abundance_bar_plot_log_transformed.png",
