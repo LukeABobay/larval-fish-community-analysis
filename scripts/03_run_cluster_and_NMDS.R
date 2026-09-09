@@ -747,6 +747,8 @@ cluster_proportion_separators <- cluster_proportion_bounds %>%
 cluster_proportion_label_positions <- cluster_proportion_bounds %>%
   mutate(x = (start + end) / 2)
 
+stacked_bar_axis_title_size <- 12
+
 clusters_proportion_bar_plot <- ggplot(
   AHC_comm_matrix_transformed_long %>%
     arrange(cluster, chrono_sample_numeric) %>%
@@ -776,8 +778,12 @@ clusters_proportion_bar_plot <- ggplot(
   labs(x = "Sample", y = "Proportion", title = "Cluster") +
   theme_classic() +
   theme(panel.background = element_rect(fill = "white", color = NA),
-        plot.title = element_text(hjust = 0.5),
-        plot.margin = margin(t = 20, r = 5, b = 5, l = 5),
+        plot.title = element_text(hjust = 0.5,
+                                  size = stacked_bar_axis_title_size,
+                                  margin = margin(b = 12)),
+        plot.margin = margin(t = 30, r = 5, b = 5, l = 5),
+        axis.title.x = element_text(size = stacked_bar_axis_title_size),
+        axis.title.y = element_text(size = stacked_bar_axis_title_size),
         axis.text.x = element_text(size = 4.5),
         legend.position = "none")
 
@@ -900,7 +906,7 @@ clust_abun_bar_plot_no_legend <- ggarrange(
   clust_abun_panel_row,
   text_grob("Sample", size = 12),
   ncol = 1,
-  heights = c(0.07, 1, 0.06)
+  heights = c(0.06, 1, 0.06)
 )
 
 clust_abun_bar_plot <- ggarrange(
@@ -946,7 +952,7 @@ log_clust_abun_bar_plot_no_legend <- ggarrange(
   log_clust_abun_panel_row,
   text_grob("Sample", size = 12),
   ncol = 1,
-  heights = c(0.07, 1, 0.06)
+  heights = c(0.06, 1, 0.06)
 )
 
 ggsave("clusters_abundance_bar_plot_log_transformed.png",
