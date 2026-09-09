@@ -238,18 +238,18 @@ dbRDA_vector_scores <- scores(dbRDA_full_model, display = "bp", choices = 1:2) %
     CAP2 = -CAP2,
     plot_label = recode(
       variable,
-      "mean_temperature_c_scaled" = "Temperature",
-      "mean_salinity_psu_scaled" = "Salinity",
-      "dissolved_oxygen_ml_l_scaled" = "Oxygen",
-      "mean_chl_0_100_m_mgm3_scaled" = "Chl a",
-      "depth_mean_m_scaled" = "Mean depth",
-      "seafloor_depth_m_scaled" = "Seafloor depth",
-      "start_latitude_dd_scaled" = "Latitude",
-      "solar_dayness_scaled" = "Time of day",
-      "year2022" = "2022",
-      "year2019" = "2019",
-      "year2023" = "2023",
-      .default = variable
+      "mean_temperature_c_scaled" = "'Temperature'",
+      "mean_salinity_psu_scaled" = "'Salinity'",
+      "dissolved_oxygen_ml_l_scaled" = "'DO'",
+      "mean_chl_0_100_m_mgm3_scaled" = "'Chl-'*italic('a')",
+      "depth_mean_m_scaled" = "'Net tow depth'",
+      "seafloor_depth_m_scaled" = "'Seafloor depth'",
+      "start_latitude_dd_scaled" = "'Latitude'",
+      "solar_dayness_scaled" = "'Time of day'",
+      "year2022" = "'2022'",
+      "year2019" = "'2019'",
+      "year2023" = "'2023'",
+      .default = paste0("'", variable, "'")
     ),
     base_label_x = CAP1 + if_else(CAP1 >= 0, 0.14, -0.14),
     base_label_y = CAP2 + if_else(CAP2 >= 0, 0.10, -0.10),
@@ -259,7 +259,7 @@ dbRDA_vector_scores <- scores(dbRDA_full_model, display = "bp", choices = 1:2) %
       variable == "year2019" ~ 0.12,
       variable == "year2022" ~ 0.15,
       variable == "solar_dayness_scaled" ~ 0.05,
-      variable == "dissolved_oxygen_ml_l_scaled" ~ 0.37,
+      variable == "dissolved_oxygen_ml_l_scaled" ~ 0.24,
       variable == "year2023" ~ -0.55,
       variable == "mean_chl_0_100_m_mgm3_scaled" ~ -0.28,
       variable == "depth_mean_m_scaled" ~ 0.35,
@@ -319,7 +319,8 @@ dbRDA_overlays_plot <- ggplot(dbRDA_site_scores, aes(x = CAP1, y = CAP2, color =
                 hjust = label_hjust),
             inherit.aes = FALSE,
             color = "black",
-            size = 2) +
+            size = 2,
+            parse = TRUE) +
   theme_classic() +
   labs(x = "CAP1", y = "CAP2", color = "Cluster", fill = "Cluster")
 print(dbRDA_overlays_plot)

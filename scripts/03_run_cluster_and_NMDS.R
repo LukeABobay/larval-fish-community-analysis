@@ -71,8 +71,81 @@ comm_for_isa <- AHC_comm_matrix_transformed %>%
 
 clusters_for_isa <- as.factor(clusters$cluster)
 
+set.seed(123)
 isa_result <- multipatt(comm_for_isa, clusters_for_isa, func = "IndVal.g", max.order = 3)
 summary(isa_result)
+
+# Summarize how much each significant indicator taxon contributes to each
+# cluster for which it is an indicator.
+isa_alpha <- 0.05
+isa_cluster_columns <- names(isa_result$sign) %>%
+  str_subset("^s\\.")
+
+indicator_taxa_cluster_membership <- isa_result$sign %>%
+  as.data.frame() %>%
+  rownames_to_column("taxon") %>%
+  as_tibble() %>%
+  filter(p.value <= isa_alpha) %>%
+  pivot_longer(cols = all_of(isa_cluster_columns),
+               names_to = "indicator_cluster_column",
+               values_to = "is_indicator_cluster") %>%
+  filter(is_indicator_cluster == 1) %>%
+  mutate(indicator_cluster = str_remove(indicator_cluster_column, "^s\\."))
+
+indicator_taxa_count_long <- wide_major_taxa_counts_nets %>%
+  select(transect_station_rep_year_net, all_of(taxa_cols)) %>%
+  semi_join(AHC_comm_matrix %>% select(transect_station_rep_year_net),
+            by = "transect_station_rep_year_net") %>%
+  pivot_longer(cols = all_of(taxa_cols),
+               names_to = "taxon",
+               values_to = "individuals_in_tow") %>%
+  left_join(clusters %>% mutate(cluster = as.character(cluster)),
+            by = "transect_station_rep_year_net") %>%
+  mutate(individuals_in_tow = coalesce(as.numeric(individuals_in_tow), 0),
+         cluster = as.character(cluster))
+
+indicator_taxon_counts_by_cluster <- indicator_taxa_count_long %>%
+  group_by(taxon, indicator_cluster = cluster) %>%
+  summarize(taxon_count_in_cluster = sum(individuals_in_tow, na.rm = TRUE),
+            .groups = "drop")
+
+indicator_cluster_larvae_totals <- indicator_taxa_count_long %>%
+  group_by(indicator_cluster = cluster) %>%
+  summarize(total_larvae_in_cluster = sum(individuals_in_tow, na.rm = TRUE),
+            .groups = "drop")
+
+indicator_taxon_totals <- indicator_taxa_count_long %>%
+  semi_join(indicator_taxa_cluster_membership, by = "taxon") %>%
+  group_by(taxon) %>%
+  summarize(total_taxon_count_all_clusters = sum(individuals_in_tow, na.rm = TRUE),
+            .groups = "drop")
+
+indicator_taxa_cluster_proportions <- indicator_taxa_cluster_membership %>%
+  transmute(taxon,
+            indicator_cluster,
+            indicator_stat = stat,
+            indicator_p_value = p.value) %>%
+  left_join(indicator_taxon_counts_by_cluster,
+            by = c("taxon", "indicator_cluster")) %>%
+  left_join(indicator_cluster_larvae_totals, by = "indicator_cluster") %>%
+  left_join(indicator_taxon_totals, by = "taxon") %>%
+  mutate(
+    taxon_count_in_cluster = coalesce(taxon_count_in_cluster, 0),
+    proportion_of_all_larvae_in_cluster =
+      if_else(total_larvae_in_cluster > 0,
+              taxon_count_in_cluster / total_larvae_in_cluster,
+              NA_real_),
+    proportion_of_taxon_count_in_cluster =
+      if_else(total_taxon_count_all_clusters > 0,
+              taxon_count_in_cluster / total_taxon_count_all_clusters,
+              NA_real_)
+  ) %>%
+  arrange(as.numeric(indicator_cluster),
+          desc(proportion_of_all_larvae_in_cluster),
+          taxon)
+
+write_csv(indicator_taxa_cluster_proportions,
+          here("output/indicator_taxa_cluster_proportions.csv"))
 
 # Map points in space by cluster and net ----------------------------------
 
@@ -287,11 +360,11 @@ environment_depth_plot_df <- environment_covariates_df %>%
     variable,
     mean_temperature_c = "Temperature (C)",
     mean_salinity_psu = "Salinity (PSU)",
-    dissolved_oxygen_ml_l = "Dissolved oxygen (mL L-1)"
+    dissolved_oxygen_ml_l = "DO (mL L-1)"
   ),
   variable = factor(variable,
                     levels = c("Temperature (C)", "Salinity (PSU)",
-                               "Dissolved oxygen (mL L-1)"))) %>%
+                               "DO (mL L-1)"))) %>%
   filter(!is.na(value), !is.na(depth_mean_m),
          !is.na(seafloor_depth_plot_m), !is.na(year))
 
@@ -328,7 +401,7 @@ make_environment_depth_plot <- function(plot_variable, plot_title, show_y_title 
            ),
            linetype = guide_legend(title = "Year")) +
     labs(x = plot_title,
-         y = "Mean tow depth (m)") +
+         y = "Net tow depth (m)") +
     theme_classic(base_size = 10) +
     theme(aspect.ratio = 2,
           legend.position = "right",
@@ -347,8 +420,8 @@ salinity_depth_plot <- make_environment_depth_plot(
   "Salinity (PSU)", "Salinity (PSU)"
 )
 dissolved_oxygen_depth_plot <- make_environment_depth_plot(
-  "Dissolved oxygen (mL L-1)",
-  expression(paste("Dissolved oxygen (mL ", plain(L)^{-1}, ")"))
+  "DO (mL L-1)",
+  expression(paste("DO (mL ", plain(L)^{-1}, ")"))
 )
 
 chlorophyll_plot_df <- environment_covariates_df %>%
@@ -370,7 +443,7 @@ chlorophyll_box_plot <- ggplot(chlorophyll_plot_df,
                     guide = "none") +
   guides(shape = "none") +
   labs(x = "Year",
-       y = expression("Chlorophyll "~(mg~m^{-3}))) +
+       y = expression("Chl-"*italic("a")~(mg~m^{-3}))) +
   theme_classic(base_size = 10) +
   theme(aspect.ratio = 0.486, legend.position = "right")
 
@@ -1256,7 +1329,7 @@ vector_df <- as.data.frame(vector_scores) %>%
   mutate(
     plot_label = recode(
       variable,
-      "depth_mean_m_scaled" = "Mean depth",
+      "depth_mean_m_scaled" = "Net tow depth",
       "seafloor_depth_m_scaled" = "Seafloor depth",
       "start_latitude_dd_scaled" = "Latitude",
       "solar_dayness_scaled" = "Time of day",
