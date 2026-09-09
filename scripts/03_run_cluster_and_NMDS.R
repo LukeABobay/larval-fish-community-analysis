@@ -140,7 +140,7 @@ isobath_levels <- -seq(250, 3000, by = 250)
 ## Create net layout
 offsets <- tibble(net = factor(0:4),
                   dx = 0,
-                  dy = c(-0.06, -0.03, 0, 0.03, 0.06))
+                  dy = c(-0.1125, -0.05625, 0, 0.05625, 0.1125))
 mapping_df2 <- mapping_df %>% 
   left_join(net0_coordinates, by = "transect_station_rep_year") %>%
   left_join(offsets, by = "net") %>%
@@ -241,7 +241,7 @@ net4_sampling_locations_map <- ggplot() +
     aes(start_longitude_dd, start_latitude_dd, shape = year, size = year,
         color = seafloor_depth_plot_m),
     alpha = 0.85,
-    stroke = 0.7
+    stroke = 0
   ) +
   scale_color_gradientn(name = "Seafloor depth (m)",
                         colors = seafloor_depth_colors,
@@ -254,7 +254,8 @@ net4_sampling_locations_map <- ggplot() +
   ) +
   scale_size_manual(values = net4_year_point_size_values, guide = "none") +
   guides(shape = guide_legend(
-    override.aes = list(color = "black", size = year_point_size_values)
+    override.aes = list(color = "black", size = year_point_size_values,
+                        stroke = 0)
   )) +
   theme(aspect.ratio = 3.35,
         text = element_text(size = net4_sampling_locations_text_size),
@@ -304,7 +305,7 @@ make_environment_depth_plot <- function(plot_variable, plot_title, show_y_title 
                 orientation = "y",
                 color = "black", linewidth = 0.4,
                 inherit.aes = FALSE) +
-    geom_point(aes(size = year), alpha = 0.85) +
+    geom_point(aes(size = year), alpha = 0.85, stroke = 0) +
     scale_size_manual(values = environmental_covariate_point_size_values,
                       guide = "none") +
     scale_y_reverse() +
@@ -322,7 +323,8 @@ make_environment_depth_plot <- function(plot_variable, plot_title, show_y_title 
     ) +
     guides(shape = guide_legend(
              title = "Year",
-             override.aes = list(size = environmental_covariate_point_size_values)
+             override.aes = list(size = environmental_covariate_point_size_values,
+                                 stroke = 0)
            ),
            linetype = guide_legend(title = "Year")) +
     labs(x = plot_title,
@@ -358,7 +360,7 @@ chlorophyll_box_plot <- ggplot(chlorophyll_plot_df,
   geom_boxplot(outlier.shape = NA, fill = "grey85", color = "black",
                linewidth = 0.3) +
   geom_jitter(aes(color = seafloor_depth_plot_m, shape = year, size = year),
-              width = 0.15, height = 0, alpha = 0.85) +
+              width = 0.15, height = 0, alpha = 0.85, stroke = 0) +
   scale_color_gradientn(name = "Seafloor depth (m)",
                         colors = seafloor_depth_colors,
                         limits = seafloor_depth_color_limits,
@@ -476,7 +478,7 @@ cluster_map_cluster_legend <- ggplot(
          label_x = 0.22,
          y = rev(seq_along(cluster_levels)))
 ) +
-  geom_point(aes(x, y, color = cluster), size = 2) +
+  geom_point(aes(x, y, color = cluster), size = 4, stroke = 0) +
   geom_text(aes(label_x, y, label = cluster), hjust = 0, size = 3) +
   scale_color_manual(values = cluster_colors,
                      limits = cluster_levels,
@@ -560,7 +562,7 @@ make_cluster_map_panel <- function(facet, title) {
   is_recent_year_panel <- facet %in% c("22", "23")
   x_size <- if (is_recent_year_panel) 1 else 0.5
   x_stroke <- if (is_recent_year_panel) 0.35 else 0.175
-  point_size <- if (is_recent_year_panel) 1.2 else 0.6
+  point_size <- if (is_recent_year_panel) 2.4 else 1.2
 
   ggplot() +
     map_layers +
@@ -570,7 +572,7 @@ make_cluster_map_panel <- function(facet, title) {
     geom_point(data = filter(mapping_df2, facet_group == facet),
                aes(plot_longitude_dd + dx, plot_latitude_dd + dy,
                    color = cluster, alpha = mid_tow_depth_alpha),
-               size = point_size) +
+               size = point_size, stroke = 0) +
     labs(title = title, x = NULL, y = NULL) +
     theme(axis.title = element_blank())
 }
@@ -783,7 +785,8 @@ make_cluster_abundance_year_plot <- function(plot_data, separator_data, plot_yea
                                              abundance_column = "sqrt_concentration",
                                              y_limit = NULL,
                                              y_label = expression(paste("Concentration (ind. ", m^-3, ")")),
-                                             show_y_axis = FALSE) {
+                                             show_y_axis = FALSE,
+                                             show_y_title = show_y_axis) {
   year_plot_data <- plot_data %>%
     filter(year == plot_year) %>%
     arrange(cluster, chrono_sample_numeric) %>%
@@ -843,7 +846,7 @@ make_cluster_abundance_year_plot <- function(plot_data, separator_data, plot_yea
           axis.title.x.top = element_blank(),
           axis.ticks.x.top = element_blank(),
           axis.text.x = element_text(size = 3.5),
-          axis.title.y = if (show_y_axis) element_text() else element_blank(),
+          axis.title.y = if (show_y_title) element_text() else element_blank(),
           axis.text.y = if (show_y_axis) element_text() else element_blank(),
           axis.ticks.y = if (show_y_axis) element_line() else element_blank(),
           axis.line.y = if (show_y_axis) element_line() else element_blank())
@@ -858,7 +861,8 @@ cluster_year_plots <- map2(cluster_years, seq_along(cluster_years),
                              .x,
                              abundance_column = "sqrt_concentration",
                              y_limit = max_height,
-                             show_y_axis = .y == 1
+                             show_y_axis = TRUE,
+                             show_y_title = .y == 1
                            ))
 cluster_abun_header <- ggarrange(
   ggarrange(
@@ -915,7 +919,8 @@ cluster_year_log_plots <- map2(cluster_years, seq_along(cluster_years),
                                  .x,
                                  abundance_column = "log_concentration_shifted",
                                  y_label = expression(paste("log Concentration (ind. ", m^-3, ")")),
-                                 show_y_axis = .y == 1
+                                 show_y_axis = TRUE,
+                                 show_y_title = .y == 1
                                ))
 
 log_clust_abun_panel_row <- ggarrange(
@@ -1248,25 +1253,25 @@ vector_df <- as.data.frame(vector_scores) %>%
     base_label_x = NMDS1 + if_else(NMDS1 >= 0, 0.14, -0.14),
     base_label_y = NMDS2 + if_else(NMDS2 >= 0, 0.10, -0.10),
     label_x = case_when(
-      variable == "seafloor_depth_m_scaled" ~ 0.75,
-      variable == "start_latitude_dd_scaled" ~ -0.65,
-      variable == "depth_mean_m_scaled" ~ 0.3,
-      variable == "solar_dayness_scaled" ~ -0.1,
-      variable == "year_2018" ~ 0.08,
-      variable == "year_2019" ~ 0.3,
-      variable == "year_2022" ~ 0.05,
-      variable == "year_2023" ~ -0.5,
+      variable == "seafloor_depth_m_scaled" ~ 0.46,
+      variable == "start_latitude_dd_scaled" ~ -0.42,
+      variable == "depth_mean_m_scaled" ~ 0.24,
+      variable == "solar_dayness_scaled" ~ -0.05,
+      variable == "year_2018" ~ 0,
+      variable == "year_2019" ~ 0.25,
+      variable == "year_2022" ~ -0.02,
+      variable == "year_2023" ~ -0.37,
       TRUE ~ base_label_x
     ),
     label_y = case_when(
-      variable == "seafloor_depth_m_scaled" ~ 0.1,
-      variable == "start_latitude_dd_scaled" ~ -0.5,
-      variable == "depth_mean_m_scaled" ~ 0.4,
-      variable == "solar_dayness_scaled" ~ 0.25,
-      variable == "year_2018" ~ -0.25,
-      variable == "year_2019" ~ -0.15,
-      variable == "year_2022" ~ 0.3,
-      variable == "year_2023" ~ 0,
+      variable == "seafloor_depth_m_scaled" ~ 0.06,
+      variable == "start_latitude_dd_scaled" ~ -0.29,
+      variable == "depth_mean_m_scaled" ~ 0.31,
+      variable == "solar_dayness_scaled" ~ 0.22,
+      variable == "year_2018" ~ -0.13,
+      variable == "year_2019" ~ -0.13,
+      variable == "year_2022" ~ 0.17,
+      variable == "year_2023" ~ -0.02,
       TRUE ~ base_label_y
     ),
     label_hjust = case_when(
@@ -1313,9 +1318,6 @@ ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
   geom_segment(data = vector_df, aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
                arrow = arrow(length = unit(0.15, "cm")), 
                color = "black", linewidth = 0.5, inherit.aes = FALSE) +
-  geom_segment(data = vector_df,
-               aes(x = NMDS1, y = NMDS2, xend = label_x, yend = label_y),
-               color = "grey35", linewidth = 0.25, inherit.aes = FALSE) +
   geom_text(data = vector_df,
             aes(x = label_x, y = label_y, label = plot_label, hjust = label_hjust),
             color = "black", size = 2, inherit.aes = FALSE) +
