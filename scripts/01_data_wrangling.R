@@ -221,7 +221,7 @@ mocness_metadata_collection_date <- mocness_metadata %>%
 # Swap new metadata in for old
 mocness_full <- mocness_full_old_metadata %>%
   select(project, transect, station, replicate, collection_date, mocness_side,
-         net, taxon, individuals_in_tow) %>% 
+         net, haul_number, taxon, individuals_in_tow) %>%
   # Add in new metadata
   merge(., mocness_metadata_collection_date, by = c("transect", "station", "replicate", "collection_date", "mocness_side", "net"), all.x = TRUE)
 
@@ -707,6 +707,7 @@ mocness_solar_dayness <- mocness_full_geographic_isiis_mixing_fluor %>%
   ) %>%
   ungroup() %>%
   mutate(
+    day_night = if_else(start_time_pt >= sunrise & start_time_pt < sunset, "Day", "Night"),
     daylight_duration_hours = as.numeric(difftime(sunset, sunrise, units = "hours")),
     night_duration_before_sunrise_hours = as.numeric(difftime(sunrise, previous_sunset, units = "hours")),
     night_duration_after_sunset_hours = as.numeric(difftime(next_sunrise, sunset, units = "hours")),
@@ -727,13 +728,13 @@ mocness_solar_dayness <- mocness_full_geographic_isiis_mixing_fluor %>%
     )
   ) %>%
   select(collection_date, start_time_pt, transect, station, replicate,
-         mocness_side, net, solar_dayness)
+         mocness_side, net, solar_dayness, day_night)
 
 
 # MOCNESS data cleanup ----------------------------------------------------
 
-# Add columns with combined location/station and min/max depth
-mocness_clean <- mocness_full_geographic_isiis_mixing_fluor %>%
+# Add tow IDs and harmonize taxa before combining catches from the two sides
+mocness_clean_by_side <- mocness_full_geographic_isiis_mixing_fluor %>%
   left_join(mocness_solar_dayness,
             by = c("collection_date", "start_time_pt", "transect", "station",
                    "replicate", "mocness_side", "net")) %>%
@@ -797,12 +798,14 @@ mocness_clean <- mocness_full_geographic_isiis_mixing_fluor %>%
                             c("Chauliodus macouni", "stomiidae") ~ "Stomiidae",
                             "Tarletonbeania crenularis" ~ "Tarletonbeania_crenularis", # Listed in Eschmeyer's Catalog of Fishes as Myctophum crenulare
                             "Trachipterus altivelis" ~ "Trachipterus_altivelis", # Our only species in Trachipteridae
-                            .default = taxon)) %>%
+                            .default = taxon),
+         individuals_in_tow = as.numeric(individuals_in_tow))
+
+mocness_clean <- mocness_clean_by_side %>%
   # Not grouping by mocness_side here because both sides will be aggregated for the entire analysis
   group_by(transect_station_rep_year_net, taxon) %>%
-  mutate(individuals_in_tow = as.numeric(individuals_in_tow),
-         # Sum number of individuals within each net/taxon and return one row per net/taxon
-         individuals_in_tow = sum(individuals_in_tow)) %>%
+  # Sum number of individuals within each net/taxon and return one row per net/taxon
+  mutate(individuals_in_tow = sum(individuals_in_tow)) %>%
   ungroup() %>%
   # Not grouping by mocness_side here because both sides will be aggregated for the entire analysis
   distinct(transect_station_rep_year, net, taxon, .keep_all = TRUE) %>%
