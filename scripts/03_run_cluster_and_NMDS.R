@@ -826,7 +826,7 @@ clusters_proportion_bar_plot <- ggplot(
     arrange(cluster, chrono_sample_numeric) %>%
     mutate(chrono_sample_ID = factor(chrono_sample_ID, levels = unique(chrono_sample_ID))),
   aes(x = chrono_sample_ID,
-      y = sqrt_concentration,
+      y = sqrt_concentration^2,
       fill = factor(taxon, levels = ordered_taxa))
 ) +
   geom_bar(stat = "identity", position = "fill") +

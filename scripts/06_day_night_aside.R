@@ -252,7 +252,7 @@ d_n_scatter_all <- ggplot(filter(model_data, individuals_in_tow > 0), aes(x = de
   scale_color_manual(values = species_colors, breaks = ordered_taxa_dvm,
                      labels = parse(text = taxon_labels[ordered_taxa_dvm])) +
   labs(title = "Taxa concentrations by mean depths",
-       x = "Mean tow depth (m)", y = "Concentration (log(ind./m3)", color = "Taxon") +
+       x = "Net tow depth (m)", y = "Concentration (log(ind./m3)", color = "Taxon") +
   theme_classic()
 ggsave("dayness_scatter_all.png", plot = d_n_scatter_all, path = here("output"),
          width = 7, height = 5, units = "in", dpi = 300)
@@ -313,7 +313,7 @@ plot_relative_abundance_surface <- function(surface_predictions, observed_tows, 
     facet_wrap(~ taxon, labeller = taxon_labeller,
                axes = "all", axis.labels = "margins") +
     labs(x = "Time of day",
-         y = "Mean tow depth (m)",
+         y = "Net tow depth (m)",
          fill = "Relative concentration") +
     theme_classic()
 }
@@ -381,7 +381,7 @@ plot_log_relative_concentration <- function(surface_predictions, observed_tows, 
                          aesthetics = c("fill", "colour"), limits = color_limits,
                          na.value = "white") +
     facet_wrap(~ taxon, labeller = taxon_labeller, axes = "all", axis.labels = "margins") +
-    labs(x = "Time of day", y = "Mean tow depth (m)") +
+    labs(x = "Time of day", y = "Net tow depth (m)") +
     theme_classic()
 }
 
@@ -448,7 +448,7 @@ glmm_matched_diagnostic_data <- model.frame(glmm_dayness_depth_model)
 plotResiduals(glmm_matched_residuals, form = glmm_matched_diagnostic_data$solar_dayness_scaled,
               xlab = "Solar dayness", main = "Matched 2019 GLMM")
 plotResiduals(glmm_matched_residuals, form = glmm_matched_diagnostic_data$depth_mean_m_scaled,
-              xlab = "Mean tow depth", main = "Matched 2019 GLMM")
+              xlab = "Net tow depth", main = "Matched 2019 GLMM")
 plotResiduals(glmm_matched_residuals, form = glmm_matched_diagnostic_data$taxon,
               xlab = "Taxon", main = "Matched 2019 GLMM")
 print(testZeroInflation(glmm_matched_residuals, plot = TRUE))
@@ -613,7 +613,7 @@ glmm_slope_plot <- ggplot(glmm_slope_predictions,
   facet_wrap(~ taxon, scales = "free_y", labeller = glmm_taxon_labeller,
              axes = "all", axis.labels = "all_y") +
   labs(x = "Time of day",
-       y = expression(paste("Slope of effect of depth on abundance (", m^{-1}, ")"))) +
+       y = expression(paste("Slope of effect of net tow depth on abundance (", m^{-1}, ")"))) +
   theme_classic()
 
 ggsave(here("output/glmm_matched_depth_slope_functions_all_taxa.png"),
@@ -762,7 +762,7 @@ glmm_full_diagnostic_data <- model.frame(full_glmm_dayness_depth_model)
 plotResiduals(glmm_full_residuals, form = glmm_full_diagnostic_data$solar_dayness_scaled,
               xlab = "Solar dayness", main = "Full-data GLMM")
 plotResiduals(glmm_full_residuals, form = glmm_full_diagnostic_data$depth_mean_m_scaled,
-              xlab = "Mean tow depth", main = "Full-data GLMM")
+              xlab = "Net tow depth", main = "Full-data GLMM")
 plotResiduals(glmm_full_residuals, form = glmm_full_diagnostic_data$taxon,
               xlab = "Taxon", main = "Full-data GLMM")
 print(testZeroInflation(glmm_full_residuals, plot = TRUE))
@@ -922,7 +922,7 @@ full_glmm_slope_plot <- ggplot(full_glmm_slope_predictions,
   facet_wrap(~ taxon, scales = "free_y", labeller = full_glmm_taxon_labeller,
              axes = "all", axis.labels = "all_y") +
   labs(x = "Time of day",
-       y = expression(paste("Slope of effect of depth on abundance (", m^{-1}, ")"))) +
+       y = expression(paste("Slope of effect of net tow depth on abundance (", m^{-1}, ")"))) +
   theme_classic()
 
 ggsave(here("output/glmm_full_data_depth_slope_functions_all_taxa.png"),
