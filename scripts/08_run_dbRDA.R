@@ -224,7 +224,7 @@ dbRDA_plot <- ggplot(dbRDA_site_scores, aes(x = CAP1, y = CAP2, color = cluster)
                      drop = FALSE) +
   theme_classic() +
   labs(title = "db-RDA of larval fish assemblage composition",
-       x = "CAP1", y = "CAP2", color = "Cluster", fill = "Cluster")
+       x = "CAP1", y = "CAP2", color = "Assemblage", fill = "Assemblage")
 print(dbRDA_plot)
 ggsave("dbRDA_cluster_ordination_no_overlays.png", plot = dbRDA_plot, path = here("output"),
        width = 7, height = 5, units = "in", dpi = 300)
@@ -322,7 +322,7 @@ dbRDA_overlays_plot <- ggplot(dbRDA_site_scores, aes(x = CAP1, y = CAP2, color =
             size = 2,
             parse = TRUE) +
   theme_classic() +
-  labs(x = "CAP1", y = "CAP2", color = "Cluster", fill = "Cluster")
+  labs(x = "CAP1", y = "CAP2", color = "Assemblage", fill = "Assemblage")
 print(dbRDA_overlays_plot)
 
 ggsave("dbRDA_cluster_ordination_with_overlays.png", plot = dbRDA_overlays_plot, path = here("output"),

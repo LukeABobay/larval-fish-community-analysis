@@ -115,7 +115,7 @@ png(filename = here("output/main_clusters_AHC_sampling_events_dendrogram.png"),
     units = "in",
     res = 300)
 plot(main_clust_AHC_result, labels = main_clust_AHC_comm_matrix_transformed$chrono_sample_ID,
-     xlab = "Net tows", main = "Clusters of Net Tows Within Main 4 Clusters", cex = 0.4)
+     xlab = "Net tows", main = "Net Tow Assemblages Within the Four Main Assemblages", cex = 0.4)
 rect.hclust(main_clust_AHC_result, k = 4, border = main_clust_dendrogram_cluster_colors)
 dev.off()
 
@@ -263,7 +263,7 @@ main_clust_cluster_map_legend <- get_legend(
                        limits = main_clust_cluster_levels,
                        breaks = main_clust_cluster_levels,
                        drop = FALSE,
-                       name = "Cluster",
+                       name = "Assemblage",
                        guide = guide_legend(order = 1,
                                             override.aes = list(alpha = 1, size = 2))) +
     scale_alpha_manual(values = net_lightness,
@@ -402,7 +402,7 @@ main_clust_abun_bar_plot<- ggplot(main_clust_AHC_comm_matrix_transformed_long, a
   geom_vline(data = main_clust_cluster_bounds[-1,],
              aes(xintercept = start - 0.5), linetype = "dashed", color = "gray40", linewidth = 0.5, inherit.aes = FALSE) +
   annotate("text", x = mean(range(as.numeric(main_clust_AHC_comm_matrix_transformed_long$chrono_sample_ID))), y = Inf,
-           label = "Cluster", vjust = -2, size = 4) +
+           label = "Assemblage", vjust = -2, size = 4) +
   annotate("text", x = (main_clust_cluster_bounds$start + main_clust_cluster_bounds$end) / 2, y = Inf,
            label = paste(main_clust_cluster_bounds$cluster), vjust = -1, size = 3) +
   coord_cartesian(clip = "off") +
@@ -511,7 +511,7 @@ ggplot(main_clust_stress_null_distribution, aes(x = main_clust_null_stress)) +
              color = "red3") +
   theme_classic() +
   labs(
-    title = "NMDS stress compared with constrained null communities for main clusters",
+    title = "NMDS stress compared with constrained null communities for main assemblages",
     subtitle = paste0("Dexter et al. null model: z = ",
                       round(main_clust_stress_null_z, 2),
                       ", p = ",
@@ -543,10 +543,10 @@ main_clust_hulls <- main_clust_stations_clustered %>%
 ggplot(main_clust_stations_clustered, aes(x = NMDS1, y = NMDS2)) +
   geom_polygon(data = main_clust_hulls, aes(fill = cluster, group = cluster), alpha = 0.25, color = NA) +
   geom_point(aes(color = cluster), size = 1) +
-  scale_fill_manual(values = main_clust_cluster_colors) +
-  scale_color_manual(values = main_clust_cluster_colors) +
+  scale_fill_manual(name = "Assemblage", values = main_clust_cluster_colors) +
+  scale_color_manual(name = "Assemblage", values = main_clust_cluster_colors) +
   theme_classic() +
-  labs(title = "NMDS Ordination of sampling events by LFC for main clusters", x = "NMDS1", y = "NMDS2")
+  labs(title = "NMDS Ordination of sampling events by LFC for main assemblages", x = "NMDS1", y = "NMDS2")
 ggsave("NMDS_main_clusters.png", plot = get_last_plot(), path = here("output"),
        width = 6, height = 5, units = "in", dpi = 300)
 
@@ -576,18 +576,18 @@ ggplot(main_clust_stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)
   #1 Polygons (cluster color)
   geom_polygon(data = main_clust_hulls, aes(x = NMDS1, y = NMDS2, fill = cluster, group = cluster), 
                alpha = 0.25, color = NA, inherit.aes = FALSE) +
-  scale_fill_manual(values = main_clust_cluster_colors) +
+  scale_fill_manual(name = "Assemblage", values = main_clust_cluster_colors) +
   #2 Points (cluster colors)
   geom_point(size = 1) +
-  scale_color_manual(values = main_clust_cluster_colors) +
+  scale_color_manual(name = "Assemblage", values = main_clust_cluster_colors) +
   #3 Vectors
   geom_segment(data = main_clust_vector_df, aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
                arrow = arrow(length = unit(0.3, "cm")), 
                color = "black", linewidth = 0.5, inherit.aes = FALSE) +
   geom_text(data = main_clust_vector_df, aes(x = NMDS1, y = NMDS2, label = variable), 
             color = "black", size = 2, vjust = -0.5,inherit.aes = FALSE) +
-  labs(title = "NMDS ordination with clustered points and covariate overlays for main clusters", x = "NMDS1", y = "NMDS2",
-       color = "Cluster", fill = "Cluster") + 
+  labs(title = "NMDS ordination with points by assemblage and covariate overlays for main assemblages", x = "NMDS1", y = "NMDS2",
+       color = "Assemblage", fill = "Assemblage") +
   theme_classic()
 ggsave("NMDS_overlays_main_clusters.png", plot = get_last_plot(), path = here("output"),
        width = 7, height = 5, units = "in", dpi = 300)
@@ -818,8 +818,8 @@ main_clust_dbRDA_plot <- ggplot(main_clust_dbRDA_site_scores, aes(x = CAP1, y = 
                      breaks = main_clust_cluster_levels,
                      drop = FALSE) +
   theme_classic() +
-  labs(title = "db-RDA of larval fish assemblage composition for main clusters",
-       x = "CAP1", y = "CAP2", color = "Cluster", fill = "Cluster")
+  labs(title = "db-RDA of larval fish assemblage composition for main assemblages",
+       x = "CAP1", y = "CAP2", color = "Assemblage", fill = "Assemblage")
 print(main_clust_dbRDA_plot)
 ggsave("main_clust_dbRDA_cluster_ordination_no_overlays.png", plot = main_clust_dbRDA_plot, path = here("output"),
        width = 7, height = 5, units = "in", dpi = 300)
@@ -906,8 +906,8 @@ main_clust_dbRDA_overlays_plot <- ggplot(main_clust_dbRDA_site_scores, aes(x = C
             color = "black",
             size = 2) +
   theme_classic() +
-  labs(title = "db-RDA of larval fish assemblage composition for main clusters",
-       x = "CAP1", y = "CAP2", color = "Cluster", fill = "Cluster")
+  labs(title = "db-RDA of larval fish assemblage composition for main assemblages",
+       x = "CAP1", y = "CAP2", color = "Assemblage", fill = "Assemblage")
 print(main_clust_dbRDA_overlays_plot)
 ggsave("main_clust_dbRDA_cluster_ordination_with_overlays.png", plot = main_clust_dbRDA_overlays_plot, path = here("output"),
        width = 7, height = 5, units = "in", dpi = 300)

@@ -140,10 +140,10 @@ nets_station_scores <- mutate(nets_site_scores, transect_station_rep_year_net = 
 nets_stations_clustered <- mutate(nets_station_scores, cluster = nets_cluster_groups)
 nets_stations_clustered$cluster <- as.numeric(as.character(nets_stations_clustered$cluster))
 nets_stations_clustered$cluster <- factor(nets_stations_clustered$cluster, levels = c(1,2,3,4,5,6,7,8,9,10), 
-                                          labels = c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster 4", "Cluster 5", "Cluster 6", "Cluster 7", "Cluster 8", "Cluster 9", "Cluster 10"))
+                                          labels = c("Assemblage 1", "Assemblage 2", "Assemblage 3", "Assemblage 4", "Assemblage 5", "Assemblage 6", "Assemblage 7", "Assemblage 8", "Assemblage 9", "Assemblage 10"))
 
 ggplot(filter(nets_stations_clustered, transect_station_rep_year_net != "TR_4_MaN_2019_2"), aes(x = NMDS1, y = NMDS2, color = cluster)) +
-  scale_color_manual(values = c("indianred", "lightsalmon", "lightblue", "palegreen", "khaki", "plum", "turquoise", "pink", "tan3", "darkolivegreen4")) +
+  scale_color_manual(name = "Assemblage", values = c("indianred", "lightsalmon", "lightblue", "palegreen", "khaki", "plum", "turquoise", "pink", "tan3", "darkolivegreen4")) +
   geom_point(size = 3) +
   geom_text_repel(aes(label = transect_station_rep_year_net), size = 3, max.overlaps = 10) +
   theme_classic() +
@@ -165,7 +165,7 @@ nets_vector_df$variable <- rownames(nets_vector_df)
 
 ##Plot NMDS with vector overlays
 ggplot(nets_stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
-  scale_color_manual(values = c("indianred", "lightsalmon", "lightblue", "palegreen", "khaki", "plum", "turquoise", "pink", "tan3", "darkolivegreen4")) +
+  scale_color_manual(name = "Assemblage", values = c("indianred", "lightsalmon", "lightblue", "palegreen", "khaki", "plum", "turquoise", "pink", "tan3", "darkolivegreen4")) +
   geom_point(size = 3) +
   #geom_text_repel(aes(label = transect_station_rep_year_net), size = 3, max.overlaps = 10) +
   theme_classic() +
@@ -207,9 +207,9 @@ ggplot(nets_stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
   geom_point(size = 3) +
   geom_path(data = nets_ell_shelf_df, aes(x = NMDS1, y = NMDS2, color = group),
             linewidth = 1) +
-  scale_color_manual(values = c("indianred", "lightsalmon", "lightblue", "palegreen", "khaki", "plum", "turquoise", "pink", "tan3", "darkolivegreen4", "royalblue4", "orangered4")) +
+  scale_color_manual(name = "Assemblage", values = c("indianred", "lightsalmon", "lightblue", "palegreen", "khaki", "plum", "turquoise", "pink", "tan3", "darkolivegreen4", "royalblue4", "orangered4")) +
   theme_classic() +
-  labs(title = "NMDS Ordination with Clustered Points and Shelf Position Ellipses",
+  labs(title = "NMDS Ordination with Points by Assemblage and Shelf Position Ellipses",
        x = "NMDS1", y = "NMDS2")
 
 # Fit db-RDA models and evaluate support for env vars ---------------------

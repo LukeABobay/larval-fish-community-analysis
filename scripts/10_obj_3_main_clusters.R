@@ -96,7 +96,7 @@ d_n_scatter_main_clust <- ggplot(main_clust_model_data, aes(x = depth_mean_m, y 
   geom_point() +
   geom_smooth(method = "lm",se = FALSE) +
   scale_color_manual(values = species_colors, labels = parse(text = taxon_labels)) +
-  labs(title = "Taxa concentrations by mean depths for main cluster samples",
+  labs(title = "Taxa concentrations by mean depths for main assemblage samples",
        x = "Mean tow depth (m)", y = "Concentration (log(ind./m3)", color = "Taxon") +
   theme_classic()
 ggsave("solar_dayness_scatter_main_clust.png", plot = d_n_scatter_main_clust, path = here("output"),

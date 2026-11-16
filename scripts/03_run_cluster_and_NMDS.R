@@ -58,7 +58,7 @@ rect.hclust(AHC_result, k = 7, border = dendrogram_cluster_colors)
 par(fig = c(0.85, 1, 0, 1), mar =c(5, 0, 4, 1), new = TRUE)
 plot.new()
 legend("center", legend = cluster_levels,
-       title = "Cluster",
+       title = "Assemblage",
        col = cluster_colors[cluster_levels],
        lwd = 2, cex = 1.2, bty = "n")
 dev.off()
@@ -562,7 +562,7 @@ cluster_map_cluster_legend <- ggplot(
                      expand = expansion(mult = c(0, 0))) +
   scale_y_continuous(NULL, limits = c(0.5, length(cluster_levels) + 0.5),
                      breaks = NULL, expand = expansion(mult = c(0, 0))) +
-  labs(title = "Cluster") +
+  labs(title = "Assemblage") +
   theme_void(base_size = 10) +
   theme(plot.title = element_text(hjust = 0, size = 10),
         plot.margin = margin(t = 4, r = 0, b = 4, l = 0))
@@ -795,16 +795,15 @@ bar_heights <- AHC_comm_matrix_transformed_long %>%
 
 max_height <- max(bar_heights$total_height)
 
-AHC_comm_matrix_log_transformed_long <- AHC_comm_matrix_transformed_long %>%
-  filter(sqrt_concentration > 0) %>%
-  mutate(log_concentration = log(sqrt_concentration),
-         log_concentration_shifted = log_concentration - min(log_concentration, na.rm = TRUE))
+# Take the square root again to show fourth-root concentrations in this barplot.
+AHC_comm_matrix_fourth_root_long <- AHC_comm_matrix_transformed_long %>%
+  mutate(fourth_root_concentration = sqrt(sqrt_concentration))
 
-log_bar_heights <- AHC_comm_matrix_log_transformed_long %>%
+fourth_root_bar_heights <- AHC_comm_matrix_fourth_root_long %>%
   group_by(year, chrono_sample_ID) %>%
-  summarize(total_height = sum(log_concentration_shifted), .groups = "drop")
+  summarize(total_height = sum(fourth_root_concentration), .groups = "drop")
 
-log_max_height <- max(log_bar_heights$total_height)
+fourth_root_max_height <- max(fourth_root_bar_heights$total_height)
 
 # Plot proportional taxonomic composition across all net tows, sorted by cluster
 cluster_proportion_bounds <- AHC_comm_matrix_transformed_long %>%
@@ -848,7 +847,7 @@ clusters_proportion_bar_plot <- ggplot(
   scale_x_discrete(guide = guide_axis(angle = 90)) +
   scale_y_continuous(labels = scales::label_number(accuracy = 0.1),
                      expand = expansion(mult = c(0, 0.02))) +
-  labs(x = "Sample", y = "Proportion", title = "Cluster") +
+  labs(x = "Sample", y = "Proportion", title = "Assemblage") +
   theme_classic() +
   theme(panel.background = element_rect(fill = "white", color = NA),
         plot.title = element_text(hjust = 0.5,
@@ -869,7 +868,7 @@ ggsave("clusters_proportion_bar_plot.png",
 make_cluster_abundance_year_plot <- function(plot_data, separator_data, plot_year,
                                              abundance_column = "sqrt_concentration",
                                              y_limit = NULL,
-                                             y_label = expression(paste("Concentration (ind. ", m^-3, ")")),
+                                             y_label = expression(sqrt("Concentration (ind. " * m^{-3} * ")")),
                                              show_y_axis = FALSE,
                                              show_y_values = show_y_axis,
                                              show_y_title = show_y_axis) {
@@ -961,7 +960,7 @@ cluster_year_plots <- map2(cluster_years, seq_along(cluster_years),
                              show_y_values = .y == 1,
                              show_y_title = .y == 1
                            ))
-cluster_abun_header <- text_grob("Cluster", size = 12)
+cluster_abun_header <- text_grob("Assemblage", size = 12)
 
 ## Extract legend
 legend_only <- cowplot::get_legend(cluster_year_plots[[1]] + theme(legend.position = "right"))
@@ -999,37 +998,37 @@ ggsave(filename = "barplot_taxa_legend.png",
 ggsave("clusters_abundance_bar_plot.png", plot = clust_abun_bar_plot_no_legend, path = here("output"),
        width = 10, height = 5, units = "in", dpi = 300)
 
-cluster_year_log_plots <- map2(cluster_years, seq_along(cluster_years),
-                               ~make_cluster_abundance_year_plot(
-                                 AHC_comm_matrix_log_transformed_long,
-                                 cluster_separators,
-                                 .x,
-                                 abundance_column = "log_concentration_shifted",
-                                 y_limit = log_max_height,
-                                 y_label = expression(paste("log Concentration (ind. ", m^-3, ")")),
-                                 show_y_axis = TRUE,
-                                 show_y_values = .y == 1,
-                                 show_y_title = .y == 1
-                               ))
+cluster_year_fourth_root_plots <- map2(cluster_years, seq_along(cluster_years),
+                                     ~make_cluster_abundance_year_plot(
+                                       AHC_comm_matrix_fourth_root_long,
+                                       cluster_separators,
+                                       .x,
+                                       abundance_column = "fourth_root_concentration",
+                                       y_limit = fourth_root_max_height,
+                                       y_label = expression(sqrt("Concentration (ind. " * m^{-3} * ")", 4)),
+                                       show_y_axis = TRUE,
+                                       show_y_values = .y == 1,
+                                       show_y_title = .y == 1
+                                     ))
 
-log_clust_abun_panel_row <- ggarrange(
-  plotlist = map(cluster_year_log_plots, ~.x + theme(legend.position = "none")),
-  ncol = length(cluster_year_log_plots),
+fourth_root_clust_abun_panel_row <- ggarrange(
+  plotlist = map(cluster_year_fourth_root_plots, ~.x + theme(legend.position = "none")),
+  ncol = length(cluster_year_fourth_root_plots),
   nrow = 1,
   widths = cluster_year_widths,
   align = "hv"
 )
 
-log_clust_abun_bar_plot_no_legend <- ggarrange(
+fourth_root_clust_abun_bar_plot_no_legend <- ggarrange(
   cluster_abun_header,
-  log_clust_abun_panel_row,
+  fourth_root_clust_abun_panel_row,
   text_grob("Sample", size = 12),
   ncol = 1,
   heights = c(0.06, 1, 0.06)
 )
 
-ggsave("clusters_abundance_bar_plot_log_transformed.png",
-       plot = log_clust_abun_bar_plot_no_legend,
+ggsave("clusters_abundance_bar_plot_fourth_root.png",
+       plot = fourth_root_clust_abun_bar_plot_no_legend,
        path = here("output"),
        width = 10, height = 5, units = "in", dpi = 300)
 
@@ -1136,7 +1135,7 @@ major_cluster_abun_header <- ggarrange(
     nrow = 1,
     widths = major_cluster_year_widths
   ),
-  text_grob("Cluster", size = 12),
+  text_grob("Assemblage", size = 12),
   ncol = 1,
   heights = c(1, 0.8)
 )
@@ -1297,8 +1296,8 @@ hulls <- stations_clustered %>%
 ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2)) +
   geom_polygon(data = hulls, aes(fill = cluster, group = cluster), alpha = 0.25, color = NA) +
   geom_point(aes(color = cluster), size = 1) +
-  scale_fill_manual(values = cluster_colors) +
-  scale_color_manual(values = cluster_colors) +
+  scale_fill_manual(name = "Assemblage", values = cluster_colors) +
+  scale_color_manual(name = "Assemblage", values = cluster_colors) +
   theme_classic() +
   labs(title = "NMDS Ordination of sampling events by LFC", x = "NMDS1", y = "NMDS2")
 ggsave("NMDS_all_clusters.png", plot = get_last_plot(), path = here("output"),
@@ -1394,10 +1393,10 @@ ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
   #1 Polygons (cluster color)
   geom_polygon(data = hulls, aes(x = NMDS1, y = NMDS2, fill = cluster, group = cluster), 
                alpha = 0.25, color = NA, inherit.aes = FALSE) +
-  scale_fill_manual(name = "Cluster", values = cluster_colors) +
+  scale_fill_manual(name = "Assemblage", values = cluster_colors) +
   #2 Points (cluster colors)
   geom_point(size = 1) +
-  scale_color_manual(name = "Cluster", values = cluster_colors) +
+  scale_color_manual(name = "Assemblage", values = cluster_colors) +
   # #3 Ellipses - Shelf Position
   # geom_path(data = ell_shelf_df, aes(x = NMDS1, y = NMDS2, color = group), 
   #           size = 1, inherit.aes = FALSE) +
@@ -1411,7 +1410,7 @@ ggplot(stations_clustered, aes(x = NMDS1, y = NMDS2, color = cluster)) +
             aes(x = label_x, y = label_y, label = plot_label, hjust = label_hjust),
             color = "black", size = 2, inherit.aes = FALSE) +
   labs(x = "NMDS1", y = "NMDS2",
-       color = "Cluster", fill = "Cluster") + 
+       color = "Assemblage", fill = "Assemblage") +
 theme_classic()
 ggsave("NMDS_overlays_all_clusters.png", plot = get_last_plot(), path = here("output"),
        width = 7, height = 5, units = "in", dpi = 300)

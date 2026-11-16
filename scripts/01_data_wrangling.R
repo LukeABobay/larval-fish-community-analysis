@@ -99,9 +99,17 @@ mocness_2022_03_fish_abundance <- mocness_2022_03_fish_abundance_raw %>%
   filter(!grepl("\\?$", number.of.individuals.raw)) %>%
   rbind(., questionable_values)
 
-#Merge winter 2022 and 2023 MOCNESS fish data
+# Merge winter 2022 and 2023 MOCNESS fish data. Fill blank adjusted counts
+# when both the raw count and split multiplier are available.
 mocness_winter_2022_2023_fish_abundance <- smartbind(mocness_2022_03_fish_abundance,
                                                      mocness_2023_02_fish_abundance) %>%
+  mutate(raw_count = suppressWarnings(as.numeric(number.of.individuals.raw)),
+         split_multiplier = suppressWarnings(as.numeric(split.multiplier)),
+         number.of.individuals.adjusted = if_else(
+           (is.na(number.of.individuals.adjusted) | trimws(number.of.individuals.adjusted) == "") &
+             is.finite(raw_count) & raw_count >= 0 &
+             is.finite(split_multiplier) & split_multiplier > 0,
+           raw_count * split_multiplier, as.numeric(number.of.individuals.adjusted))) %>%
   rename(collection_date = date, haul_number = haul.number, net_number = net.number, 
          volume_filtered_m3 = volume.filtered.m3, 
          individuals_in_tow = number.of.individuals.adjusted) %>%
